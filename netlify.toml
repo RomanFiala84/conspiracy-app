@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  functions = "functions"
+  functions = ".netlify/functions"
   publish = "build"
 
 [dev]
@@ -9,5 +9,5 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/progress/:splat"
+  to = "/.netlify/functions/progress"
   status = 200

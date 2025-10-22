@@ -1,4 +1,4 @@
-// src/contexts/UserStatsContext.js
+// src/contexts/UserStatsContext.js - KOMPLETNÁ VERZIA
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import DataManager from '../utils/DataManager';
@@ -54,7 +54,7 @@ export const UserStatsProvider = ({ children }) => {
     };
 
     updateUserId();
-    intervalRef.current = setInterval(updateUserId, 3000);
+    intervalRef.current = setInterval(updateUserId, 5000);
 
     window.addEventListener('storage', updateUserId);
     window.addEventListener('focus', updateUserId);
@@ -101,7 +101,6 @@ export const UserStatsProvider = ({ children }) => {
     }
   }, [userId, dataManager]);
 
-  // reload stats when centralStorage changes
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === dataManager.centralStorageKey) {
@@ -112,31 +111,17 @@ export const UserStatsProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorage);
   }, [dataManager.centralStorageKey, loadUserStats]);
 
-  // polling z servera každých 2 sekundy
   useEffect(() => {
     if (!userId || isLoadingRef.current) return;
 
-    const load = async () => {
-      try {
-        const progress = await dataManager.loadUserProgress(userId);
-        if (progress) {
-          const updatedStats = {
-            level: progress.user_stats_level || 1,
-            points: progress.user_stats_points || 0,
-            referrals: progress.referrals_count || 0,
-            completedSections: Array.isArray(progress.completedSections) ? progress.completedSections : [],
-            bonusPoints: (progress.referrals_count || 0) * 50
-          };
-          setUserStats(updatedStats);
-        }
-      } catch (error) {
-        console.warn('⚠️ Chyba pri pollingu stats:', error);
-      }
-    };
+    loadUserStats();
 
-    const interval = setInterval(load, 2000);
+    const interval = setInterval(() => {
+      loadUserStats();
+    }, 5000);
+
     return () => clearInterval(interval);
-  }, [userId, dataManager]);
+  }, [userId, loadUserStats]);
 
   useEffect(() => {
     if (userId && !isLoadingRef.current) {

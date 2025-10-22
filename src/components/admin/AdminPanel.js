@@ -1,3 +1,5 @@
+// src/components/admin/AdminPanel.js - KOMPLETNÁ VERZIA
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -69,6 +71,7 @@ const ButtonGroup = styled.div`
   justify-content: center;
   gap: 16px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 `;
 
 const Button = styled.button`
@@ -129,36 +132,31 @@ export default function AdminPanel() {
     }
 
     const loadUsers = () => {
-      const all = dataManager.getAllParticipantsData();
-      const userList = Object.values(all).map(user => ({
-        ...user,
-        isActive: user.instruction_completed && user.timestamp_last_update,
-        lastActivity: user.timestamp_last_update ? new Date(user.timestamp_last_update).toLocaleDateString('sk-SK') : '—'
-      }));
-      setUsers(userList);
+      try {
+        const all = dataManager.getAllParticipantsData();
+        const userList = Object.values(all).map(user => ({
+          ...user,
+          isActive: user.instruction_completed && user.timestamp_last_update,
+          lastActivity: user.timestamp_last_update ? new Date(user.timestamp_last_update).toLocaleDateString('sk-SK') : '—'
+        }));
+        setUsers(userList);
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
     };
 
     loadUsers();
-    const interval = setInterval(loadUsers, 30000);
+    const interval = setInterval(loadUsers, 5000);
     return () => clearInterval(interval);
   }, [dataManager, userId, navigate]);
 
-  useEffect(() => {
-    const load = () => {
-      const all = dataManager.getAllParticipantsData();
-      const userList = Object.values(all).map(user => ({
-        ...user,
-        isActive: user.instruction_completed && user.timestamp_last_update,
-        lastActivity: user.timestamp_last_update ? new Date(user.timestamp_last_update).toLocaleDateString('sk-SK') : '—'
-      }));
-      setUsers(userList);
-    };
-    const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
-  }, [dataManager]);
-
   const handleExport = () => {
-    dataManager.exportAllParticipantsCSV();
+    try {
+      dataManager.exportAllParticipantsCSV();
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('❌ Chyba pri exportovaní dáta.');
+    }
   };
 
   const handleClearAllData = async () => {
@@ -168,13 +166,22 @@ export default function AdminPanel() {
       localStorage.clear();
       sessionStorage.clear();
 
-      await fetch('/api/progress?code=all', { method: 'DELETE' }).catch(() => {});
+      const response = await fetch('/api/progress?code=all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: 'RF9846' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Delete failed');
+      }
 
       alert('✅ Všetky dáta boli úspešne vymazané.');
       setUsers([]);
     } catch (err) {
-      console.error('❌ Chyba pri mazaní dát:', err);
-      alert('❌ Chyba pri mazaní dát.');
+      console.error('❌ Delete error:', err);
+      alert(`❌ Chyba pri mazaní dáta: ${err.message}`);
     }
   };
 

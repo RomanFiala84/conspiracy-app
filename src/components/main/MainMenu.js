@@ -1,4 +1,4 @@
-// src/components/main/MainMenu.js
+// src/components/main/MainMenu.js - KOMPLETNÁ OPRAVENÁ VERZIA
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,20 +11,24 @@ const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
 `;
+
 const Header = styled.div`
   text-align: center;
   margin-bottom: 30px;
 `;
+
 const Title = styled.h1`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 8px;
 `;
+
 const Subtitle = styled.p`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   font-size: 14px;
 `;
+
 const StatsCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
   border: 1px solid ${p => p.theme.BORDER_COLOR};
@@ -34,26 +38,31 @@ const StatsCard = styled.div`
   justify-content: space-around;
   margin-bottom: 30px;
 `;
+
 const StatItem = styled.div`
   text-align: center;
 `;
+
 const StatValue = styled.div`
   font-size: 24px;
   font-weight: 700;
   color: ${p => p.theme.ACCENT_COLOR};
 `;
+
 const StatLabel = styled.div`
   font-size: 12px;
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
+
 const MissionsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 `;
+
 const MissionCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
   border: 1px solid ${p => p.theme.BORDER_COLOR};
@@ -70,6 +79,7 @@ const MissionCard = styled.div`
     border-color: ${p => p.locked ? p.theme.BORDER_COLOR : p.theme.ACCENT_COLOR};
   }
 `;
+
 const MissionNumber = styled.div`
   font-size: 12px;
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
@@ -77,17 +87,20 @@ const MissionNumber = styled.div`
   font-weight: 600;
   text-transform: uppercase;
 `;
+
 const MissionTitle = styled.h3`
   font-size: 16px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   margin-bottom: 12px;
 `;
+
 const MissionStatus = styled.div`
   font-size: 12px;
   color: ${p => p.completed ? p.theme.ACCENT_COLOR_3 : p.theme.SECONDARY_TEXT_COLOR};
   font-weight: 600;
   text-transform: uppercase;
 `;
+
 const AdminButtons = styled.div`
   position: absolute;
   top: 8px;
@@ -95,6 +108,7 @@ const AdminButtons = styled.div`
   display: flex;
   gap: 4px;
 `;
+
 const AdminButton = styled.button`
   background: ${p => p.unlock ? p.theme.ACCENT_COLOR_3 : p.theme.ACCENT_COLOR_2};
   color: #fff;
@@ -104,12 +118,15 @@ const AdminButton = styled.button`
   font-size: 10px;
   cursor: pointer;
 `;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: center;
   gap: 16px;
   margin-top: 20px;
+  flex-wrap: wrap;
 `;
+
 const IconButton = styled.button`
   display: flex;
   align-items: center;
@@ -128,6 +145,7 @@ const IconButton = styled.button`
     transform: translateY(-1px);
   }
 `;
+
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -140,6 +158,7 @@ const ModalOverlay = styled.div`
   justify-content: center;
   z-index: 1000;
 `;
+
 const ModalContent = styled.div`
   position: relative;
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -149,6 +168,7 @@ const ModalContent = styled.div`
   width: 100%;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
 `;
+
 const CloseButton = styled.button`
   position: absolute;
   top: 16px;
@@ -169,12 +189,13 @@ const makeMissionList = (p) => [
 
 const MainMenu = () => {
   const navigate = useNavigate();
-  const { dataManager, userId, totalPoints, logout } = useUserStats();
+  // OPRAVA #1: Správne destructuring z useUserStats
+  const { userStats, dataManager, userId, logout } = useUserStats();
   const [missions, setMissions] = useState([]);
   const [modal, setModal] = useState({ open: false, type: '' });
   const isAdmin = dataManager.isAdmin(userId);
 
-  // polling + storage listener to refresh from server and localStorage
+  // OPRAVA #2: Jeden unified useEffect pre polling
   useEffect(() => {
     if (!userId) return;
 
@@ -193,15 +214,19 @@ const MainMenu = () => {
         const central = dataManager.getAllParticipantsData();
         const p = central[userId] || {};
         setMissions(makeMissionList(p));
-      } catch {
+      } catch (error) {
+        console.warn('Sync failed, using local data:', error);
         const central = dataManager.getAllParticipantsData();
         const p = central[userId] || {};
         setMissions(makeMissionList(p));
       }
     };
 
-    // Polling z servera každých 2 sekundy
-    const interval = setInterval(load, 2000);
+    // Počiatočné načítanie
+    load();
+
+    // OPRAVA: Jeden interval namiesto dvoch - 5000ms namiesto 2000ms
+    const interval = setInterval(load, 5000);
     window.addEventListener('storage', handleStorage);
 
     return () => {
@@ -210,43 +235,72 @@ const MainMenu = () => {
     };
   }, [dataManager, userId]);
 
+  // Redirectovanie ak nie je user
   useEffect(() => {
     if (!userId) {
       navigate('/instruction');
-      return;
     }
-    (async () => {
-      let p;
-      try {
-        p = await dataManager.loadUserProgress(userId);
-      } catch {
-        const central = dataManager.getAllParticipantsData();
-        p = central[userId] || {};
-      }
+  }, [userId, navigate]);
+
+  // Inicializácia pri prvom načítaní
+  useEffect(() => {
+    if (userId) {
+      const loadInitial = async () => {
+        try {
+          const p = await dataManager.loadUserProgress(userId);
+          setMissions(makeMissionList(p));
+        } catch (error) {
+          console.warn('Failed to load initial data:', error);
+          const central = dataManager.getAllParticipantsData();
+          const p = central[userId] || {};
+          setMissions(makeMissionList(p));
+        }
+      };
+      loadInitial();
+    }
+  }, [dataManager, userId]);
+
+  const handleMissionClick = (m) => {
+    if (!m.locked) navigate(m.route);
+  };
+
+  const handleExport = () => {
+    try {
+      dataManager.exportAllParticipantsCSV();
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('❌ Chyba pri exportovaní dáta.');
+    }
+  };
+
+  const handleUnlock = async (id) => {
+    try {
+      await dataManager.unlockMissionForAll(id);
+      const central = dataManager.getAllParticipantsData();
+      const p = central[userId] || {};
       setMissions(makeMissionList(p));
-    })();
-  }, [dataManager, userId, navigate]);
-
-  const handleMissionClick = m => { if (!m.locked) navigate(m.route); };
-  const handleExport = () => dataManager.exportAllParticipantsCSV();
-
-  const handleUnlock = async id => {
-    await dataManager.unlockMissionForAll(id);
-    const central = dataManager.getAllParticipantsData();
-    const p = central[userId] || {};
-    setMissions(makeMissionList(p));
+    } catch (error) {
+      console.error('Unlock error:', error);
+    }
   };
 
-  const handleLock = async id => {
-    await dataManager.lockMissionForAll(id);
-    const central = dataManager.getAllParticipantsData();
-    const p = central[userId] || {};
-    setMissions(makeMissionList(p));
+  const handleLock = async (id) => {
+    try {
+      await dataManager.lockMissionForAll(id);
+      const central = dataManager.getAllParticipantsData();
+      const p = central[userId] || {};
+      setMissions(makeMissionList(p));
+    } catch (error) {
+      console.error('Lock error:', error);
+    }
   };
 
-  const openModal = type => setModal({ open: true, type });
+  const openModal = (type) => setModal({ open: true, type });
   const closeModal = () => setModal({ open: false, type: '' });
-  const handleLogout = () => { logout(); navigate('/instruction'); };
+  const handleLogout = () => {
+    logout();
+    navigate('/instruction');
+  };
 
   return (
     <Layout>
@@ -256,7 +310,8 @@ const MainMenu = () => {
           <Subtitle>Staňte sa detektívom a odhaľte pravdu</Subtitle>
           <StatsCard>
             <StatItem>
-              <StatValue>{totalPoints}</StatValue>
+              {/* OPRAVA #3: Použitie userStats.points namiesto totalPoints */}
+              <StatValue>{userStats.points}</StatValue>
               <StatLabel>Body</StatLabel>
             </StatItem>
             <StatItem>
@@ -278,11 +333,19 @@ const MainMenu = () => {
                 <AdminButtons>
                   <AdminButton
                     unlock
-                    onClick={e => { e.stopPropagation(); handleUnlock(m.id); }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleUnlock(m.id);
+                    }}
                   >
                     🔓
                   </AdminButton>
-                  <AdminButton onClick={e => { e.stopPropagation(); handleLock(m.id); }}>
+                  <AdminButton
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleLock(m.id);
+                    }}
+                  >
                     🔒
                   </AdminButton>
                 </AdminButtons>

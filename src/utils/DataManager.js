@@ -158,18 +158,21 @@ class DataManager {
     try {
       console.log('🔄 Synchronizujem dáta zo servera...');
       const resp = await fetch('/api/progress?code=all');
-      if (resp.ok) {
-        const allData = await resp.json();
-        localStorage.setItem(this.centralStorageKey, JSON.stringify(allData));
-        console.log('✅ Dáta synchronizované zo servera');
-        return allData;
-      } else {
+      
+      // OPRAVA #1: Kontrola HTTP status
+      if (!resp.ok) {
         console.warn('⚠️ Server vrátil chybu:', resp.status);
+        return this.getAllParticipantsData();
       }
+      
+      const allData = await resp.json();
+      localStorage.setItem(this.centralStorageKey, JSON.stringify(allData));
+      console.log('✅ Dáta synchronizované zo servera');
+      return allData;
     } catch (e) {
-      console.warn('⚠️ Sync všetkých dát zo servera zlyhal:', e);
+      console.warn('⚠️ Sync všetkých dáta zo servera zlyhal:', e);
+      return this.getAllParticipantsData();
     }
-    return this.getAllParticipantsData();
   }
 
   async loadUserProgress(participantCode) {
@@ -180,25 +183,39 @@ class DataManager {
 
     try {
       const resp = await fetch(`/api/progress?code=${participantCode}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        const prog = this.validateAndFixData(data.progress || data, participantCode);
-        this._cacheAndStore(participantCode, prog);
-        return prog;
+      
+      // OPRAVA #2: Kontrola HTTP status (nie len network error)
+      if (!resp.ok) {
+        console.warn(`Server error ${resp.status}: ${resp.statusText}`);
+        throw new Error(`HTTP ${resp.status}`);
       }
-    } catch {
-      console.warn('Server nedostupný, používam localStorage.');
+      
+      const data = await resp.json();
+      const prog = this.validateAndFixData(data.progress || data, participantCode);
+      this._cacheAndStore(participantCode, prog);
+      return prog;
+    } catch (error) {
+      console.warn('Server nedostupný, používam localStorage:', error.message);
     }
 
+    // Fallback 1: localStorage
     const saved = localStorage.getItem(`fullProgress_${participantCode}`);
     if (saved) {
-      const data = JSON.parse(saved);
-      const prog = this.validateAndFixData(data, participantCode);
-      this.cache.set(participantCode, prog);
-      this.syncToServer(participantCode, prog);
-      return prog;
+      try {
+        const data = JSON.parse(saved);
+        const prog = this.validateAndFixData(data, participantCode);
+        this.cache.set(participantCode, prog);
+        // Try async sync in background
+        this.syncToServer(participantCode, prog).catch(e => 
+          console.warn('Background sync failed:', e)
+        );
+        return prog;
+      } catch (e) {
+        console.error('localStorage data corrupted:', e);
+      }
     }
 
+    // Fallback 2: centrálne storage
     const central = this.getAllParticipantsData();
     if (central[participantCode]) {
       const prog = this.validateAndFixData(central[participantCode], participantCode);
@@ -206,18 +223,29 @@ class DataManager {
       return prog;
     }
 
+    // Fallback 3: nový záznam
     return this.createNewUserRecord(participantCode);
   }
 
   async syncToServer(participantCode, data) {
     try {
-      await fetch(`/api/progress?code=${participantCode}`, {
+      const resp = await fetch(`/api/progress?code=${participantCode}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-    } catch {
-      console.warn('Sync na server zlyhal.');
+
+      // OPRAVA #3: Kontrola HTTP status
+      if (!resp.ok) {
+        console.warn(`Sync failed for ${participantCode}: HTTP ${resp.status}`);
+        return false;
+      }
+
+      console.log(`✅ Synced ${participantCode}`);
+      return true;
+    } catch (error) {
+      console.warn('Sync na server zlyhal:', error.message);
+      return false;
     }
   }
 
