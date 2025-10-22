@@ -16,7 +16,7 @@ const getConnection = (() => {
     const client = new MongoClient(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      maxPoolSize: 10,        // OPRAVA: zvýšená z 1
+      maxPoolSize: 10,
       minPoolSize: 2,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
@@ -193,6 +193,9 @@ exports.handler = async (event) => {
         console.log(`💾 Ukladám progres pre ${code}`);
         const group = data.group_assignment || (Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2');
 
+        // OPRAVA KRITICKÁ: Oddeľ participant_code z dát!
+        const { participant_code, ...dataToUpdate } = data;
+
         await col.updateOne(
           { participant_code: code },
           {
@@ -202,7 +205,7 @@ exports.handler = async (event) => {
               createdAt: new Date()
             },
             $set: {
-              ...data,
+              ...dataToUpdate,              // ✅ BEZ participant_code!
               updatedAt: new Date()
             }
           },
