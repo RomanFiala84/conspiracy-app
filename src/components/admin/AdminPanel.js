@@ -1,14 +1,9 @@
-// src/components/admin/AdminPanel.js
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../styles/Layout';
 import { useUserStats } from '../../contexts/UserStatsContext';
 
-// ────────────────────────────────
-// Styled komponenty (bez zmeny)
-// ────────────────────────────────
 const Container = styled.div`
   padding: 20px;
   max-width: 1200px;
@@ -122,9 +117,6 @@ const StatLabel = styled.div`
   letter-spacing: 0.5px;
 `;
 
-// ────────────────────────────────
-// HLAVNÝ KOMPONENT
-// ────────────────────────────────
 export default function AdminPanel() {
   const navigate = useNavigate();
   const { dataManager, userId } = useUserStats();
@@ -151,7 +143,6 @@ export default function AdminPanel() {
     return () => clearInterval(interval);
   }, [dataManager, userId, navigate]);
 
-  // polling to refresh users from localStorage changes
   useEffect(() => {
     const load = () => {
       const all = dataManager.getAllParticipantsData();
@@ -174,12 +165,10 @@ export default function AdminPanel() {
     if (!window.confirm('⚠️ Naozaj chceš nenávratne vymazať všetky dáta zo systému aj zo servera?')) return;
 
     try {
-      // 1️⃣ Lokálne dáta
       localStorage.clear();
       sessionStorage.clear();
 
-      // 2️⃣ Serverové dáta (Netlify function → MongoDB)
-      await fetch('/.netlify/functions/progress?code=all', { method: 'DELETE' }).catch(() => {});
+      await fetch('/api/progress?code=all', { method: 'DELETE' }).catch(() => {});
 
       alert('✅ Všetky dáta boli úspešne vymazané.');
       setUsers([]);
