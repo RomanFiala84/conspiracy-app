@@ -1,62 +1,85 @@
+/**
+ * /netlify/functions/progress.js
+ * Serverless MongoDB API pre CPASS Game – verzia s automatickou registráciou
+ */
+
 const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGO_URI;
+if (!uri) {
+  console.error('❌ Environment variable MONGO_URI nie je nastavená!');
+}
 
-// OPRAVA #1: Lepšie connection pooling
+//
+// 🧩 1️⃣ Connection pooling
+//
 const getConnection = (() => {
   let cachedClient = null;
-  
+
   return async () => {
-    if (cachedClient && cachedClient.topology && cachedClient.topology.isConnected()) {
+    if (cachedClient) {
       console.log('♻️ Using cached MongoDB connection');
       return cachedClient;
     }
-    
+
     console.log('🔌 Creating new MongoDB connection...');
     const client = new MongoClient(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       maxPoolSize: 10,
-      minPoolSize: 2,
+      minPoolSize: 1,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
     });
-    
+
     await client.connect();
-    cachedClient = client;
     console.log('✅ MongoDB connected');
+    cachedClient = client;
     return cachedClient;
   };
 })();
 
-// OPRAVA #2: CORS Headers helper
+//
+// 🧩 2️⃣ CORS Helper
+//
 const getCorsHeaders = () => ({
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
-  'Cache-Control': 'no-cache'
+  'Cache-Control': 'no-cache',
 });
 
+//
+// 🧩 3️⃣ Helper – vytvorenie nového používateľa
+//
+const createNewParticipant = (code) => {
+  const group = Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2';
+  return {
+    participant_code: code,
+    group_assignment: group,
+    points: 0,
+    completedSections: [],
+    level: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+};
+
+//
+// 🧩 4️⃣ Main Handler
+//
 exports.handler = async (event) => {
   try {
-    // OPRAVA #3: Handle OPTIONS for CORS preflight
     if (event.httpMethod === 'OPTIONS') {
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: ''
-      };
+      return { statusCode: 200, headers: getCorsHeaders(), body: '' };
     }
 
     if (!uri) {
-      console.error('❌ MONGO_URI nie je nastavená!');
       return {
         statusCode: 500,
         headers: getCorsHeaders(),
-        body: JSON.stringify({ error: 'MONGO_URI not configured' })
+        body: JSON.stringify({ error: 'MONGO_URI not configured' }),
       };
     }
 
@@ -64,58 +87,56 @@ exports.handler = async (event) => {
     const db = client.db('conspiracy');
     const col = db.collection('participants');
 
-    let code;
-    if (event.queryStringParameters && event.queryStringParameters.code) {
-      code = event.queryStringParameters.code;
-    } else if (event.path) {
-      code = event.path.split('/').pop();
-    } else {
-      code = null;
-    }
+    const code =
+      event.queryStringParameters?.code ||
+      (event.path ? event.path.split('/').pop() : null);
 
     console.log(`📝 Request: ${event.httpMethod} ${event.path} (code: ${code})`);
 
+    //
+    // 📖 GET – Načítanie alebo automatická registrácia
+    //
     if (event.httpMethod === 'GET') {
       try {
         if (code === 'all') {
           const docs = await col.find({}).toArray();
           const allData = {};
-          docs.forEach(doc => {
-            allData[doc.participant_code] = doc;
-          });
+          docs.forEach((doc) => (allData[doc.participant_code] = doc));
           console.log(`✓ Vrátené ${Object.keys(allData).length} záznamov`);
           return {
             statusCode: 200,
             headers: getCorsHeaders(),
-            body: JSON.stringify(allData)
+            body: JSON.stringify(allData),
           };
         }
 
-        const doc = await col.findOne({ participant_code: code });
+        let doc = await col.findOne({ participant_code: code });
         if (!doc) {
-          console.log(`❌ Používateľ ${code} nenájdený`);
-          return {
-            statusCode: 200,
-            headers: getCorsHeaders(),
-            body: JSON.stringify({})
-          };
+          console.log(`🆕 Automatická registrácia nového účastníka: ${code}`);
+          const newUser = createNewParticipant(code);
+          await col.insertOne(newUser);
+          doc = newUser;
         }
+
         console.log(`✓ Vrátený používateľ ${code}`);
         return {
           statusCode: 200,
           headers: getCorsHeaders(),
-          body: JSON.stringify(doc)
+          body: JSON.stringify(doc),
         };
       } catch (dbError) {
-        console.error('❌ GET database error:', dbError.message);
+        console.error('❌ GET database error:', dbError);
         return {
           statusCode: 500,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ error: 'Database query failed', details: dbError.message })
+          body: JSON.stringify({ error: 'Database query failed', details: dbError.message }),
         };
       }
     }
 
+    //
+    // 💾 PUT – Uloženie progresu alebo zámkov
+    //
     if (event.httpMethod === 'PUT') {
       let data;
       try {
@@ -125,18 +146,20 @@ exports.handler = async (event) => {
         return {
           statusCode: 400,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ error: 'Invalid JSON' })
+          body: JSON.stringify({ error: 'Invalid JSON' }),
         };
       }
 
       try {
-        if (code === 'missions-unlock') {
-          console.log(`🔓 Odomykám misiu ${data.missionId} pre všetkých...`);
+        // 🔒 / 🔓 Admin operácie
+        if (code === 'missions-lock' || code === 'missions-unlock') {
+          const lock = code === 'missions-lock';
+          console.log(`${lock ? '🔒' : '🔓'} ${lock ? 'Zamykám' : 'Odomykám'} misiu ${data.missionId}`);
           if ((!data.missionId && data.missionId !== 0) || !data.adminCode) {
             return {
               statusCode: 400,
               headers: getCorsHeaders(),
-              body: JSON.stringify({ error: 'Missing missionId or adminCode' })
+              body: JSON.stringify({ error: 'Missing missionId or adminCode' }),
             };
           }
           if (data.adminCode !== 'RF9846') {
@@ -144,56 +167,30 @@ exports.handler = async (event) => {
             return {
               statusCode: 403,
               headers: getCorsHeaders(),
-              body: JSON.stringify({ error: 'Forbidden' })
+              body: JSON.stringify({ error: 'Forbidden' }),
             };
           }
+
           const missionField = `mission${data.missionId}_unlocked`;
           const result = await col.updateMany(
             {},
-            { $set: { [missionField]: true, updatedAt: new Date() } }
+            { $set: { [missionField]: !lock, updatedAt: new Date() } }
           );
-          console.log(`✓ Odomknutá misia ${data.missionId} pre ${result.modifiedCount} účastníkov`);
+
+          console.log(`✓ ${lock ? 'Zamknutá' : 'Odomknutá'} misia ${data.missionId} (${result.modifiedCount} účastníkov)`);
           return {
             statusCode: 200,
             headers: getCorsHeaders(),
-            body: JSON.stringify({ modifiedCount: result.modifiedCount })
+            body: JSON.stringify({ modifiedCount: result.modifiedCount }),
           };
         }
 
-        if (code === 'missions-lock') {
-          console.log(`🔒 Zamykám misiu ${data.missionId} pre všetkých...`);
-          if ((!data.missionId && data.missionId !== 0) || !data.adminCode) {
-            return {
-              statusCode: 400,
-              headers: getCorsHeaders(),
-              body: JSON.stringify({ error: 'Missing missionId or adminCode' })
-            };
-          }
-          if (data.adminCode !== 'RF9846') {
-            console.log(`❌ Nesprávny admin kód: ${data.adminCode}`);
-            return {
-              statusCode: 403,
-              headers: getCorsHeaders(),
-              body: JSON.stringify({ error: 'Forbidden' })
-            };
-          }
-          const missionField = `mission${data.missionId}_unlocked`;
-          const result = await col.updateMany(
-            {},
-            { $set: { [missionField]: false, updatedAt: new Date() } }
-          );
-          console.log(`✓ Zamknutá misia ${data.missionId} pre ${result.modifiedCount} účastníkov`);
-          return {
-            statusCode: 200,
-            headers: getCorsHeaders(),
-            body: JSON.stringify({ modifiedCount: result.modifiedCount })
-          };
-        }
-
+        // 💾 Bežný update / auto-registrácia
         console.log(`💾 Ukladám progres pre ${code}`);
-        const group = data.group_assignment || (Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2');
+        const group =
+          data.group_assignment ||
+          (Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2');
 
-        // OPRAVA KRITICKÁ: Oddeľ participant_code z dát!
         const { participant_code, ...dataToUpdate } = data;
 
         await col.updateOne(
@@ -202,12 +199,12 @@ exports.handler = async (event) => {
             $setOnInsert: {
               participant_code: code,
               group_assignment: group,
-              createdAt: new Date()
+              createdAt: new Date(),
             },
             $set: {
-              ...dataToUpdate,              // ✅ BEZ participant_code!
-              updatedAt: new Date()
-            }
+              ...dataToUpdate,
+              updatedAt: new Date(),
+            },
           },
           { upsert: true }
         );
@@ -217,19 +214,21 @@ exports.handler = async (event) => {
         return {
           statusCode: 200,
           headers: getCorsHeaders(),
-          body: JSON.stringify(updated)
+          body: JSON.stringify(updated),
         };
       } catch (dbError) {
-        console.error('❌ PUT database error:', dbError.message);
+        console.error('❌ PUT database error:', dbError);
         return {
           statusCode: 500,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ error: 'Database update failed', details: dbError.message })
+          body: JSON.stringify({ error: 'Database update failed', details: dbError.message }),
         };
       }
     }
 
-    // OPRAVA #4: DELETE endpoint
+    //
+    // 🗑️ DELETE – Mazanie dát
+    //
     if (event.httpMethod === 'DELETE') {
       let data;
       try {
@@ -239,7 +238,7 @@ exports.handler = async (event) => {
         return {
           statusCode: 400,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ error: 'Invalid JSON' })
+          body: JSON.stringify({ error: 'Invalid JSON' }),
         };
       }
 
@@ -248,7 +247,7 @@ exports.handler = async (event) => {
           return {
             statusCode: 400,
             headers: getCorsHeaders(),
-            body: JSON.stringify({ error: 'Missing adminCode' })
+            body: JSON.stringify({ error: 'Missing adminCode' }),
           };
         }
 
@@ -257,17 +256,17 @@ exports.handler = async (event) => {
           return {
             statusCode: 403,
             headers: getCorsHeaders(),
-            body: JSON.stringify({ error: 'Forbidden' })
+            body: JSON.stringify({ error: 'Forbidden' }),
           };
         }
 
         if (code === 'all') {
           const result = await col.deleteMany({});
-          console.log(`🗑️ Vymazáno ${result.deletedCount} záznamov`);
+          console.log(`🗑️ Vymazaných ${result.deletedCount} záznamov`);
           return {
             statusCode: 200,
             headers: getCorsHeaders(),
-            body: JSON.stringify({ success: true, deletedCount: result.deletedCount })
+            body: JSON.stringify({ success: true, deletedCount: result.deletedCount }),
           };
         }
 
@@ -276,30 +275,32 @@ exports.handler = async (event) => {
         return {
           statusCode: 200,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ success: true, deletedCount: result.deletedCount })
+          body: JSON.stringify({ success: true, deletedCount: result.deletedCount }),
         };
       } catch (dbError) {
-        console.error('❌ DELETE database error:', dbError.message);
+        console.error('❌ DELETE database error:', dbError);
         return {
           statusCode: 500,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ error: 'Database delete failed', details: dbError.message })
+          body: JSON.stringify({ error: 'Database delete failed', details: dbError.message }),
         };
       }
     }
 
+    //
+    // ❌ Nepodporovaná metóda
+    //
     return {
       statusCode: 405,
       headers: getCorsHeaders(),
-      body: JSON.stringify({ error: 'Method Not Allowed' })
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   } catch (error) {
     console.error('❌ Serverová chyba:', error);
-    console.error('Stack:', error.stack);
     return {
       statusCode: 500,
       headers: getCorsHeaders(),
-      body: JSON.stringify({ error: 'Internal Server Error', message: error.message })
+      body: JSON.stringify({ error: 'Internal Server Error', message: error.message }),
     };
   }
 };
