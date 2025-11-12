@@ -1,4 +1,4 @@
-// src/components/main/MainMenu.js - KOMPLETNÁ OPRAVENÁ VERZIA
+// src/components/main/MainMenu.js - OPRAVENÁ VERZIA
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -117,6 +117,11 @@ const AdminButton = styled.button`
   padding: 4px 6px;
   font-size: 10px;
   cursor: pointer;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const ButtonGroup = styled.div`
@@ -189,13 +194,13 @@ const makeMissionList = (p) => [
 
 const MainMenu = () => {
   const navigate = useNavigate();
-  // OPRAVA #1: Správne destructuring z useUserStats
   const { userStats, dataManager, userId, logout } = useUserStats();
   const [missions, setMissions] = useState([]);
   const [modal, setModal] = useState({ open: false, type: '' });
+  const [isUpdating, setIsUpdating] = useState(false);
   const isAdmin = dataManager.isAdmin(userId);
 
-  // OPRAVA #2: Jeden unified useEffect pre polling
+  // ✅ OPRAVA: Jeden unified useEffect pre polling s kratším intervalom
   useEffect(() => {
     if (!userId) return;
 
@@ -209,7 +214,6 @@ const MainMenu = () => {
 
     const load = async () => {
       try {
-        // Synchronizuj všetky dáta zo servera
         await dataManager.syncAllFromServer();
         const central = dataManager.getAllParticipantsData();
         const p = central[userId] || {};
@@ -222,11 +226,10 @@ const MainMenu = () => {
       }
     };
 
-    // Počiatočné načítanie
     load();
 
-    // OPRAVA: Jeden interval namiesto dvoch - 5000ms namiesto 2000ms
-    const interval = setInterval(load, 5000);
+    // ✅ OPRAVA: Kratší interval pre rýchlejší refresh (2s namiesto 5s)
+    const interval = setInterval(load, 2000);
     window.addEventListener('storage', handleStorage);
 
     return () => {
@@ -235,14 +238,12 @@ const MainMenu = () => {
     };
   }, [dataManager, userId]);
 
-  // Redirectovanie ak nie je user
   useEffect(() => {
     if (!userId) {
       navigate('/instruction');
     }
   }, [userId, navigate]);
 
-  // Inicializácia pri prvom načítaní
   useEffect(() => {
     if (userId) {
       const loadInitial = async () => {
@@ -273,25 +274,51 @@ const MainMenu = () => {
     }
   };
 
+  // ✅ OPRAVA: Vylepšený handleUnlock s okamžitým refresh a feedback
   const handleUnlock = async (id) => {
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
     try {
+      console.log(`🔓 Odomykám misiu ${id}...`);
       await dataManager.unlockMissionForAll(id);
+      
+      // Okamžitý refresh dát
+      await dataManager.syncAllFromServer();
       const central = dataManager.getAllParticipantsData();
       const p = central[userId] || {};
       setMissions(makeMissionList(p));
+      
+      alert(`✅ Misia ${id} bola odomknutá pre všetkých používateľov`);
     } catch (error) {
       console.error('Unlock error:', error);
+      alert(`❌ Chyba pri odomykaní misie: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
+  // ✅ OPRAVA: Vylepšený handleLock s okamžitým refresh a feedback
   const handleLock = async (id) => {
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
     try {
+      console.log(`🔒 Zamykám misiu ${id}...`);
       await dataManager.lockMissionForAll(id);
+      
+      // Okamžitý refresh dát
+      await dataManager.syncAllFromServer();
       const central = dataManager.getAllParticipantsData();
       const p = central[userId] || {};
       setMissions(makeMissionList(p));
+      
+      alert(`✅ Misia ${id} bola zamknutá pre všetkých používateľov`);
     } catch (error) {
       console.error('Lock error:', error);
+      alert(`❌ Chyba pri zamykaní misie: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -310,7 +337,6 @@ const MainMenu = () => {
           <Subtitle>Staňte sa detektívom a odhaľte pravdu</Subtitle>
           <StatsCard>
             <StatItem>
-              {/* OPRAVA #3: Použitie userStats.points namiesto totalPoints */}
               <StatValue>{userStats.points}</StatValue>
               <StatLabel>Body</StatLabel>
             </StatItem>
@@ -333,6 +359,7 @@ const MainMenu = () => {
                 <AdminButtons>
                   <AdminButton
                     unlock
+                    disabled={isUpdating}
                     onClick={e => {
                       e.stopPropagation();
                       handleUnlock(m.id);
@@ -341,6 +368,7 @@ const MainMenu = () => {
                     🔓
                   </AdminButton>
                   <AdminButton
+                    disabled={isUpdating}
                     onClick={e => {
                       e.stopPropagation();
                       handleLock(m.id);

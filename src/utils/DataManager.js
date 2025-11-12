@@ -100,79 +100,103 @@ class DataManager {
 
   async unlockMissionForAll(missionId) {
     console.log(`🔓 Odomykám misiu ${missionId} pre všetkých...`);
+    
     try {
-      await fetch('/api/progress?code=missions-unlock', {
+      const response = await fetch('/api/progress?code=missions-unlock', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ missionId, adminCode: this.adminUserId })
       });
-      console.log(`✅ Batch unlock ${missionId} na serveri`);
-    } catch (e) {
-      console.warn('Batch unlock na server zlyhal, pokračujem lokálne.');
-    }
 
-    await this.syncAllFromServer();
-    const allData = this.getAllParticipantsData();
-    Object.entries(allData).forEach(([code, data]) => {
-      data[`mission${missionId}_unlocked`] = true;
-      data.timestamp_last_update = new Date().toISOString();
-      localStorage.setItem(`fullProgress_${code}`, JSON.stringify(data));
-    });
-    this.cache.forEach((data, code) => {
-      data[`mission${missionId}_unlocked`] = true;
-      data.timestamp_last_update = new Date().toISOString();
-    });
-    console.log(`✅ Lokálne odomknutá misia ${missionId}`);
-    console.log(`✅ Cache aktualizovaný pre misiu ${missionId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ Batch unlock ${missionId} na serveri (${result.modifiedCount} používateľov)`);
+
+      await this.syncAllFromServer();
+      this.cache.clear();
+      
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: this.centralStorageKey,
+        newValue: localStorage.getItem(this.centralStorageKey),
+        url: window.location.href
+      }));
+
+      console.log(`✅ Misia ${missionId} odomknutá pre všetkých`);
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Unlock failed:', error);
+      throw error;
+    }
   }
 
   async lockMissionForAll(missionId) {
     console.log(`🔒 Zamykám misiu ${missionId} pre všetkých...`);
+    
     try {
-      await fetch('/api/progress?code=missions-lock', {
+      const response = await fetch('/api/progress?code=missions-lock', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ missionId, adminCode: this.adminUserId })
       });
-      console.log(`✅ Batch lock ${missionId} na serveri`);
-    } catch (e) {
-      console.warn('Batch lock na server zlyhal, pokračujem lokálne.');
-    }
 
-    await this.syncAllFromServer();
-    const allData = this.getAllParticipantsData();
-    Object.entries(allData).forEach(([code, data]) => {
-      data[`mission${missionId}_unlocked`] = false;
-      data.timestamp_last_update = new Date().toISOString();
-      localStorage.setItem(`fullProgress_${code}`, JSON.stringify(data));
-    });
-    this.cache.forEach((data, code) => {
-      data[`mission${missionId}_unlocked`] = false;
-      data.timestamp_last_update = new Date().toISOString();
-    });
-    console.log(`✅ Lokálne zamknutá misia ${missionId}`);
-    console.log(`✅ Cache aktualizovaný pre misiu ${missionId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ Batch lock ${missionId} na serveri (${result.modifiedCount} používateľov)`);
+
+      await this.syncAllFromServer();
+      this.cache.clear();
+      
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: this.centralStorageKey,
+        newValue: localStorage.getItem(this.centralStorageKey),
+        url: window.location.href
+      }));
+
+      console.log(`✅ Misia ${missionId} zamknutá pre všetkých`);
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Lock failed:', error);
+      throw error;
+    }
   }
 
   async syncAllFromServer() {
     try {
       console.log('🔄 Synchronizujem dáta zo servera...');
       const resp = await fetch('/api/progress?code=all');
+      
       if (!resp.ok) {
         console.warn('⚠️ Server vrátil chybu:', resp.status);
         return this.getAllParticipantsData();
       }
+      
       const allData = await resp.json();
+      
       localStorage.setItem(this.centralStorageKey, JSON.stringify(allData));
-      console.log('✅ Dáta synchronizované zo servera');
+      
+      Object.entries(allData).forEach(([code, data]) => {
+        localStorage.setItem(`fullProgress_${code}`, JSON.stringify(data));
+      });
+      
+      console.log(`✅ Synchronizovaných ${Object.keys(allData).length} používateľov zo servera`);
       return allData;
+      
     } catch (e) {
       console.warn('⚠️ Sync všetkých dáta zo servera zlyhal:', e);
       return this.getAllParticipantsData();
     }
   }
 
-  // 🆕 Aktualizovaná verzia s automatickou registráciou
   async loadUserProgress(participantCode) {
     if (!participantCode) return null;
     if (this.cache.has(participantCode)) {
@@ -230,14 +254,12 @@ class DataManager {
       return prog;
     }
 
-    // 🆕 Ak neexistuje nikde → vytvor nového používateľa
     console.log(`🆕 Lokálne vytváram nového používateľa ${participantCode}`);
     const rec = this.createNewUserRecord(participantCode);
     await this.syncToServer(participantCode, rec);
     return rec;
   }
 
-  // 🆕 Upravené – ak sync zlyhá, skúsi znova registráciu
   async syncToServer(participantCode, data) {
     try {
       const resp = await fetch(`/api/progress?code=${participantCode}`, {
