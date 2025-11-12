@@ -1,6 +1,6 @@
 /**
  * /netlify/functions/progress.js
- * Serverless MongoDB API pre CPASS Game – verzia s automatickou registráciou
+ * Serverless MongoDB API pre CPASS Game – verzia s globálnym stavom misií
  */
 
 const { MongoClient } = require('mongodb');
@@ -27,7 +27,7 @@ const getConnection = (() => {
       maxPoolSize: 10,
       minPoolSize: 1,
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+      socketTimeoutMS: 60000,
       retryWrites: true,
       w: 'majority',
     });
@@ -51,28 +51,56 @@ const getCorsHeaders = () => ({
 });
 
 //
-// 🧩 3️⃣ Helper – vytvorenie nového používateľa
+// 🧩 3️⃣ Helper – načítanie globálneho stavu misií
 //
-const createNewParticipant = (code) => {
+const getGlobalMissionsState = async (db) => {
+  const configCol = db.collection('missions_config');
+  let config = await configCol.findOne({ _id: 'global_missions' });
+  
+  if (!config) {
+    console.log('🆕 Vytváram globálny stav misií');
+    config = {
+      _id: 'global_missions',
+      mission0_unlocked: false,
+      mission1_unlocked: false,
+      mission2_unlocked: false,
+      mission3_unlocked: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    await configCol.insertOne(config);
+  }
+  
+  return config;
+};
+
+//
+// 🧩 4️⃣ Helper – vytvorenie nového používateľa
+//
+const createNewParticipant = async (code, db) => {
   const group = Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2';
+  
+  // Načítaj globálny stav misií
+  const globalState = await getGlobalMissionsState(db);
+  
   return {
     participant_code: code,
     group_assignment: group,
-    points: 0,
     completedSections: [],
-    level: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
-    // ✅ OPRAVENÉ: Všetky mission polia
-    mission0_unlocked: false,
+    
+    // Použij globálny stav namiesto hard-coded false
+    mission0_unlocked: globalState.mission0_unlocked,
     mission0_completed: false,
-    mission1_unlocked: false,
+    mission1_unlocked: globalState.mission1_unlocked,
     mission1_completed: false,
-    mission2_unlocked: false,
+    mission2_unlocked: globalState.mission2_unlocked,
     mission2_completed: false,
-    mission3_unlocked: false,
+    mission3_unlocked: globalState.mission3_unlocked,
     mission3_completed: false,
-    // Ďalšie potrebné polia
+    
+    // User stats
     user_stats_points: 0,
     user_stats_level: 1,
     referrals_count: 0,
@@ -83,12 +111,14 @@ const createNewParticipant = (code) => {
     total_time_spent: 0,
     current_progress_step: 'instruction',
     timestamp_start: new Date().toISOString(),
-    timestamp_last_update: new Date().toISOString()
+    timestamp_last_update: new Date().toISOString(),
+    sharing_code: null,
+    referral_code: null
   };
 };
 
 //
-// 🧩 4️⃣ Main Handler
+// 🧩 5️⃣ Main Handler
 //
 exports.handler = async (event) => {
   try {
@@ -134,9 +164,10 @@ exports.handler = async (event) => {
         let doc = await col.findOne({ participant_code: code });
         if (!doc) {
           console.log(`🆕 Automatická registrácia nového účastníka: ${code}`);
-          const newUser = createNewParticipant(code);
+          const newUser = await createNewParticipant(code, db);
           await col.insertOne(newUser);
           doc = newUser;
+          console.log(`✅ Vytvorený nový user ${code} s globálnym stavom misií`);
         }
 
         console.log(`✓ Vrátený používateľ ${code}`);
@@ -176,6 +207,7 @@ exports.handler = async (event) => {
         if (code === 'missions-lock' || code === 'missions-unlock') {
           const lock = code === 'missions-lock';
           console.log(`${lock ? '🔒' : '🔓'} ${lock ? 'Zamykám' : 'Odomykám'} misiu ${data.missionId}`);
+          
           if ((!data.missionId && data.missionId !== 0) || !data.adminCode) {
             return {
               statusCode: 400,
@@ -183,6 +215,7 @@ exports.handler = async (event) => {
               body: JSON.stringify({ error: 'Missing missionId or adminCode' }),
             };
           }
+          
           if (data.adminCode !== 'RF9846') {
             console.log(`❌ Nesprávny admin kód: ${data.adminCode}`);
             return {
@@ -194,11 +227,21 @@ exports.handler = async (event) => {
 
           const missionField = `mission${data.missionId}_unlocked`;
           
-          // ✅ OPRAVENÉ: Pridané detailné logovanie
-          console.log(`📊 Pred update - kontrolujem počet záznamov`);
-          const countBefore = await col.countDocuments({});
-          console.log(`📊 Celkový počet používateľov: ${countBefore}`);
+          // 1. Aktualizuj globálny stav
+          const configCol = db.collection('missions_config');
+          await configCol.updateOne(
+            { _id: 'global_missions' },
+            { 
+              $set: { 
+                [missionField]: !lock,
+                updatedAt: new Date()
+              }
+            },
+            { upsert: true }
+          );
+          console.log(`✅ Globálny stav: ${missionField} = ${!lock}`);
           
+          // 2. Aktualizuj všetkých existujúcich používateľov
           const result = await col.updateMany(
             {},
             { $set: { [missionField]: !lock, updatedAt: new Date() } }
@@ -206,7 +249,6 @@ exports.handler = async (event) => {
 
           console.log(`✓ ${lock ? 'Zamknutá' : 'Odomknutá'} misia ${data.missionId} (${result.modifiedCount} účastníkov)`);
           
-          // ✅ NOVÉ: Overenie že sa update naozaj uložil
           const countAfter = await col.countDocuments({ [missionField]: !lock });
           console.log(`📊 Počet používateľov s ${missionField}=${!lock}: ${countAfter}`);
           
@@ -215,7 +257,7 @@ exports.handler = async (event) => {
             headers: getCorsHeaders(),
             body: JSON.stringify({ 
               modifiedCount: result.modifiedCount,
-              totalUsers: countBefore,
+              globalStateUpdated: true,
               usersWithUnlock: countAfter
             }),
           };
@@ -229,7 +271,9 @@ exports.handler = async (event) => {
 
         const { participant_code, ...dataToUpdate } = data;
 
-        // ✅ OPRAVENÉ: Pridané default mission polia pri upsert
+        // Načítaj globálny stav pre $setOnInsert
+        const globalState = await getGlobalMissionsState(db);
+
         await col.updateOne(
           { participant_code: code },
           {
@@ -237,21 +281,31 @@ exports.handler = async (event) => {
               participant_code: code,
               group_assignment: group,
               createdAt: new Date(),
-              // ✅ PRIDANÉ: Default mission polia
-              mission0_unlocked: false,
+              
+              // Použij globálny stav
+              mission0_unlocked: globalState.mission0_unlocked,
               mission0_completed: false,
-              mission1_unlocked: false,
+              mission1_unlocked: globalState.mission1_unlocked,
               mission1_completed: false,
-              mission2_unlocked: false,
+              mission2_unlocked: globalState.mission2_unlocked,
               mission2_completed: false,
-              mission3_unlocked: false,
+              mission3_unlocked: globalState.mission3_unlocked,
               mission3_completed: false,
-              points: 0,
-              level: 1,
+              
               completedSections: [],
               user_stats_points: 0,
               user_stats_level: 1,
               referrals_count: 0,
+              instruction_completed: false,
+              intro_completed: false,
+              mainmenu_visits: 0,
+              session_count: 1,
+              total_time_spent: 0,
+              current_progress_step: 'instruction',
+              timestamp_start: new Date().toISOString(),
+              timestamp_last_update: new Date().toISOString(),
+              sharing_code: null,
+              referral_code: null
             },
             $set: {
               ...dataToUpdate,
@@ -313,12 +367,34 @@ exports.handler = async (event) => {
         }
 
         if (code === 'all') {
+          // Vymaž všetkých používateľov
           const result = await col.deleteMany({});
-          console.log(`🗑️ Vymazaných ${result.deletedCount} záznamov`);
+          
+          // Reset globálneho stavu misií
+          const configCol = db.collection('missions_config');
+          await configCol.updateOne(
+            { _id: 'global_missions' },
+            {
+              $set: {
+                mission0_unlocked: false,
+                mission1_unlocked: false,
+                mission2_unlocked: false,
+                mission3_unlocked: false,
+                updatedAt: new Date()
+              }
+            },
+            { upsert: true }
+          );
+          
+          console.log(`🗑️ Vymazaných ${result.deletedCount} záznamov a resetovaný globálny stav`);
           return {
             statusCode: 200,
             headers: getCorsHeaders(),
-            body: JSON.stringify({ success: true, deletedCount: result.deletedCount }),
+            body: JSON.stringify({ 
+              success: true, 
+              deletedCount: result.deletedCount,
+              globalStateReset: true
+            }),
           };
         }
 
