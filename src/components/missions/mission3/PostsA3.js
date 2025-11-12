@@ -1,10 +1,13 @@
 // src/components/missions/mission3/PostsA3.js
+// Aligned with PostsA1 behavior (response manager, timing, autosave)
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
+import { getResponseManager } from '../../../utils/ResponseManager';
 
 const Container = styled.div`
   padding: 20px;
@@ -33,10 +36,11 @@ const PostsGrid = styled.div`
 
 const PostCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
-  border: ${p => p.hasError ? `2px solid ${p.theme.ACCENT_COLOR_2}` : `1px solid ${p.theme.BORDER_COLOR}`};
+  border: 1px solid ${p => p.theme.BORDER_COLOR};
   border-radius: 8px;
   overflow: hidden;
   transition: transform 0.2s ease;
+  border: ${p => p.hasError ? `2px solid ${p.theme.ACCENT_COLOR_2}` : `1px solid ${p.theme.BORDER_COLOR}`};
   
   &:hover {
     transform: translateY(-2px);
@@ -151,63 +155,145 @@ const ButtonContainer = styled.div`
   margin-top: 24px;
 `;
 
-const mockPostsA3 = [
-  { id: 1, username: 'user_m3_a1', content: 'Mission 3 Post A3-1.', image: null },
-  { id: 2, username: 'user_m3_a2', content: 'Mission 3 Post A3-2.', image: '/img/a3-2.jpg' },
-  { id: 3, username: 'user_m3_a3', content: 'Mission 3 Post A3-3.', image: '/img/a3-3.jpg' }
+const ProgressIndicator = styled.div`
+  text-align: center;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-top: 16px;
+`;
+
+// Definícia príspevkov - ľahko sa pridávajú/odoberajú
+const POSTS = [
+  { id: 'post_a3_1', username: 'user1', content: 'Obsah príspevku A3-1.', image: null },
+  { id: 'post_a3_2', username: 'user2', content: 'Obsah príspevku A3-2.', image: '/img/a3-2.jpg' },
+  { id: 'post_a3_3', username: 'user3', content: 'Obsah príspevku A3-3.', image: '/img/a3-3.jpg' }
 ];
+
+const COMPONENT_ID = 'mission3_postsa';
 
 const PostsA3 = () => {
   const navigate = useNavigate();
   const { dataManager, userId, addPoints } = useUserStats();
+  const responseManager = getResponseManager(dataManager);
+  
   const [ratings, setRatings] = useState({});
   const [errors, setErrors] = useState({});
+  const [startTime] = useState(Date.now());
+  const [postStartTimes] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const refs = useRef({});
 
+  // Načítaj uložené hodnotenia
   useEffect(() => {
-    (async () => {
-      if (userId) {
-        const progress = await dataManager.loadUserProgress(userId);
-        const saved = (progress && progress['postsA3_data']) || {};
-        setRatings(saved);
+    const loadSaved = async () => {
+      if (!userId) return;
+      
+      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
+      if (saved.answers && Object.keys(saved.answers).length > 0) {
+        setRatings(saved.answers);
       }
-    })();
-  }, [userId, dataManager]);
-
-  const handleRating = (id, value) => {
-    setRatings(r => ({ ...r, [id]: value }));
-    setErrors(e => { const copy = { ...e }; delete copy[id]; return copy; });
+    };
     
-    (async () => {
-      const progress = await dataManager.loadUserProgress(userId);
-      const cur = (progress && progress['postsA3_data']) || {};
-      cur[id] = value;
-      cur.timestamp = new Date().toISOString();
-      progress['postsA3_data'] = cur;
-      await dataManager.saveProgress(userId, progress);
-    })();
+    loadSaved();
+  }, [userId, responseManager]);
+
+  // Tracking času na každom príspevku
+  useEffect(() => {
+    POSTS.forEach(post => {
+      if (!postStartTimes[post.id]) {
+        postStartTimes[post.id] = Date.now();
+      }
+    });
+  }, [postStartTimes]);
+
+  // Handler pre rating s auto-save
+  const handleRating = async (postId, value) => {
+    setRatings(prev => ({ ...prev, [postId]: value }));
+    setErrors(prev => { const copy = { ...prev }; delete copy[postId]; return copy; });
+    
+  // Vypočítaj čas strávený na tomto príspevku
+  const timeOnPost = Math.floor((Date.now() - postStartTimes[postId]) / 1000);
+    
+    // Auto-save
+    await responseManager.saveAnswer(
+      userId,
+      COMPONENT_ID,
+      postId,
+      value,
+      { [`time_on_${postId}`]: timeOnPost }
+    );
   };
 
+  // Validácia
+  const isComplete = () => {
+    return POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
+  };
+
+  // Submit
   const handleContinue = async () => {
-    const missing = mockPostsA3.map(p => p.id).filter(id => !ratings[id]);
+    const missing = POSTS.filter(post => !ratings[post.id]);
+    
     if (missing.length) {
-      setErrors(Object.fromEntries(missing.map(id => [id, true])));
-      refs.current[missing]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const newErrors = {};
+      missing.forEach(post => newErrors[post.id] = true);
+      setErrors(newErrors);
+      refs.current[missing[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     
-    await addPoints(10, 'postsA3');
-    const group = (await dataManager.loadUserProgress(userId)).group_assignment;
-    if (group === '1') navigate('/mission3/intervention');
-    else navigate('/mission3/postsb');
+    setIsSubmitting(true);
+    
+    try {
+      // Celkový čas strávený
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Časy na jednotlivých príspevkoch
+      const postTimes = {};
+      POSTS.forEach(post => {
+        postTimes[`time_on_${post.id}`] = Math.floor((Date.now() - postStartTimes[post.id]) / 1000);
+      });
+      
+      // Ulož všetky hodnotenia s metadata
+      await responseManager.saveMultipleAnswers(
+        userId,
+        COMPONENT_ID,
+        ratings,
+        {
+          total_time_spent_seconds: totalTime,
+          posts_count: POSTS.length,
+          ...postTimes,
+          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          completed_at: new Date().toISOString()
+        }
+      );
+      
+      // Pridaj body
+      await addPoints(10, 'postsA3');
+      
+      // Navigácia podľa skupiny
+      const progress = await dataManager.loadUserProgress(userId);
+      const group = progress.group_assignment;
+      
+      if (group === '1') {
+        navigate('/mission3/intervention');
+      } else {
+        navigate('/mission3/postsb');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting posts:', error);
+      alert('Chyba pri ukladaní hodnotení. Skús to znova.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Layout>
       <Container>
-        <Title>Hodnotenie príspevkov A - Misia 3</Title>
+        <Title>Hodnotenie príspevkov A</Title>
         <PostsGrid>
-          {mockPostsA3.map(post => (
+          {POSTS.map(post => (
             <PostCard 
               key={post.id} 
               ref={el => refs.current[post.id] = el} 
@@ -245,10 +331,18 @@ const PostsA3 = () => {
         </PostsGrid>
         
         <ButtonContainer>
-          <StyledButton accent onClick={handleContinue}>
-            Pokračovať
+          <StyledButton 
+            accent 
+            onClick={handleContinue}
+            disabled={!isComplete() || isSubmitting}
+          >
+            {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
           </StyledButton>
         </ButtonContainer>
+        
+        <ProgressIndicator>
+          Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
+        </ProgressIndicator>
       </Container>
     </Layout>
   );

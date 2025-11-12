@@ -1,12 +1,15 @@
 // src/components/missions/mission1/PostsB1.js
+// UPRAVENÁ VERZIA s ResponseManager a time tracking
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
+import { getResponseManager } from '../../../utils/ResponseManager';
 
-// Použiť rovnaké styled komponenty ako PostsA1
+// Všetky styled-components rovnaké ako v PostsA1.js
 const Container = styled.div`
   padding: 20px;
   max-width: 935px;
@@ -75,6 +78,13 @@ const Username = styled.span`
   font-weight: 600;
   font-size: 14px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+`;
+
+const PostImage = styled.img`
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
 `;
 
 const PostContent = styled.div`
@@ -146,53 +156,105 @@ const ButtonContainer = styled.div`
   margin-top: 24px;
 `;
 
-const mockPostsB = [
-  { id: 1, username: 'userA', content: 'Post B1-1 content.' },
-  { id: 2, username: 'userB', content: 'Post B1-2 text.' },
-  { id: 3, username: 'userC', content: 'Post B1-3 details.' }
+const ProgressIndicator = styled.div`
+  text-align: center;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-top: 16px;
+`;
+
+// Definícia príspevkov B (iné ako v A)
+const POSTS = [
+  { id: 'post_b1_1', username: 'user4', content: 'Obsah príspevku B1-1.', image: null },
+  { id: 'post_b1_2', username: 'user5', content: 'Obsah príspevku B1-2.', image: '/img/b1-2.jpg' },
+  { id: 'post_b1_3', username: 'user6', content: 'Obsah príspevku B1-3.', image: '/img/b1-3.jpg' }
 ];
+
+const COMPONENT_ID = 'mission1_postsb';
 
 const PostsB1 = () => {
   const navigate = useNavigate();
   const { dataManager, userId, addPoints } = useUserStats();
+  const responseManager = getResponseManager(dataManager);
+  
   const [ratings, setRatings] = useState({});
   const [errors, setErrors] = useState({});
+  const [startTime] = useState(Date.now());
+  const [postStartTimes] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const refs = useRef({});
 
   useEffect(() => {
-    (async () => {
-      if (userId) {
-        const progress = await dataManager.loadUserProgress(userId);
-        const saved = (progress && progress['postsB1_data']) || {};
-        setRatings(saved);
+    const loadSaved = async () => {
+      if (!userId) return;
+      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
+      if (saved.answers && Object.keys(saved.answers).length > 0) {
+        setRatings(saved.answers);
       }
-    })();
-  }, [userId, dataManager]);
+    };
+    loadSaved();
+  }, [userId, responseManager]);
 
-  const handleRating = (id, value) => {
-    setRatings(r => ({ ...r, [id]: value }));
-    setErrors(e => { const copy = { ...e }; delete copy[id]; return copy; });
+  useEffect(() => {
+    POSTS.forEach(post => {
+      if (!postStartTimes[post.id]) {
+        postStartTimes[post.id] = Date.now();
+      }
+    });
+  }, [postStartTimes]);
+
+  const handleRating = async (postId, value) => {
+    setRatings(prev => ({ ...prev, [postId]: value }));
+    setErrors(prev => { const copy = { ...prev }; delete copy[postId]; return copy; });
     
-    (async () => {
-      const progress = await dataManager.loadUserProgress(userId);
-      const cur = (progress && progress['postsB1_data']) || {};
-      cur[id] = value;
-      cur.timestamp = new Date().toISOString();
-      progress['postsB1_data'] = cur;
-      await dataManager.saveProgress(userId, progress);
-    })();
+    const timeOnPost = Math.floor((Date.now() - postStartTimes[postId]) / 1000);
+    await responseManager.saveAnswer(userId, COMPONENT_ID, postId, value, { [`time_on_${postId}`]: timeOnPost });
   };
 
+  const isComplete = () => POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
+
   const handleContinue = async () => {
-    const missing = mockPostsB.map(p => p.id).filter(id => !ratings[id]);
+    const missing = POSTS.filter(post => !ratings[post.id]);
+    
     if (missing.length) {
-      setErrors(Object.fromEntries(missing.map(id => [id, true])));
-      refs.current[missing]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const newErrors = {};
+      missing.forEach(post => newErrors[post.id] = true);
+      setErrors(newErrors);
+      refs.current[missing[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     
-    await addPoints(15, 'postsB1');
-    navigate('/mission1/questionnaire1b');
+    setIsSubmitting(true);
+    
+    try {
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      const postTimes = {};
+      POSTS.forEach(post => {
+        postTimes[`time_on_${post.id}`] = Math.floor((Date.now() - postStartTimes[post.id]) / 1000);
+      });
+      
+      await responseManager.saveMultipleAnswers(
+        userId,
+        COMPONENT_ID,
+        ratings,
+        {
+          total_time_spent_seconds: totalTime,
+          posts_count: POSTS.length,
+          ...postTimes,
+          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          completed_at: new Date().toISOString()
+        }
+      );
+      
+      await addPoints(10, 'postsB1');
+      navigate('/mission1/questionnaire1b');
+      
+    } catch (error) {
+      console.error('Error submitting posts:', error);
+      alert('Chyba pri ukladaní hodnotení. Skús to znova.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -200,7 +262,7 @@ const PostsB1 = () => {
       <Container>
         <Title>Hodnotenie príspevkov B</Title>
         <PostsGrid>
-          {mockPostsB.map(post => (
+          {POSTS.map(post => (
             <PostCard 
               key={post.id} 
               ref={el => refs.current[post.id] = el} 
@@ -210,6 +272,8 @@ const PostsB1 = () => {
                 <Avatar />
                 <Username>{post.username}</Username>
               </PostHeader>
+              
+              {post.image && <PostImage src={post.image} alt="" />}
               
               <PostContent>
                 <ContentText>{post.content}</ContentText>
@@ -236,10 +300,18 @@ const PostsB1 = () => {
         </PostsGrid>
         
         <ButtonContainer>
-          <StyledButton accent onClick={handleContinue}>
-            Pokračovať
+          <StyledButton 
+            accent 
+            onClick={handleContinue}
+            disabled={!isComplete() || isSubmitting}
+          >
+            {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
           </StyledButton>
         </ButtonContainer>
+        
+        <ProgressIndicator>
+          Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
+        </ProgressIndicator>
       </Container>
     </Layout>
   );

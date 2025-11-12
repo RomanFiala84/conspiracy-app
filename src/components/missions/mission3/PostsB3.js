@@ -1,15 +1,15 @@
 // src/components/missions/mission3/PostsB3.js
+// UPRAVENÁ VERZIA s ResponseManager a time tracking (mission3)
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
+import { getResponseManager } from '../../../utils/ResponseManager';
 
-// ═══════════════════════════════════════════════════════════
-// STYLED COMPONENTS - INSTAGRAM DESIGN
-// ═══════════════════════════════════════════════════════════
-
+// Všetky styled-components rovnaké ako v PostsA1.js
 const Container = styled.div`
   padding: 20px;
   max-width: 935px;
@@ -37,14 +37,14 @@ const PostsGrid = styled.div`
 
 const PostCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
-  border: ${p => p.hasError ? `2px solid ${p.theme.ACCENT_COLOR_2}` : `1px solid ${p.theme.BORDER_COLOR}`};
+  border: 1px solid ${p => p.theme.BORDER_COLOR};
   border-radius: 8px;
   overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease;
+  border: ${p => p.hasError ? `2px solid ${p.theme.ACCENT_COLOR_2}` : `1px solid ${p.theme.BORDER_COLOR}`};
   
   &:hover {
     transform: translateY(-2px);
-    border-color: ${p => p.hasError ? p.theme.ACCENT_COLOR_2 : p.theme.ACCENT_COLOR};
   }
 `;
 
@@ -64,7 +64,6 @@ const Avatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   
   &::after {
     content: '';
@@ -81,6 +80,13 @@ const Username = styled.span`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
 `;
 
+const PostImage = styled.img`
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+`;
+
 const PostContent = styled.div`
   padding: 16px;
 `;
@@ -90,7 +96,6 @@ const ContentText = styled.p`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 14px;
   margin-bottom: 16px;
-  word-wrap: break-word;
 `;
 
 const RatingSection = styled.div`
@@ -128,15 +133,9 @@ const RatingButton = styled.label`
   color: ${p => p.checked ? '#FFFFFF' : p.theme.PRIMARY_TEXT_COLOR};
   font-weight: 600;
   font-size: 14px;
-  user-select: none;
   
   &:hover {
     background: ${p => p.checked ? p.theme.ACCENT_COLOR : p.theme.HOVER_OVERLAY};
-    transform: scale(1.05);
-  }
-  
-  &:active {
-    transform: scale(0.98);
   }
   
   input {
@@ -149,7 +148,6 @@ const ErrorText = styled.div`
   font-size: 12px;
   margin-top: 8px;
   text-align: center;
-  font-weight: 500;
 `;
 
 const ButtonContainer = styled.div`
@@ -158,108 +156,113 @@ const ButtonContainer = styled.div`
   margin-top: 24px;
 `;
 
-// ═══════════════════════════════════════════════════════════
-// MOCK DATA - Mission 3 Posts B
-// ═══════════════════════════════════════════════════════════
+const ProgressIndicator = styled.div`
+  text-align: center;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-top: 16px;
+`;
 
-const mockPostsB3 = [
-  { 
-    id: 1, 
-    username: 'investigator_m3', 
-    content: 'Po dôkladnej analýze všetkých faktov môžem konštatovať, že pravda je často komplikovanejšia než sa zdá.' 
-  },
-  { 
-    id: 2, 
-    username: 'skeptic_researcher', 
-    content: 'Kritické myslenie je kľúč k pochopeniu zložitých informácií. Vždy si overte zdroje.' 
-  },
-  { 
-    id: 3, 
-    username: 'truth_seeker_99', 
-    content: 'Naučil som sa, že najlepšou obranou proti dezinformáciám je vzdelanie a neustála ostražitosť.' 
-  }
+// Definícia príspevkov B (iné ako v A)
+const POSTS = [
+  { id: 'post_b3_1', username: 'user4', content: 'Obsah príspevku B3-1.', image: null },
+  { id: 'post_b3_2', username: 'user5', content: 'Obsah príspevku B3-2.', image: '/img/b3-2.jpg' },
+  { id: 'post_b3_3', username: 'user6', content: 'Obsah príspevku B3-3.', image: '/img/b3-3.jpg' }
 ];
 
-// ═══════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════
+const COMPONENT_ID = 'mission3_postsb';
 
 const PostsB3 = () => {
   const navigate = useNavigate();
   const { dataManager, userId, addPoints } = useUserStats();
+  const responseManager = getResponseManager(dataManager);
+  
   const [ratings, setRatings] = useState({});
   const [errors, setErrors] = useState({});
+  const [startTime] = useState(Date.now());
+  const [postStartTimes] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const refs = useRef({});
 
-  // ─────────────────────────────────────────────────────────
-  // Load saved ratings on mount
-  // ─────────────────────────────────────────────────────────
   useEffect(() => {
-    (async () => {
-      if (userId) {
-        const progress = await dataManager.loadUserProgress(userId);
-        // OPRAVA: Použiť špecifický kľúč pre PostsB3
-        const saved = (progress && progress['postsB3_data']) || {};
-        setRatings(saved);
+    const loadSaved = async () => {
+      if (!userId) return;
+      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
+      if (saved.answers && Object.keys(saved.answers).length > 0) {
+        setRatings(saved.answers);
       }
-    })();
-  }, [userId, dataManager]);
+    };
+    loadSaved();
+  }, [userId, responseManager]);
 
-  // ─────────────────────────────────────────────────────────
-  // Handle rating selection
-  // ─────────────────────────────────────────────────────────
-  const handleRating = (id, value) => {
-    setRatings(r => ({ ...r, [id]: value }));
-    setErrors(e => { 
-      const copy = { ...e }; 
-      delete copy[id]; 
-      return copy; 
+  useEffect(() => {
+    POSTS.forEach(post => {
+      if (!postStartTimes[post.id]) {
+        postStartTimes[post.id] = Date.now();
+      }
     });
+  }, [postStartTimes]);
+
+  const handleRating = async (postId, value) => {
+    setRatings(prev => ({ ...prev, [postId]: value }));
+    setErrors(prev => { const copy = { ...prev }; delete copy[postId]; return copy; });
     
-    // Auto-save to storage
-    (async () => {
-      const progress = await dataManager.loadUserProgress(userId);
-      const cur = (progress && progress['postsB3_data']) || {};
-      cur[id] = value;
-      cur.timestamp = new Date().toISOString();
-      progress['postsB3_data'] = cur;
-      await dataManager.saveProgress(userId, progress);
-    })();
+    const timeOnPost = Math.floor((Date.now() - postStartTimes[postId]) / 1000);
+    await responseManager.saveAnswer(userId, COMPONENT_ID, postId, value, { [`time_on_${postId}`]: timeOnPost });
   };
 
-  // ─────────────────────────────────────────────────────────
-  // Handle continue button
-  // ─────────────────────────────────────────────────────────
+  const isComplete = () => POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
+
   const handleContinue = async () => {
-    const missing = mockPostsB3.map(p => p.id).filter(id => !ratings[id]);
+    const missing = POSTS.filter(post => !ratings[post.id]);
     
     if (missing.length) {
-      setErrors(Object.fromEntries(missing.map(id => [id, true])));
-      // Scroll to first missing rating
-      if (refs.current[missing]) {
-        refs.current[missing].scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }
+      const newErrors = {};
+      missing.forEach(post => newErrors[post.id] = true);
+      setErrors(newErrors);
+      refs.current[missing[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     
-    // Add points and navigate
-    await addPoints(15, 'postsB3');
-    navigate('/mission3/questionnaire3b');
+    setIsSubmitting(true);
+    
+    try {
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      const postTimes = {};
+      POSTS.forEach(post => {
+        postTimes[`time_on_${post.id}`] = Math.floor((Date.now() - postStartTimes[post.id]) / 1000);
+      });
+      
+      await responseManager.saveMultipleAnswers(
+        userId,
+        COMPONENT_ID,
+        ratings,
+        {
+          total_time_spent_seconds: totalTime,
+          posts_count: POSTS.length,
+          ...postTimes,
+          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          completed_at: new Date().toISOString()
+        }
+      );
+      
+  await addPoints(10, 'postsB3');
+  navigate('/mission3/questionnaire3b');
+      
+    } catch (error) {
+      console.error('Error submitting posts:', error);
+      alert('Chyba pri ukladaní hodnotení. Skús to znova.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // ─────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────
   return (
     <Layout>
       <Container>
-        <Title>Hodnotenie príspevkov B - Misia 3</Title>
-        
+        <Title>Hodnotenie príspevkov B</Title>
         <PostsGrid>
-          {mockPostsB3.map(post => (
+          {POSTS.map(post => (
             <PostCard 
               key={post.id} 
               ref={el => refs.current[post.id] = el} 
@@ -270,6 +273,8 @@ const PostsB3 = () => {
                 <Username>{post.username}</Username>
               </PostHeader>
               
+              {post.image && <PostImage src={post.image} alt="" />}
+              
               <PostContent>
                 <ContentText>{post.content}</ContentText>
                 
@@ -277,25 +282,17 @@ const PostsB3 = () => {
                   <RatingLabel>Ohodnotiť príspevok</RatingLabel>
                   <RatingScale>
                     {[1, 2, 3, 4, 5].map(v => (
-                      <RatingButton 
-                        key={v} 
-                        checked={ratings[post.id] === v}
-                        title={`Hodnotenie: ${v}`}
-                      >
+                      <RatingButton key={v} checked={ratings[post.id] === v}>
                         <input
                           type="radio"
-                          name={`rating-post-${post.id}`}
                           checked={ratings[post.id] === v}
                           onChange={() => handleRating(post.id, v)}
-                          aria-label={`Ohodnotiť príspevok ${v} z 5`}
                         />
                         {v}
                       </RatingButton>
                     ))}
                   </RatingScale>
-                  {errors[post.id] && (
-                    <ErrorText>⚠ Prosím označte rating.</ErrorText>
-                  )}
+                  {errors[post.id] && <ErrorText>Prosím označte rating.</ErrorText>}
                 </RatingSection>
               </PostContent>
             </PostCard>
@@ -303,10 +300,18 @@ const PostsB3 = () => {
         </PostsGrid>
         
         <ButtonContainer>
-          <StyledButton accent onClick={handleContinue}>
-            Pokračovať
+          <StyledButton 
+            accent 
+            onClick={handleContinue}
+            disabled={!isComplete() || isSubmitting}
+          >
+            {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
           </StyledButton>
         </ButtonContainer>
+        
+        <ProgressIndicator>
+          Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
+        </ProgressIndicator>
       </Container>
     </Layout>
   );

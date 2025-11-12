@@ -1,10 +1,13 @@
 // src/components/missions/mission3/Questionnaire3A.js
+// UPRAVENÁ VERZIA s ResponseManager a time tracking
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
+import { getResponseManager } from '../../../utils/ResponseManager';
 
 const Container = styled.div`
   padding: 20px;
@@ -17,6 +20,7 @@ const Card = styled.div`
   border: 1px solid ${p => p.theme.BORDER_COLOR};
   border-radius: 8px;
   padding: 24px;
+  margin-bottom: 20px;
 `;
 
 const Title = styled.h2`
@@ -46,6 +50,7 @@ const ScaleContainer = styled.div`
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 8px;
 `;
 
 const RadioLabel = styled.label`
@@ -82,7 +87,7 @@ const ScaleLabels = styled.div`
 
 const ErrorText = styled.div`
   color: ${p => p.theme.ACCENT_COLOR_2};
-  margin-top: 16px;
+  margin-bottom: 16px;
   text-align: center;
   font-size: 14px;
 `;
@@ -93,66 +98,143 @@ const ButtonContainer = styled.div`
   margin-top: 24px;
 `;
 
-const statements = [
-  'Dôverujem médiám, ktoré pravidelne používam.',
-  'Som skeptický voči neovereným informáciám.',
-  'Overujem si fakty pred zdieľaním.'
+const ProgressIndicator = styled.div`
+  text-align: center;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-top: 16px;
+`;
+
+// Definícia otázok - ľahko sa pridávajú/odoberajú
+const QUESTIONS = [
+  {
+    id: 'q1_trust_media',
+    text: 'Dôverujem médiám, ktoré pravidelne používam.',
+    scale: [1, 2, 3, 4, 5]
+  },
+  {
+    id: 'q2_skeptical',
+    text: 'Som skeptický voči neovereným informáciám.',
+    scale: [1, 2, 3, 4, 5]
+  },
+  {
+    id: 'q3_verify_facts',
+    text: 'Overujem si fakty pred zdieľaním.',
+    scale: [1, 2, 3, 4, 5]
+  }
 ];
+
+const COMPONENT_ID = 'mission3_questionnaire3a';
 
 const Questionnaire3A = () => {
   const navigate = useNavigate();
   const { dataManager, userId, addPoints } = useUserStats();
+  const responseManager = getResponseManager(dataManager);
+  
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState('');
+  const [startTime] = useState(Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Načítaj uložené odpovede
   useEffect(() => {
-    (async () => {
-      const progress = await dataManager.loadUserProgress(userId);
-      // OPRAVA: Špecifický kľúč pre 3A
-      const saved = (progress && progress['questionnaire3a_data']) || {};
-      setAnswers(saved.answers || {});
-    })();
-  }, [dataManager, userId]);
+    const loadSaved = async () => {
+      if (!userId) return;
+      
+      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
+      if (saved.answers && Object.keys(saved.answers).length > 0) {
+        setAnswers(saved.answers);
+      }
+    };
+    
+    loadSaved();
+  }, [userId, responseManager]);
 
-  const handleChange = (idx, val) => {
-    setAnswers(a => ({ ...a, [idx]: val }));
+  // Handler pre zmenu odpovede s auto-save
+  const handleChange = async (questionId, value) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
     setError('');
+    
+    // Auto-save do DB
+    await responseManager.saveAnswer(
+      userId,
+      COMPONENT_ID,
+      questionId,
+      value
+    );
   };
 
+  // Validácia - všetky otázky vyplnené?
+  const isComplete = () => {
+    return QUESTIONS.every(q => answers[q.id] !== undefined && answers[q.id] !== null);
+  };
+
+  // Submit
   const handleContinue = async () => {
-    if (statements.some((_, i) => !answers[i])) {
+    if (!isComplete()) {
       setError('Prosím označte odpoveď na všetky výroky.');
       return;
     }
     
-    // OPRAVA: Oddelený kľúč pre 3A
-    const progress = await dataManager.loadUserProgress(userId);
-    progress['questionnaire3a_data'] = { answers, timestamp: new Date().toISOString() };
-    await dataManager.saveProgress(userId, progress);
+    setIsSubmitting(true);
     
-    await addPoints(10, 'questionnaire3a');
-    const group = (await dataManager.loadUserProgress(userId)).group_assignment;
-    if (group === '2') return navigate('/mission3/prevention');
-    navigate('/mission3/postsa');
+    try {
+      // Vypočítaj čas strávený
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Ulož všetky odpovede s metadata
+      await responseManager.saveMultipleAnswers(
+        userId,
+        COMPONENT_ID,
+        answers,
+        {
+          time_spent_seconds: timeSpent,
+          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          completed_at: new Date().toISOString()
+        }
+      );
+      
+      // Pridaj body
+      await addPoints(10, 'questionnaire3a');
+      
+      // Navigácia podľa skupiny
+      const progress = await dataManager.loadUserProgress(userId);
+      const group = progress.group_assignment;
+      
+      if (group === '2') {
+        navigate('/mission3/prevention');
+      } else {
+        navigate('/mission3/postsa');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting questionnaire:', error);
+      setError('Chyba pri ukladaní odpovedí. Skús to znova.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Layout>
       <Container>
         <Card>
-          <Title>Dotazník 3A – Miera dôvery</Title>
+          <Title>Dotazník 2A – Miera dôvery</Title>
           
-          {statements.map((statement, i) => (
-            <QuestionCard key={i}>
-              <Question>{statement}</Question>
+          {QUESTIONS.map((question, i) => (
+            <QuestionCard key={question.id}>
+              <Question>{question.text}</Question>
               <ScaleContainer>
-                {[1, 2, 3, 4, 5].map(v => (
-                  <RadioLabel key={v} checked={answers[i] === v}>
+                {question.scale.map(v => (
+                  <RadioLabel key={v} checked={answers[question.id] === v}>
                     <input
                       type="radio"
-                      name={`q${i}`}
-                      checked={answers[i] === v}
-                      onChange={() => handleChange(i, v)}
+                      name={question.id}
+                      checked={answers[question.id] === v}
+                      onChange={() => handleChange(question.id, v)}
                     />
                     {v}
                   </RadioLabel>
@@ -168,10 +250,18 @@ const Questionnaire3A = () => {
           {error && <ErrorText>{error}</ErrorText>}
           
           <ButtonContainer>
-            <StyledButton accent onClick={handleContinue}>
-              Pokračovať
+            <StyledButton 
+              accent 
+              onClick={handleContinue}
+              disabled={!isComplete() || isSubmitting}
+            >
+              {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
             </StyledButton>
           </ButtonContainer>
+          
+          <ProgressIndicator>
+            Vyplnené: {Object.keys(answers).length} / {QUESTIONS.length}
+          </ProgressIndicator>
         </Card>
       </Container>
     </Layout>

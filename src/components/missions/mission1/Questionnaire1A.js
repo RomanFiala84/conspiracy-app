@@ -1,10 +1,13 @@
 // src/components/missions/mission1/Questionnaire1A.js
+// UPRAVENÁ VERZIA s ResponseManager a time tracking
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
+import { getResponseManager } from '../../../utils/ResponseManager';
 
 const Container = styled.div`
   padding: 20px;
@@ -95,47 +98,124 @@ const ButtonContainer = styled.div`
   margin-top: 24px;
 `;
 
-const statements = [
-  'Dôverujem médiám, ktoré pravidelne používam.',
-  'Som skeptický voči neovereným informáciám.',
-  'Overujem si fakty pred zdieľaním.'
+const ProgressIndicator = styled.div`
+  text-align: center;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-top: 16px;
+`;
+
+// Definícia otázok - ľahko sa pridávajú/odoberajú
+const QUESTIONS = [
+  {
+    id: 'q1_trust_media',
+    text: 'Dôverujem médiám, ktoré pravidelne používam.',
+    scale: [1, 2, 3, 4, 5]
+  },
+  {
+    id: 'q2_skeptical',
+    text: 'Som skeptický voči neovereným informáciám.',
+    scale: [1, 2, 3, 4, 5]
+  },
+  {
+    id: 'q3_verify_facts',
+    text: 'Overujem si fakty pred zdieľaním.',
+    scale: [1, 2, 3, 4, 5]
+  }
 ];
+
+const COMPONENT_ID = 'mission1_questionnaire1a';
 
 const Questionnaire1A = () => {
   const navigate = useNavigate();
   const { dataManager, userId, addPoints } = useUserStats();
+  const responseManager = getResponseManager(dataManager);
+  
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState('');
+  const [startTime] = useState(Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Načítaj uložené odpovede
   useEffect(() => {
-    (async () => {
-      const progress = await dataManager.loadUserProgress(userId);
-      // OPRAVA: Použiť špecifický kľúč pre 1A
-      const saved = (progress && progress['questionnaire1a_data']) || {};
-      setAnswers(saved.answers || {});
-    })();
-  }, [dataManager, userId]);
+    const loadSaved = async () => {
+      if (!userId) return;
+      
+      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
+      if (saved.answers && Object.keys(saved.answers).length > 0) {
+        setAnswers(saved.answers);
+      }
+    };
+    
+    loadSaved();
+  }, [userId, responseManager]);
 
-  const handleChange = (idx, val) => {
-    setAnswers(a => ({ ...a, [idx]: val }));
+  // Handler pre zmenu odpovede s auto-save
+  const handleChange = async (questionId, value) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
     setError('');
+    
+    // Auto-save do DB
+    await responseManager.saveAnswer(
+      userId,
+      COMPONENT_ID,
+      questionId,
+      value
+    );
   };
 
+  // Validácia - všetky otázky vyplnené?
+  const isComplete = () => {
+    return QUESTIONS.every(q => answers[q.id] !== undefined && answers[q.id] !== null);
+  };
+
+  // Submit
   const handleContinue = async () => {
-    if (statements.some((_, i) => !answers[i])) {
+    if (!isComplete()) {
       setError('Prosím označte odpoveď na všetky výroky.');
       return;
     }
     
-    // OPRAVA: Ukladať do oddelených kľúčov
-    const progress = await dataManager.loadUserProgress(userId);
-    progress['questionnaire1a_data'] = { answers, timestamp: new Date().toISOString() };
-    await dataManager.saveProgress(userId, progress);
+    setIsSubmitting(true);
     
-    await addPoints(10, 'questionnaire1a');
-    const group = (await dataManager.loadUserProgress(userId)).group_assignment;
-    if (group === '2') return navigate('/mission1/prevention');
-    navigate('/mission1/postsa');
+    try {
+      // Vypočítaj čas strávený
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Ulož všetky odpovede s metadata
+      await responseManager.saveMultipleAnswers(
+        userId,
+        COMPONENT_ID,
+        answers,
+        {
+          time_spent_seconds: timeSpent,
+          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          completed_at: new Date().toISOString()
+        }
+      );
+      
+      // Pridaj body
+      await addPoints(10, 'questionnaire1a');
+      
+      // Navigácia podľa skupiny
+      const progress = await dataManager.loadUserProgress(userId);
+      const group = progress.group_assignment;
+      
+      if (group === '2') {
+        navigate('/mission1/prevention');
+      } else {
+        navigate('/mission1/postsa');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting questionnaire:', error);
+      setError('Chyba pri ukladaní odpovedí. Skús to znova.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -144,17 +224,17 @@ const Questionnaire1A = () => {
         <Card>
           <Title>Dotazník 1A – Miera dôvery</Title>
           
-          {statements.map((statement, i) => (
-            <QuestionCard key={i}>
-              <Question>{statement}</Question>
+          {QUESTIONS.map((question, i) => (
+            <QuestionCard key={question.id}>
+              <Question>{question.text}</Question>
               <ScaleContainer>
-                {[1, 2, 3, 4, 5].map(v => (
-                  <RadioLabel key={v} checked={answers[i] === v}>
+                {question.scale.map(v => (
+                  <RadioLabel key={v} checked={answers[question.id] === v}>
                     <input
                       type="radio"
-                      name={`q${i}`}
-                      checked={answers[i] === v}
-                      onChange={() => handleChange(i, v)}
+                      name={question.id}
+                      checked={answers[question.id] === v}
+                      onChange={() => handleChange(question.id, v)}
                     />
                     {v}
                   </RadioLabel>
@@ -170,10 +250,18 @@ const Questionnaire1A = () => {
           {error && <ErrorText>{error}</ErrorText>}
           
           <ButtonContainer>
-            <StyledButton accent onClick={handleContinue}>
-              Pokračovať
+            <StyledButton 
+              accent 
+              onClick={handleContinue}
+              disabled={!isComplete() || isSubmitting}
+            >
+              {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
             </StyledButton>
           </ButtonContainer>
+          
+          <ProgressIndicator>
+            Vyplnené: {Object.keys(answers).length} / {QUESTIONS.length}
+          </ProgressIndicator>
         </Card>
       </Container>
     </Layout>

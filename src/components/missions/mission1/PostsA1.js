@@ -1,10 +1,13 @@
 // src/components/missions/mission1/PostsA1.js
+// UPRAVENÁ VERZIA s ResponseManager a time tracking
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
+import { getResponseManager } from '../../../utils/ResponseManager';
 
 const Container = styled.div`
   padding: 20px;
@@ -152,55 +155,137 @@ const ButtonContainer = styled.div`
   margin-top: 24px;
 `;
 
-const mockPosts = [
-  { id: 1, username: 'user1', content: 'Obsah príspevku A1-1.', image: null },
-  { id: 2, username: 'user2', content: 'Obsah príspevku A1-2.', image: '/img/a1-2.jpg' },
-  { id: 3, username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' }
+const ProgressIndicator = styled.div`
+  text-align: center;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-top: 16px;
+`;
+
+// Definícia príspevkov - ľahko sa pridávajú/odoberajú
+const POSTS = [
+  { id: 'post_a1_1', username: 'user1', content: 'Obsah príspevku A1-1.', image: null },
+  { id: 'post_a1_2', username: 'user2', content: 'Obsah príspevku A1-2.', image: '/img/a1-2.jpg' },
+  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' }
 ];
+
+const COMPONENT_ID = 'mission1_postsa';
 
 const PostsA1 = () => {
   const navigate = useNavigate();
   const { dataManager, userId, addPoints } = useUserStats();
+  const responseManager = getResponseManager(dataManager);
+  
   const [ratings, setRatings] = useState({});
   const [errors, setErrors] = useState({});
+  const [startTime] = useState(Date.now());
+  const [postStartTimes] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const refs = useRef({});
 
+  // Načítaj uložené hodnotenia
   useEffect(() => {
-    (async () => {
-      if (userId) {
-        const progress = await dataManager.loadUserProgress(userId);
-        const saved = (progress && progress['postsA1_data']) || {};
-        setRatings(saved);
+    const loadSaved = async () => {
+      if (!userId) return;
+      
+      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
+      if (saved.answers && Object.keys(saved.answers).length > 0) {
+        setRatings(saved.answers);
       }
-    })();
-  }, [userId, dataManager]);
-
-  const handleRating = (id, value) => {
-    setRatings(r => ({ ...r, [id]: value }));
-    setErrors(e => { const copy = { ...e }; delete copy[id]; return copy; });
+    };
     
-    (async () => {
-      const progress = await dataManager.loadUserProgress(userId);
-      const cur = (progress && progress['postsA1_data']) || {};
-      cur[id] = value;
-      cur.timestamp = new Date().toISOString();
-      progress['postsA1_data'] = cur;
-      await dataManager.saveProgress(userId, progress);
-    })();
+    loadSaved();
+  }, [userId, responseManager]);
+
+  // Tracking času na každom príspevku
+  useEffect(() => {
+    POSTS.forEach(post => {
+      if (!postStartTimes[post.id]) {
+        postStartTimes[post.id] = Date.now();
+      }
+    });
+  }, [postStartTimes]);
+
+  // Handler pre rating s auto-save
+  const handleRating = async (postId, value) => {
+    setRatings(prev => ({ ...prev, [postId]: value }));
+    setErrors(prev => { const copy = { ...prev }; delete copy[postId]; return copy; });
+    
+    // Vypočítaj čas strávený na tomto príspevku
+    const timeOnPost = Math.floor((Date.now() - postStartTimes[postId]) / 1000);
+    
+    // Auto-save
+    await responseManager.saveAnswer(
+      userId,
+      COMPONENT_ID,
+      postId,
+      value,
+      { [`time_on_${postId}`]: timeOnPost }
+    );
   };
 
+  // Validácia
+  const isComplete = () => {
+    return POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
+  };
+
+  // Submit
   const handleContinue = async () => {
-    const missing = mockPosts.map(p => p.id).filter(id => !ratings[id]);
+    const missing = POSTS.filter(post => !ratings[post.id]);
+    
     if (missing.length) {
-      setErrors(Object.fromEntries(missing.map(id => [id, true])));
-      refs.current[missing]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const newErrors = {};
+      missing.forEach(post => newErrors[post.id] = true);
+      setErrors(newErrors);
+      refs.current[missing[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     
-    await addPoints(10, 'postsA1');
-    const group = (await dataManager.loadUserProgress(userId)).group_assignment;
-    if (group === '1') navigate('/mission1/intervention');
-    else navigate('/mission1/postsb');
+    setIsSubmitting(true);
+    
+    try {
+      // Celkový čas strávený
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Časy na jednotlivých príspevkoch
+      const postTimes = {};
+      POSTS.forEach(post => {
+        postTimes[`time_on_${post.id}`] = Math.floor((Date.now() - postStartTimes[post.id]) / 1000);
+      });
+      
+      // Ulož všetky hodnotenia s metadata
+      await responseManager.saveMultipleAnswers(
+        userId,
+        COMPONENT_ID,
+        ratings,
+        {
+          total_time_spent_seconds: totalTime,
+          posts_count: POSTS.length,
+          ...postTimes,
+          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          completed_at: new Date().toISOString()
+        }
+      );
+      
+      // Pridaj body
+      await addPoints(10, 'postsA1');
+      
+      // Navigácia podľa skupiny
+      const progress = await dataManager.loadUserProgress(userId);
+      const group = progress.group_assignment;
+      
+      if (group === '1') {
+        navigate('/mission1/intervention');
+      } else {
+        navigate('/mission1/postsb');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting posts:', error);
+      alert('Chyba pri ukladaní hodnotení. Skús to znova.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -208,7 +293,7 @@ const PostsA1 = () => {
       <Container>
         <Title>Hodnotenie príspevkov A</Title>
         <PostsGrid>
-          {mockPosts.map(post => (
+          {POSTS.map(post => (
             <PostCard 
               key={post.id} 
               ref={el => refs.current[post.id] = el} 
@@ -246,10 +331,18 @@ const PostsA1 = () => {
         </PostsGrid>
         
         <ButtonContainer>
-          <StyledButton accent onClick={handleContinue}>
-            Pokračovať
+          <StyledButton 
+            accent 
+            onClick={handleContinue}
+            disabled={!isComplete() || isSubmitting}
+          >
+            {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
           </StyledButton>
         </ButtonContainer>
+        
+        <ProgressIndicator>
+          Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
+        </ProgressIndicator>
       </Container>
     </Layout>
   );
