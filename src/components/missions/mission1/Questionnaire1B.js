@@ -128,7 +128,7 @@ const COMPONENT_ID = 'mission1_questionnaire1b';
 
 const Questionnaire1B = () => {
   const navigate = useNavigate();
-  const { dataManager, userId, addPoints } = useUserStats();
+  const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
   const [answers, setAnswers] = useState({});
@@ -177,7 +177,6 @@ const Questionnaire1B = () => {
         }
       );
       
-      await addPoints(10, 'questionnaire1b');
       
       // Označ misiu 1 ako dokončenú
       const progress = await dataManager.loadUserProgress(userId);

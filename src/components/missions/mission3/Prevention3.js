@@ -72,7 +72,7 @@ const COMPONENT_ID = 'mission3_prevention';
 
 const Prevention3 = () => {
   const navigate = useNavigate();
-  const { dataManager, userId, addPoints } = useUserStats();
+  const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
   const [startTime] = useState(Date.now());
@@ -152,7 +152,7 @@ const Prevention3 = () => {
         }
       );
       
-  await addPoints(10, 'prevention3');
+
       
       // Navigácia podľa skupiny
       const progress = await dataManager.loadUserProgress(userId);

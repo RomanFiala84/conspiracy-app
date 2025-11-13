@@ -1,5 +1,5 @@
 // src/utils/DataManager.js
-// OPRAVA: správne URL pre Netlify Functions + OCHRANA PROTI ZNEUŽITIU REFERRAL KÓDOV
+// OPRAVA: správne URL pre Netlify Functions + OCHRANA PROTI ZNEUŽITIU REFERRAL KÓDOV + NOVÝ BODOVÝ SYSTÉM
 
 import * as XLSX from 'xlsx';
 
@@ -34,8 +34,8 @@ class DataManager {
       'group_assignment',
       'sharing_code',
       'referral_code',
-      'used_referral_code', // ✅ NOVÉ
-      'referred_by', // ✅ NOVÉ
+      'used_referral_code',
+      'referred_by',
       'timestamp_start',
       'timestamp_last_update',
       'session_count',
@@ -43,9 +43,11 @@ class DataManager {
       'instruction_completed',
       'intro_completed',
       'user_stats_points',
+      'user_stats_mission_points', // ✅ NOVÉ
       'user_stats_level',
       'referrals_count',
-      'referred_users', // ✅ NOVÉ
+      'referred_users',
+      'completedMissions', // ✅ ZMENENÉ z completedSections
       'mainmenu_visits',
       'mission0_unlocked',
       'mission0_completed',
@@ -54,7 +56,8 @@ class DataManager {
       'mission2_unlocked',
       'mission2_completed',
       'mission3_unlocked',
-      'mission3_completed'
+      'mission3_completed',
+      'all_missions_completed' // ✅ NOVÉ
     ];
   }
 
@@ -68,7 +71,6 @@ class DataManager {
     return Object.values(all).some(d => d.sharing_code === code.toUpperCase());
   }
 
-  // ✅ NOVÁ FUNKCIA - Získanie sharing kódu používateľa
   async getUserSharingCode(userId) {
     try {
       const userData = await this.loadUserProgress(userId);
@@ -79,23 +81,20 @@ class DataManager {
     }
   }
 
-  // ✅ UPRAVENÁ FUNKCIA - S OCHRANOU PROTI ZNEUŽITIU
+  // ✅ UPRAVENÁ FUNKCIA - S NOVÝM BODOVÝM SYSTÉMOM
   async processReferral(participantCode, referralCode) {
     try {
       console.log(`🎁 Processing referral: ${participantCode} → ${referralCode}`);
       
       const all = this.getAllParticipantsData();
       
-      // 1. Načítaj dáta nového používateľa
       const newUserData = await this.loadUserProgress(participantCode);
       
-      // 2. ✅ NOVÉ - Skontroluj, či používateľ už nepoužil referral kód
       if (newUserData?.used_referral_code) {
         console.warn(`⚠️ Používateľ ${participantCode} už použil referral kód: ${newUserData.used_referral_code}`);
         throw new Error('Tento používateľ už použil referral kód');
       }
       
-      // 3. Nájdi používateľa, ktorý má tento sharing_code
       const entry = Object.entries(all).find(([_, d]) => d.sharing_code === referralCode.toUpperCase());
       
       if (!entry) {
@@ -105,38 +104,32 @@ class DataManager {
       
       const [refCode, refData] = entry;
       
-      // 4. ✅ NOVÉ - Zabráň použitiu vlastného kódu
       if (refCode === participantCode) {
         console.warn(`⚠️ ${participantCode} sa pokúsil použiť svoj vlastný referral kód`);
         throw new Error('Nemôžete použiť svoj vlastný zdieľací kód');
       }
       
-      // 5. Pridaj +10 bodov referrerovi
+      // ✅ NOVÝ BODOVÝ SYSTÉM - už sa nepridávajú body tu, ale cez addReferralPoints v contexte
       refData.referrals_count = (refData.referrals_count || 0) + 1;
-      refData.user_stats_points = (refData.user_stats_points || 0) + 10;
       refData.referred_users = refData.referred_users || [];
       
-      // ✅ NOVÉ - Zabráň duplikátnym záznamom
       if (!refData.referred_users.includes(participantCode)) {
         refData.referred_users.push(participantCode);
       }
       
-      // 6. ✅ NOVÉ - Označ nového používateľa, že už použil kód
       newUserData.used_referral_code = referralCode.toUpperCase();
       newUserData.referred_by = refCode;
-      newUserData.referral_code = referralCode.toUpperCase(); // Pre kompatibilitu
+      newUserData.referral_code = referralCode.toUpperCase();
       
-      // 7. Ulož zmeny
       await this.saveProgress(refCode, refData);
       await this.saveProgress(participantCode, newUserData);
       
-      console.log(`✅ Referral processed: ${refCode} získal +10 bodov (celkom: ${refData.referrals_count} referralov)`);
+      console.log(`✅ Referral processed: ${refCode} získal referral (celkom: ${refData.referrals_count} referralov)`);
       console.log(`✅ ${participantCode} označený ako referral použitý`);
       
       return {
         success: true,
         referrerCode: refCode,
-        referrerPoints: refData.user_stats_points,
         referrerCount: refData.referrals_count
       };
       
@@ -364,12 +357,14 @@ class DataManager {
       instruction_completed: false,
       intro_completed: false,
       user_stats_points: 0,
+      user_stats_mission_points: 0, // ✅ NOVÉ
       user_stats_level: 1,
-      completedSections: [],
+      completedSections: [], // ✅ Zachované pre kompatibilitu
+      completedMissions: [], // ✅ NOVÉ
       referrals_count: 0,
-      referred_users: [], // ✅ NOVÉ
-      used_referral_code: null, // ✅ NOVÉ
-      referred_by: null, // ✅ NOVÉ
+      referred_users: [],
+      used_referral_code: null,
+      referred_by: null,
       mainmenu_visits: 0,
       mission0_completed: false,
       mission0_unlocked: false,
@@ -379,6 +374,7 @@ class DataManager {
       mission2_unlocked: false,
       mission3_completed: false,
       mission3_unlocked: false,
+      all_missions_completed: false, // ✅ NOVÉ
       responses: {}
     };
   }

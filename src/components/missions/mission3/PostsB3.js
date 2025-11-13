@@ -174,7 +174,7 @@ const COMPONENT_ID = 'mission3_postsb';
 
 const PostsB3 = () => {
   const navigate = useNavigate();
-  const { dataManager, userId, addPoints } = useUserStats();
+  const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
   const [ratings, setRatings] = useState({});
@@ -246,7 +246,6 @@ const PostsB3 = () => {
         }
       );
       
-  await addPoints(10, 'postsB3');
   navigate('/mission3/questionnaire3b');
       
     } catch (error) {

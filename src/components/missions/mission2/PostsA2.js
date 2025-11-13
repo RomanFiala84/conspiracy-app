@@ -173,7 +173,7 @@ const COMPONENT_ID = 'mission2_postsa';
 
 const PostsA2 = () => {
 	const navigate = useNavigate();
-	const { dataManager, userId, addPoints } = useUserStats();
+	const { dataManager, userId } = useUserStats();
 	const responseManager = getResponseManager(dataManager);
   
 	const [ratings, setRatings] = useState({});
@@ -267,8 +267,7 @@ const PostsA2 = () => {
 				}
 			);
       
-			// Pridaj body
-			await addPoints(10, 'postsA2');
+
       
 			// Navigácia podľa skupiny
 			const progress = await dataManager.loadUserProgress(userId);

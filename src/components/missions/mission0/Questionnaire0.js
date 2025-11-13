@@ -99,7 +99,7 @@ const COMPONENT_ID = 'mission0_questionnaire';
 
 export default function Questionnaire0() {
   const navigate = useNavigate();
-  const { dataManager, userId, addPoints } = useUserStats();
+  const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
   const [answers, setAnswers] = useState({});
@@ -172,7 +172,7 @@ export default function Questionnaire0() {
       );
       
       // Pridaj body
-      await addPoints(10, 'questionnaire0');
+  
       
       // Označ misiu 0 ako dokončenú
       const progress = await dataManager.loadUserProgress(userId);

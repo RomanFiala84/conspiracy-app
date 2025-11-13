@@ -128,7 +128,7 @@ const COMPONENT_ID = 'mission2_questionnaire2b';
 
 const Questionnaire2B = () => {
   const navigate = useNavigate();
-  const { dataManager, userId, addPoints } = useUserStats();
+  const { dataManager, userId} = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
   const [answers, setAnswers] = useState({});
@@ -181,7 +181,6 @@ const Questionnaire2B = () => {
         }
       );
       
-  await addPoints(10, 'questionnaire2b');
 
   // Mark mission 2 completed
   const progress = await dataManager.loadUserProgress(userId);

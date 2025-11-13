@@ -1,27 +1,117 @@
+// src/components/missions/mission1/OutroMission1.js
+// UPRAVENÁ VERZIA - 25 bodov za misiu
+
 import React, { useEffect } from 'react';
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
-import {useUserStats} from '../../../contexts/UserStatsContext';
+import { useUserStats } from '../../../contexts/UserStatsContext';
 
-const C=styled.div`padding:40px;text-align:center;`;
-const T=styled.h2`color:${p=>p.theme.ACCENT_COLOR};margin-bottom:20px;`;
-const P=styled.p`color:${p=>p.theme.SECONDARY_TEXT_COLOR};margin-bottom:30px;`;
+const Container = styled.div`
+  padding: 40px;
+  text-align: center;
+`;
 
-const OutroMission1=()=>{
-  const nav=useNavigate();
-  const{dataManager,userId,addPoints}=useUserStats();
+const Title = styled.h2`
+  color: ${p => p.theme.ACCENT_COLOR};
+  margin-bottom: 20px;
+`;
 
-  useEffect(()=>{(async()=>{const p=await dataManager.loadUserProgress(userId);p.mission1_completed=true;p.mission1_timestamp_end=new Date().toISOString();await dataManager.saveProgress(userId,p);await addPoints(5,'mission1_outro');})()},[dataManager,userId,addPoints]);
+const Text = styled.p`
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-bottom: 30px;
+  line-height: 1.6;
+`;
 
-  return(
+const SuccessBox = styled.div`
+  background: ${p => p.theme.CARD_BACKGROUND};
+  border: 2px solid ${p => p.theme.ACCENT_COLOR};
+  border-radius: 12px;
+  padding: 24px;
+  margin: 30px auto;
+  max-width: 400px;
+`;
+
+const PointsEarned = styled.div`
+  font-size: 48px;
+  font-weight: bold;
+  color: ${p => p.theme.ACCENT_COLOR};
+  margin: 16px 0;
+  
+  @media (max-width: 480px) {
+    font-size: 36px;
+  }
+`;
+
+const PointsLabel = styled.div`
+  font-size: 16px;
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  margin-bottom: 8px;
+`;
+
+const LevelUpText = styled.div`
+  font-size: 14px;
+  color: ${p => p.theme.ACCENT_COLOR_2};
+  margin-top: 16px;
+  font-weight: 600;
+`;
+
+const OutroMission1 = () => {
+  const navigate = useNavigate();
+  const { dataManager, userId, addMissionPoints } = useUserStats(); // ✅ Použiť addMissionPoints
+
+  useEffect(() => {
+    const completeMission = async () => {
+      if (!userId) return;
+
+      try {
+        const progress = await dataManager.loadUserProgress(userId);
+        
+        // ✅ Pridaj 25 bodov za misiu
+        const pointsAdded = await addMissionPoints('mission1');
+        
+        if (pointsAdded) {
+          console.log('✅ Mission 1 dokončená a body pridané');
+        }
+        
+        // Označ misiu ako dokončenú
+        progress.mission1_completed = true;
+        progress.mission1_timestamp_end = new Date().toISOString();
+        await dataManager.saveProgress(userId, progress);
+        
+      } catch (error) {
+        console.error('❌ Chyba pri dokončovaní Mission 1:', error);
+      }
+    };
+
+    completeMission();
+  }, [dataManager, userId, addMissionPoints]);
+
+  return (
     <Layout>
-      <C>
-        <T>Debriefing dokončený</T>
-        <P>Ďakujeme za vašu účasť na Misiu 1!</P>
-        <StyledButton accent onClick={()=>nav('/mainmenu')}>Hlavné menu</StyledButton>
-      </C>
+      <Container>
+        <Title>🎉 Debriefing dokončený!</Title>
+        
+        <Text>
+          Výborne! Úspešne ste dokončili Misiu 1 a získali cenné detektívne skúsenosti!
+        </Text>
+
+        {/* ✅ Zobrazenie získaných bodov */}
+        <SuccessBox>
+          <PointsLabel>Získané body za misiu:</PointsLabel>
+          <PointsEarned>+25</PointsEarned>
+          <LevelUpText>⭐ Misia 1 dokončená!</LevelUpText>
+        </SuccessBox>
+
+        <Text>
+          Ďakujeme za vašu účasť! Pokračujte do hlavného menu pre ďalšie výzvy.
+        </Text>
+
+        <StyledButton accent onClick={() => navigate('/mainmenu')}>
+          🏠 Hlavné menu
+        </StyledButton>
+      </Container>
     </Layout>
   );
 };
