@@ -285,7 +285,8 @@ const AdminPanel = () => {
     if (!window.confirm('Ste si istý? Všetky dáta budú natrvalo vymazané!')) return;
 
     try {
-      const response = await fetch('/api/progress?code=all', {
+      // ✅ OPRAVA: správna URL
+      const response = await fetch('/.netlify/functions/progress?code=all', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminCode: 'RF9846' })
@@ -296,7 +297,8 @@ const AdminPanel = () => {
         alert('✅ Všetky dáta vymazané!');
         await loadStats();
       } else {
-        alert('Chyba pri mazaní dát');
+        const errorData = await response.json();
+        alert(`Chyba pri mazaní dát: ${errorData.error || response.statusText}`);
       }
     } catch (error) {
       alert(`Chyba: ${error.message}`);

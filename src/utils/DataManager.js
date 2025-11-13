@@ -1,3 +1,6 @@
+// src/utils/DataManager.js
+// OPRAVA: správne URL pre Netlify Functions
+
 import * as XLSX from 'xlsx';
 
 class DataManager {
@@ -6,6 +9,9 @@ class DataManager {
     this.adminUserId = 'RF9846';
     this.cache = new Map();
     this.allParticipantsCache = null;
+    
+    // ✅ NOVÉ - API base URL
+    this.apiBase = '/.netlify/functions/progress';
 
     this.clearAllData = () => {
       this.cache.clear();
@@ -91,11 +97,12 @@ class DataManager {
     };
   }
 
+  // ✅ OPRAVA: správna URL
   async unlockMissionForAll(missionId) {
     console.log(`🔓 Odomykám misiu ${missionId} pre všetkých...`);
     
     try {
-      const response = await fetch('/api/progress?code=missions-unlock', {
+      const response = await fetch(`${this.apiBase}?code=missions-unlock`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ missionId, adminCode: this.adminUserId })
@@ -127,11 +134,12 @@ class DataManager {
     }
   }
 
+  // ✅ OPRAVA: správna URL
   async lockMissionForAll(missionId) {
     console.log(`🔒 Zamykám misiu ${missionId} pre všetkých...`);
     
     try {
-      const response = await fetch('/api/progress?code=missions-lock', {
+      const response = await fetch(`${this.apiBase}?code=missions-lock`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ missionId, adminCode: this.adminUserId })
@@ -163,10 +171,11 @@ class DataManager {
     }
   }
 
+  // ✅ OPRAVA: správna URL
   async fetchAllParticipantsData() {
     try {
       console.log('📥 Načítavam všetkých používateľov z backendu...');
-      const resp = await fetch('/api/progress?code=all');
+      const resp = await fetch(`${this.apiBase}?code=all`);
       
       if (!resp.ok) {
         console.warn('⚠️ Server vrátil chybu:', resp.status);
@@ -195,6 +204,7 @@ class DataManager {
     return await this.fetchAllParticipantsData();
   }
 
+  // ✅ OPRAVA: správna URL
   async loadUserProgress(participantCode) {
     if (!participantCode) return null;
     if (this.cache.has(participantCode)) {
@@ -202,7 +212,7 @@ class DataManager {
     }
 
     try {
-      const resp = await fetch(`/api/progress?code=${participantCode}`);
+      const resp = await fetch(`${this.apiBase}?code=${participantCode}`);
 
       if (!resp.ok) {
         if (resp.status === 404) {
@@ -258,9 +268,10 @@ class DataManager {
     return rec;
   }
 
+  // ✅ OPRAVA: správna URL
   async syncToServer(participantCode, data) {
     try {
-      const resp = await fetch(`/api/progress?code=${participantCode}`, {
+      const resp = await fetch(`${this.apiBase}?code=${participantCode}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
