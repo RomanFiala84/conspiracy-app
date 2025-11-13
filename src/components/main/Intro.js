@@ -261,7 +261,7 @@ const Intro = () => {
   };
 
   return (
-    <Layout>
+    <Layout showLevelDisplay={false}>
       <Container>
         <Header>
           <Title>🔍 Conspiracy Pass</Title>

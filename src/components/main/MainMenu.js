@@ -1,5 +1,5 @@
 // src/components/main/MainMenu.js
-// FINÁLNA VERZIA - Použitie StyledButton, lepší layout, optimalizácia
+// UPRAVENÁ VERZIA - Misie pod sebou, sharing section na konci
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { useUserStats } from '../../contexts/UserStatsContext';
 
 const Container = styled.div`
   padding: 20px;
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
   
   @media (max-width: 768px) {
@@ -92,6 +92,156 @@ const StatLabel = styled.div`
   font-weight: 600;
 `;
 
+const SectionTitle = styled.h2`
+  font-size: 24px;
+  font-weight: 700;
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  margin-bottom: 20px;
+  text-align: center;
+  
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
+`;
+
+// ✅ NOVÉ - Misie pod sebou namiesto grid
+const MissionsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 40px;
+`;
+
+const MissionCard = styled.div`
+  background: ${p => p.theme.CARD_BACKGROUND};
+  border: 2px solid ${p => p.locked ? p.theme.BORDER_COLOR : p.theme.ACCENT_COLOR}44;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  cursor: ${p => p.locked ? 'not-allowed' : 'pointer'};
+  opacity: ${p => p.locked ? 0.6 : 1};
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+  &:hover {
+    transform: ${p => p.locked ? 'none' : 'translateY(-2px)'};
+    border-color: ${p => p.locked ? p.theme.BORDER_COLOR : p.theme.ACCENT_COLOR};
+    box-shadow: ${p => p.locked ? '0 2px 8px rgba(0,0,0,0.1)' : `0 6px 16px ${p.theme.ACCENT_COLOR}33`};
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+`;
+
+const MissionIcon = styled.div`
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  background: linear-gradient(135deg, 
+    ${p => p.theme.ACCENT_COLOR}, 
+    ${p => p.theme.ACCENT_COLOR_2}
+  );
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  
+  @media (max-width: 480px) {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    font-size: 28px;
+  }
+`;
+
+const MissionContent = styled.div`
+  flex: 1;
+  
+  @media (max-width: 480px) {
+    text-align: center;
+  }
+`;
+
+const MissionNumber = styled.div`
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-bottom: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+`;
+
+const MissionTitle = styled.h3`
+  font-size: 18px;
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  margin-bottom: 4px;
+  font-weight: 600;
+`;
+
+const MissionStatus = styled.div`
+  font-size: 13px;
+  color: ${p => p.completed ? '#10b981' : p.theme.SECONDARY_TEXT_COLOR};
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const AdminButtons = styled.div`
+  display: flex;
+  gap: 8px;
+  
+  @media (max-width: 480px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+const AdminButton = styled.button`
+  background: ${p => p.$unlock ? '#10b981' : p.theme.ACCENT_COLOR};
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  
+  &:hover:not(:disabled) {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+`;
+
+// ✅ Sharing section presunutá na koniec
 const SharingSection = styled.div`
   background: linear-gradient(135deg, 
     ${p => p.theme.ACCENT_COLOR}22, 
@@ -100,13 +250,12 @@ const SharingSection = styled.div`
   border: 2px solid ${p => p.theme.ACCENT_COLOR};
   border-radius: 16px;
   padding: 24px;
-  margin-bottom: 40px;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-top: 20px;
   
   @media (max-width: 768px) {
     padding: 20px;
-    margin-bottom: 30px;
   }
 `;
 
@@ -198,108 +347,6 @@ const ReferralStatLabel = styled.div`
   letter-spacing: 0.5px;
 `;
 
-const MissionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const MissionCard = styled.div`
-  background: ${p => p.theme.CARD_BACKGROUND};
-  border: 2px solid ${p => p.locked ? p.theme.BORDER_COLOR : p.theme.ACCENT_COLOR}44;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  position: relative;
-  cursor: ${p => p.locked ? 'not-allowed' : 'pointer'};
-  opacity: ${p => p.locked ? 0.6 : 1};
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-
-  &:hover {
-    transform: ${p => p.locked ? 'none' : 'translateY(-4px)'};
-    border-color: ${p => p.locked ? p.theme.BORDER_COLOR : p.theme.ACCENT_COLOR};
-    box-shadow: ${p => p.locked ? '0 2px 8px rgba(0,0,0,0.1)' : `0 8px 20px ${p.theme.ACCENT_COLOR}33`};
-  }
-`;
-
-const MissionNumber = styled.div`
-  font-size: 12px;
-  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
-  margin-bottom: 8px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-`;
-
-const MissionTitle = styled.h3`
-  font-size: 18px;
-  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
-  margin-bottom: 16px;
-  font-weight: 600;
-`;
-
-const MissionStatus = styled.div`
-  font-size: 13px;
-  color: ${p => p.completed ? p.theme.SUCCESS_COLOR || p.theme.ACCENT_COLOR_3 : p.theme.SECONDARY_TEXT_COLOR};
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const AdminButtons = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-`;
-
-const AdminButton = styled.button`
-  background: ${p => p.$unlock ? p.theme.SUCCESS_COLOR || '#10b981' : p.theme.ACCENT_COLOR};
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover:not(:disabled) {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    
-    button {
-      width: 100%;
-    }
-  }
-`;
-
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -363,10 +410,10 @@ const CloseButton = styled.button`
 `;
 
 const makeMissionList = (p) => [
-  { id: 0, title: 'Misia 0', route: '/mission0/intro', completed: !!p.mission0_completed, locked: !p.mission0_unlocked },
-  { id: 1, title: 'Misia 1', route: '/mission1/intro', completed: !!p.mission1_completed, locked: !p.mission1_unlocked },
-  { id: 2, title: 'Misia 2', route: '/mission2/intro', completed: !!p.mission2_completed, locked: !p.mission2_unlocked },
-  { id: 3, title: 'Misia 3', route: '/mission3/intro', completed: !!p.mission3_completed, locked: !p.mission3_unlocked }
+  { id: 0, title: 'Špeciálny agent', route: '/mission0/intro', completed: !!p.mission0_completed, locked: !p.mission0_unlocked, icon: '🎯' },
+  { id: 1, title: 'Misia 1', route: '/mission1/intro', completed: !!p.mission1_completed, locked: !p.mission1_unlocked, icon: '🔍' },
+  { id: 2, title: 'Misia 2', route: '/mission2/intro', completed: !!p.mission2_completed, locked: !p.mission2_unlocked, icon: '🕵️' },
+  { id: 3, title: 'Misia 3', route: '/mission3/intro', completed: !!p.mission3_completed, locked: !p.mission3_unlocked, icon: '🎭' }
 ];
 
 const MainMenu = () => {
@@ -501,7 +548,75 @@ const MainMenu = () => {
           </StatsCard>
         </Header>
 
-        {/* Sharing Section */}
+        {/* ✅ Misie pod sebou */}
+        <SectionTitle>📋 Misie</SectionTitle>
+        <MissionsList>
+          {missions.map(m => (
+            <MissionCard
+              key={m.id}
+              locked={m.locked}
+              completed={m.completed}
+              onClick={() => handleMissionClick(m)}
+            >
+              <MissionIcon>{m.icon}</MissionIcon>
+              <MissionContent>
+                <MissionNumber>Misia {m.id}</MissionNumber>
+                <MissionTitle>{m.title}</MissionTitle>
+                <MissionStatus completed={m.completed}>
+                  {m.locked ? '🔒 Uzamknuté' : m.completed ? '✅ Dokončené' : '▶️ Začať'}
+                </MissionStatus>
+              </MissionContent>
+              {isAdmin && (
+                <AdminButtons>
+                  <AdminButton
+                    $unlock
+                    disabled={isUpdating}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleUnlock(m.id);
+                    }}
+                  >
+                    🔓 Odomknúť
+                  </AdminButton>
+                  <AdminButton
+                    disabled={isUpdating}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleLock(m.id);
+                    }}
+                  >
+                    🔒 Zamknúť
+                  </AdminButton>
+                </AdminButtons>
+              )}
+            </MissionCard>
+          ))}
+        </MissionsList>
+
+        {/* Navigation Buttons */}
+        <ButtonGroup>
+          <StyledButton variant="ghost" size="small" onClick={() => openModal('help')}>
+            ❓ Pomoc
+          </StyledButton>
+          <StyledButton variant="ghost" size="small" onClick={() => openModal('contest')}>
+            🎁 Súťaž
+          </StyledButton>
+          {isAdmin && (
+            <>
+              <StyledButton variant="outline" size="small" onClick={handleExport}>
+                📤 Export
+              </StyledButton>
+              <StyledButton variant="accent" size="small" onClick={() => navigate('/admin')}>
+                ⚙️ Admin
+              </StyledButton>
+            </>
+          )}
+          <StyledButton variant="danger" size="small" onClick={handleLogout}>
+            🔒 Odhlásiť
+          </StyledButton>
+        </ButtonGroup>
+
+        {/* ✅ Sharing Section na konci */}
         <SharingSection>
           <SharingTitle>🎁 Zdieľajte a získajte body!</SharingTitle>
           
@@ -538,70 +653,6 @@ const MainMenu = () => {
             </ReferralStats>
           )}
         </SharingSection>
-
-        {/* Missions */}
-        <MissionsGrid>
-          {missions.map(m => (
-            <MissionCard
-              key={m.id}
-              locked={m.locked}
-              completed={m.completed}
-              onClick={() => handleMissionClick(m)}
-            >
-              {isAdmin && (
-                <AdminButtons>
-                  <AdminButton
-                    $unlock
-                    disabled={isUpdating}
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleUnlock(m.id);
-                    }}
-                  >
-                    🔓
-                  </AdminButton>
-                  <AdminButton
-                    disabled={isUpdating}
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleLock(m.id);
-                    }}
-                  >
-                    🔒
-                  </AdminButton>
-                </AdminButtons>
-              )}
-              <MissionNumber>Misia {m.id}</MissionNumber>
-              <MissionTitle>{m.title}</MissionTitle>
-              <MissionStatus completed={m.completed}>
-                {m.locked ? '🔒 Uzamknuté' : m.completed ? '✓ Dokončené' : '→ Začať'}
-              </MissionStatus>
-            </MissionCard>
-          ))}
-        </MissionsGrid>
-
-        {/* Navigation Buttons */}
-        <ButtonGroup>
-          <StyledButton variant="ghost" size="small" onClick={() => openModal('help')}>
-            ❓ Pomoc
-          </StyledButton>
-          <StyledButton variant="ghost" size="small" onClick={() => openModal('contest')}>
-            🎁 Súťaž
-          </StyledButton>
-          {isAdmin && (
-            <>
-              <StyledButton variant="outline" size="small" onClick={handleExport}>
-                📤 Export
-              </StyledButton>
-              <StyledButton variant="accent" size="small" onClick={() => navigate('/admin')}>
-                ⚙️ Admin
-              </StyledButton>
-            </>
-          )}
-          <StyledButton variant="danger" size="small" onClick={handleLogout}>
-            🔒 Odhlásiť
-          </StyledButton>
-        </ButtonGroup>
 
         {/* Modal */}
         {modal.open && (

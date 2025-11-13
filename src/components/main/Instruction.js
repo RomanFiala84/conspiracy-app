@@ -350,7 +350,7 @@ export default function Instruction() {
   };
 
   return (
-    <Layout>
+    <Layout showLevelDisplay={false}>
       <Container>
         <Title>🔑 Conspiracy Pass</Title>
         <Subtitle>

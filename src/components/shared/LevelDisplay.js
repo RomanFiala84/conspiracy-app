@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+// src/components/shared/LevelDisplay.js
+// OPRAVENÁ VERZIA - Bez zbytočného refreshu
+
+import React from 'react';
 import styled from 'styled-components';
 import { useUserStats } from '../../contexts/UserStatsContext';
 
@@ -83,11 +86,7 @@ const Progress = styled.div`
 `;
 
 const LevelDisplay = () => {
-  const { userStats, refreshUserStats } = useUserStats();
-
-  useEffect(() => {
-    refreshUserStats();
-  }, [refreshUserStats]);
+  const { userStats } = useUserStats(); // ✅ Iba userStats, bez refreshUserStats
 
   const mission = userStats?.missionPoints ?? 0;
   const bonus = userStats?.bonusPoints ?? 0;
@@ -95,7 +94,7 @@ const LevelDisplay = () => {
   const total = userStats?.totalPoints ?? 0;
   const level = userStats?.level ?? 1;
 
-  // Progress podľa misií (max 100)
+  // Progress based on missions (max 100)
   const progress = Math.min((mission / 100) * 100, 100);
 
   return (

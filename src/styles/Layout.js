@@ -1,9 +1,9 @@
 // src/styles/Layout.js
-// UPRAVENÉ - Pridaný LevelDisplay
+// OPRAVENÁ VERZIA - LevelDisplay s podmienkou cez prop
 
 import React from 'react';
 import styled from 'styled-components';
-import LevelDisplay from '../components/shared/LevelDisplay'; // ✅ PRIDANÉ
+import LevelDisplay from '../components/shared/LevelDisplay';
 
 const LayoutContainer = styled.div`
   min-height: 100vh;
@@ -25,25 +25,25 @@ const ContentWrapper = styled.div`
   margin: 0 auto;
   width: 100%;
   
-  /* ✅ NOVÉ - Padding pre LevelDisplay v ľavom hornom rohu */
-  padding-top: 80px;
+  /* ✅ Padding iba ak sa zobrazuje LevelDisplay */
+  padding-top: ${p => p.$showLevel ? '80px' : '0'};
   
   @media (max-width: 768px) {
-    padding-top: 70px;
+    padding-top: ${p => p.$showLevel ? '70px' : '0'};
   }
   
   @media (max-width: 480px) {
-    padding-top: 60px;
+    padding-top: ${p => p.$showLevel ? '60px' : '0'};
   }
 `;
 
-const Layout = ({ children }) => {
+const Layout = ({ children, showLevelDisplay = true }) => {
   return (
     <LayoutContainer>
-      {/* ✅ PRIDANÉ - LevelDisplay sa zobrazí na každej stránke */}
-      <LevelDisplay />
+      {/* ✅ Zobrazí sa iba ak showLevelDisplay === true */}
+      {showLevelDisplay && <LevelDisplay />}
       
-      <ContentWrapper>
+      <ContentWrapper $showLevel={showLevelDisplay}>
         {children}
       </ContentWrapper>
     </LayoutContainer>
