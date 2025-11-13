@@ -1,6 +1,6 @@
 /**
  * /netlify/functions/progress.js
- * Serverless MongoDB API pre CPASS Game – verzia s globálnym stavom misií
+ * KOMPLETNÁ OPRAVENÁ VERZIA - správne responses merge + náhodné skupiny
  */
 
 const { MongoClient } = require('mongodb');
@@ -51,7 +51,17 @@ const getCorsHeaders = () => ({
 });
 
 //
-// 🧩 3️⃣ Helper – načítanie globálneho stavu misií
+// 🧩 3️⃣ Helper – náhodné priradenie skupiny
+//
+const assignRandomGroup = () => {
+  const rand = Math.random();
+  if (rand < 0.33) return '0';      // 33% šanca
+  if (rand < 0.66) return '1';      // 33% šanca
+  return '2';                        // 34% šanca
+};
+
+//
+// 🧩 4️⃣ Helper – načítanie globálneho stavu misií
 //
 const getGlobalMissionsState = async (db) => {
   const configCol = db.collection('missions_config');
@@ -75,22 +85,20 @@ const getGlobalMissionsState = async (db) => {
 };
 
 //
-// 🧩 4️⃣ Helper – vytvorenie nového používateľa
+// 🧩 5️⃣ Helper – vytvorenie nového používateľa
 //
 const createNewParticipant = async (code, db) => {
-  const group = Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2';
-  
-  // Načítaj globálny stav misií
+  const group = assignRandomGroup();  // ✅ Náhodná skupina
   const globalState = await getGlobalMissionsState(db);
   
-  return {
+  const newUser = {
     participant_code: code,
     group_assignment: group,
     completedSections: [],
     createdAt: new Date(),
     updatedAt: new Date(),
     
-    // Použij globálny stav namiesto hard-coded false
+    // Mission status z globálneho stavu
     mission0_unlocked: globalState.mission0_unlocked,
     mission0_completed: false,
     mission1_unlocked: globalState.mission1_unlocked,
@@ -113,12 +121,18 @@ const createNewParticipant = async (code, db) => {
     timestamp_start: new Date().toISOString(),
     timestamp_last_update: new Date().toISOString(),
     sharing_code: null,
-    referral_code: null
+    referral_code: null,
+    
+    // ✅ KRITICKÉ: Inicializuj responses objekt
+    responses: {}
   };
+  
+  console.log(`✅ Vytvorený nový používateľ ${code} v skupine ${group}`);
+  return newUser;
 };
 
 //
-// 🧩 5️⃣ Main Handler
+// 🧩 6️⃣ Main Handler
 //
 exports.handler = async (event) => {
   try {
@@ -167,10 +181,9 @@ exports.handler = async (event) => {
           const newUser = await createNewParticipant(code, db);
           await col.insertOne(newUser);
           doc = newUser;
-          console.log(`✅ Vytvorený nový user ${code} s globálnym stavom misií`);
         }
 
-        console.log(`✓ Vrátený používateľ ${code}`);
+        console.log(`✓ Vrátený používateľ ${code} (skupina: ${doc.group_assignment})`);
         return {
           statusCode: 200,
           headers: getCorsHeaders(),
@@ -249,85 +262,142 @@ exports.handler = async (event) => {
 
           console.log(`✓ ${lock ? 'Zamknutá' : 'Odomknutá'} misia ${data.missionId} (${result.modifiedCount} účastníkov)`);
           
-          const countAfter = await col.countDocuments({ [missionField]: !lock });
-          console.log(`📊 Počet používateľov s ${missionField}=${!lock}: ${countAfter}`);
-          
           return {
             statusCode: 200,
             headers: getCorsHeaders(),
             body: JSON.stringify({ 
               modifiedCount: result.modifiedCount,
-              globalStateUpdated: true,
-              usersWithUnlock: countAfter
+              globalStateUpdated: true
             }),
           };
         }
 
         // 💾 Bežný update / auto-registrácia
         console.log(`💾 Ukladám progres pre ${code}`);
-        const group =
-          data.group_assignment ||
-          (Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2');
+        
+        const { participant_code, _id, createdAt, ...dataToUpdate } = data;
 
-        const { participant_code, ...dataToUpdate } = data;
-
-        // Načítaj globálny stav pre $setOnInsert
-        const globalState = await getGlobalMissionsState(db);
-
+        // Načítaj existujúci dokument
+        const existing = await col.findOne({ participant_code: code });
+        
+        if (!existing) {
+          // ✅ Nový používateľ - vytvor s náhodnou skupinou
+          console.log(`🆕 Vytváram nového používateľa ${code}`);
+          const globalState = await getGlobalMissionsState(db);
+          
+          const newUser = {
+            participant_code: code,
+            group_assignment: dataToUpdate.group_assignment || assignRandomGroup(),  // ✅ Náhodná skupina
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            
+            // Mission status
+            mission0_unlocked: globalState.mission0_unlocked,
+            mission0_completed: false,
+            mission1_unlocked: globalState.mission1_unlocked,
+            mission1_completed: false,
+            mission2_unlocked: globalState.mission2_unlocked,
+            mission2_completed: false,
+            mission3_unlocked: globalState.mission3_unlocked,
+            mission3_completed: false,
+            
+            // Default values
+            completedSections: [],
+            user_stats_points: 0,
+            user_stats_level: 1,
+            referrals_count: 0,
+            instruction_completed: false,
+            intro_completed: false,
+            mainmenu_visits: 0,
+            session_count: 1,
+            total_time_spent: 0,
+            current_progress_step: 'instruction',
+            timestamp_start: new Date().toISOString(),
+            timestamp_last_update: new Date().toISOString(),
+            sharing_code: null,
+            referral_code: null,
+            responses: {},  // ✅ Inicializuj responses
+            
+            // Merge s dataToUpdate
+            ...dataToUpdate
+          };
+          
+          await col.insertOne(newUser);
+          console.log(`✅ Vytvorený nový používateľ ${code} v skupine ${newUser.group_assignment}`);
+          
+          return {
+            statusCode: 200,
+            headers: getCorsHeaders(),
+            body: JSON.stringify(newUser),
+          };
+        }
+        
+        // ✅ Existujúci používateľ - smart merge pre responses
+        console.log(`📝 Aktualizujem existujúceho používateľa ${code}`);
+        
+        // Deep merge pre responses objekt
+        const mergedResponses = { ...(existing.responses || {}) };
+        
+        if (dataToUpdate.responses) {
+          Object.entries(dataToUpdate.responses).forEach(([componentId, componentData]) => {
+            // Merge každý komponent samostatne
+            if (componentData && typeof componentData === 'object') {
+              mergedResponses[componentId] = componentData;
+            }
+          });
+          console.log(`📊 Merging responses components: ${Object.keys(dataToUpdate.responses).join(', ')}`);
+        }
+        
+        // Priprav update data
+        const updateData = {
+          ...dataToUpdate,
+          responses: mergedResponses,  // ✅ Použiť merged responses
+          updatedAt: new Date(),
+          timestamp_last_update: new Date().toISOString()
+        };
+        
+        // Vymaž responses z dataToUpdate ak je prázdny
+        delete updateData.responses;
+        
         await col.updateOne(
           { participant_code: code },
-          {
-            $setOnInsert: {
-              participant_code: code,
-              group_assignment: group,
-              createdAt: new Date(),
-              
-              // Použij globálny stav
-              mission0_unlocked: globalState.mission0_unlocked,
-              mission0_completed: false,
-              mission1_unlocked: globalState.mission1_unlocked,
-              mission1_completed: false,
-              mission2_unlocked: globalState.mission2_unlocked,
-              mission2_completed: false,
-              mission3_unlocked: globalState.mission3_unlocked,
-              mission3_completed: false,
-              
-              completedSections: [],
-              user_stats_points: 0,
-              user_stats_level: 1,
-              referrals_count: 0,
-              instruction_completed: false,
-              intro_completed: false,
-              mainmenu_visits: 0,
-              session_count: 1,
-              total_time_spent: 0,
-              current_progress_step: 'instruction',
-              timestamp_start: new Date().toISOString(),
-              timestamp_last_update: new Date().toISOString(),
-              sharing_code: null,
-              referral_code: null
-            },
+          { 
             $set: {
-              ...dataToUpdate,
-              updatedAt: new Date(),
-            },
-          },
-          { upsert: true }
+              ...updateData,
+              // Nastav responses samostatne aby sa zachoval merge
+              ...Object.keys(mergedResponses).reduce((acc, key) => {
+                acc[`responses.${key}`] = mergedResponses[key];
+                return acc;
+              }, {})
+            }
+          }
         );
 
         const updated = await col.findOne({ participant_code: code });
-        console.log(`✓ Uložený progres pre ${code}`);
+        console.log(`✅ Aktualizovaný používateľ ${code}`);
+        
+        // Debug log pre responses
+        if (updated.responses && Object.keys(updated.responses).length > 0) {
+          console.log(`📊 Responses components uložené: ${Object.keys(updated.responses).join(', ')}`);
+        }
+        
         return {
           statusCode: 200,
           headers: getCorsHeaders(),
           body: JSON.stringify(updated),
         };
+        
       } catch (dbError) {
         console.error('❌ PUT database error:', dbError);
+        console.error('Stack trace:', dbError.stack);
         return {
           statusCode: 500,
           headers: getCorsHeaders(),
-          body: JSON.stringify({ error: 'Database update failed', details: dbError.message }),
+          body: JSON.stringify({ 
+            error: 'Database update failed', 
+            details: dbError.message,
+            stack: dbError.stack 
+          }),
         };
       }
     }
@@ -425,10 +495,15 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error('❌ Serverová chyba:', error);
+    console.error('Stack trace:', error.stack);
     return {
       statusCode: 500,
       headers: getCorsHeaders(),
-      body: JSON.stringify({ error: 'Internal Server Error', message: error.message }),
+      body: JSON.stringify({ 
+        error: 'Internal Server Error', 
+        message: error.message,
+        stack: error.stack 
+      }),
     };
   }
 };
