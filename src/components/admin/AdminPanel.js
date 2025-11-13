@@ -1,4 +1,5 @@
 // src/components/admin/AdminPanel.js
+// OPRAVENÁ VERZIA - fetch all data pred exportom
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -86,6 +87,8 @@ const AdminPanel = () => {
     mission3Complete: 0
   });
 
+  const [isExporting, setIsExporting] = useState(false);
+
   const loadStats = useCallback(() => {
     const allData = dataManager.getAllParticipantsData();
     const participants = Object.values(allData);
@@ -107,102 +110,134 @@ const AdminPanel = () => {
       navigate('/');
       return;
     }
-    loadStats();
+    
+    // Načítaj všetkých používateľov pri otvorení admin panelu
+    (async () => {
+      await dataManager.fetchAllParticipantsData();
+      loadStats();
+    })();
   }, [userId, dataManager, navigate, loadStats]);
 
-  const handleExportExcel = () => {
-    const allData = dataManager.getAllParticipantsData();
-    const participants = Object.values(allData);
+  // ✅ OPRAVENÝ EXPORT - najprv fetch všetkých dát
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    
+    try {
+      // 1. Načítaj VŠETKÝCH používateľov z backendu
+      console.log('📥 Načítavam všetkých používateľov...');
+      await dataManager.fetchAllParticipantsData();
+      
+      // 2. Získaj dáta z cache
+      const allData = dataManager.getAllParticipantsData();
+      const participants = Object.values(allData);
 
-    if (participants.length === 0) {
-      alert('Žiadne dáta na export');
-      return;
-    }
+      console.log(`📊 Exportujem ${participants.length} používateľov`);
 
-    const allComponentIds = new Set();
-    const questionIdsByComponent = {};
-
-    participants.forEach(p => {
-      if (p.responses) {
-        Object.entries(p.responses).forEach(([componentId, componentData]) => {
-          allComponentIds.add(componentId);
-          if (!questionIdsByComponent[componentId]) {
-            questionIdsByComponent[componentId] = new Set();
-          }
-          if (componentData.answers) {
-            Object.keys(componentData.answers).forEach(qId => {
-              questionIdsByComponent[componentId].add(qId);
-            });
-          }
-        });
+      if (participants.length === 0) {
+        alert('Žiadne dáta na export');
+        setIsExporting(false);
+        return;
       }
-    });
 
-    const rows = participants.map(p => {
-      const row = {
-        participant_code: p.participant_code || '',
-        group_assignment: p.group_assignment || '',
-        sharing_code: p.sharing_code || '',
-        referral_code: p.referral_code || '',
-        timestamp_start: p.timestamp_start || '',
-        timestamp_last_update: p.timestamp_last_update || '',
-        user_stats_points: p.user_stats_points || 0,
-        user_stats_level: p.user_stats_level || 1,
-        mission0_completed: p.mission0_completed || false,
-        mission1_completed: p.mission1_completed || false,
-        mission2_completed: p.mission2_completed || false,
-        mission3_completed: p.mission3_completed || false,
-        instruction_completed: p.instruction_completed || false,
-        intro_completed: p.intro_completed || false
-      };
+      // 3. Zber všetky component IDs a question IDs
+      const allComponentIds = new Set();
+      const questionIdsByComponent = {};
 
-      allComponentIds.forEach(componentId => {
-        const componentData = p.responses?.[componentId];
-        if (componentData) {
-          const questionIds = questionIdsByComponent[componentId];
-          questionIds.forEach(qId => {
-            const columnName = `${componentId}__${qId}`;
-            row[columnName] = componentData.answers?.[qId] ?? '';
+      participants.forEach(p => {
+        if (p.responses) {
+          Object.entries(p.responses).forEach(([componentId, componentData]) => {
+            allComponentIds.add(componentId);
+            if (!questionIdsByComponent[componentId]) {
+              questionIdsByComponent[componentId] = new Set();
+            }
+            if (componentData.answers) {
+              Object.keys(componentData.answers).forEach(qId => {
+                questionIdsByComponent[componentId].add(qId);
+              });
+            }
           });
-
-          if (componentData.metadata) {
-            row[`${componentId}__started_at`] = componentData.metadata.started_at || '';
-            row[`${componentId}__completed_at`] = componentData.metadata.completed_at || '';
-            row[`${componentId}__time_spent_seconds`] = componentData.metadata.time_spent_seconds || '';
-            row[`${componentId}__device`] = componentData.metadata.device || '';
-          }
-        } else {
-          const questionIds = questionIdsByComponent[componentId];
-          if (questionIds) {
-            questionIds.forEach(qId => {
-              row[`${componentId}__${qId}`] = '';
-            });
-          }
         }
       });
-      return row;
-    });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    
-    if (rows.length > 0) {
-      const colWidths = [];
-      const headers = Object.keys(rows[0]);
-      headers.forEach((header, i) => {
-        const maxLen = Math.max(
-          header.length,
-          ...rows.map(row => String(row[header] || '').length)
-        );
-        colWidths[i] = { wch: Math.min(maxLen + 2, 50) };
+      console.log(`📋 Komponenty: ${Array.from(allComponentIds).join(', ')}`);
+
+      // 4. Vytvor riadky pre export
+      const rows = participants.map(p => {
+        const row = {
+          participant_code: p.participant_code || '',
+          group_assignment: p.group_assignment || '',
+          sharing_code: p.sharing_code || '',
+          referral_code: p.referral_code || '',
+          timestamp_start: p.timestamp_start || '',
+          timestamp_last_update: p.timestamp_last_update || '',
+          user_stats_points: p.user_stats_points || 0,
+          user_stats_level: p.user_stats_level || 1,
+          mission0_completed: p.mission0_completed || false,
+          mission1_completed: p.mission1_completed || false,
+          mission2_completed: p.mission2_completed || false,
+          mission3_completed: p.mission3_completed || false,
+          instruction_completed: p.instruction_completed || false,
+          intro_completed: p.intro_completed || false
+        };
+
+        // Pridaj responses
+        allComponentIds.forEach(componentId => {
+          const componentData = p.responses?.[componentId];
+          if (componentData) {
+            const questionIds = questionIdsByComponent[componentId];
+            questionIds.forEach(qId => {
+              const columnName = `${componentId}__${qId}`;
+              row[columnName] = componentData.answers?.[qId] ?? '';
+            });
+
+            if (componentData.metadata) {
+              row[`${componentId}__started_at`] = componentData.metadata.started_at || '';
+              row[`${componentId}__completed_at`] = componentData.metadata.completed_at || '';
+              row[`${componentId}__time_spent_seconds`] = componentData.metadata.time_spent_seconds || '';
+              row[`${componentId}__device`] = componentData.metadata.device || '';
+            }
+          } else {
+            const questionIds = questionIdsByComponent[componentId];
+            if (questionIds) {
+              questionIds.forEach(qId => {
+                row[`${componentId}__${qId}`] = '';
+              });
+            }
+          }
+        });
+        return row;
       });
-      ws['!cols'] = colWidths;
-    }
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'All Data');
-    const filename = `conspiracy_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
-    XLSX.writeFile(wb, filename);
-    alert(`Export úspešný! (${rows.length} účastníkov)`);
+      // 5. Vytvor Excel
+      const ws = XLSX.utils.json_to_sheet(rows);
+      
+      if (rows.length > 0) {
+        const colWidths = [];
+        const headers = Object.keys(rows[0]);
+        headers.forEach((header, i) => {
+          const maxLen = Math.max(
+            header.length,
+            ...rows.map(row => String(row[header] || '').length)
+          );
+          colWidths[i] = { wch: Math.min(maxLen + 2, 50) };
+        });
+        ws['!cols'] = colWidths;
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'All Data');
+      const filename = `conspiracy_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      
+      console.log(`✅ Export úspešný: ${rows.length} účastníkov, ${allComponentIds.size} komponentov`);
+      alert(`✅ Export úspešný!\n\n${rows.length} účastníkov\n${allComponentIds.size} komponentov\n${Object.values(questionIdsByComponent).reduce((sum, set) => sum + set.size, 0)} otázok`);
+      
+    } catch (error) {
+      console.error('❌ Chyba pri exporte:', error);
+      alert(`Chyba pri exporte: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleUnlockMission = async (missionId) => {
@@ -210,6 +245,7 @@ const AdminPanel = () => {
     try {
       await dataManager.unlockMissionForAll(missionId);
       alert(`Misia ${missionId} odomknutá!`);
+      await dataManager.fetchAllParticipantsData();
       loadStats();
     } catch (error) {
       alert(`Chyba: ${error.message}`);
@@ -221,6 +257,7 @@ const AdminPanel = () => {
     try {
       await dataManager.lockMissionForAll(missionId);
       alert(`Misia ${missionId} zamknutá!`);
+      await dataManager.fetchAllParticipantsData();
       loadStats();
     } catch (error) {
       alert(`Chyba: ${error.message}`);
@@ -255,7 +292,6 @@ const AdminPanel = () => {
       <Container>
         <Title>Admin Panel</Title>
 
-        {/* Štatistiky */}
         <Section>
           <SectionTitle>📊 Štatistiky</SectionTitle>
           <StatsGrid>
@@ -294,20 +330,22 @@ const AdminPanel = () => {
           </StatsGrid>
         </Section>
 
-        {/* Export */}
         <Section>
           <SectionTitle>💾 Export dát</SectionTitle>
           <InfoText>
-            Export obsahuje všetky odpovede, metadata a progress informácie.
+            Export obsahuje všetky odpovede, metadata a progress informácie zo všetkých účastníkov.
           </InfoText>
           <ButtonGroup>
-            <StyledButton accent onClick={handleExportExcel}>
-              📥 Export do Excel (.xlsx)
+            <StyledButton 
+              accent 
+              onClick={handleExportExcel}
+              disabled={isExporting}
+            >
+              {isExporting ? '⏳ Exportujem...' : '📥 Export do Excel (.xlsx)'}
             </StyledButton>
           </ButtonGroup>
         </Section>
 
-        {/* Misie */}
         <Section>
           <SectionTitle>🔓 Správa misií</SectionTitle>
           <InfoText>Odomknúť/zamknúť misie pre všetkých účastníkov.</InfoText>
@@ -324,7 +362,6 @@ const AdminPanel = () => {
           ))}
         </Section>
 
-        {/* Danger Zone */}
         <Section>
           <SectionTitle style={{ color: '#d9534f' }}>⚠️ Danger Zone</SectionTitle>
           <InfoText>Tieto akcie sú nevratné!</InfoText>
