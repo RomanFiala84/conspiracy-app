@@ -6,9 +6,11 @@ class DataManager {
     this.adminUserId = 'RF9846';
     this.cache = new Map();
     this.codes = [];
+    this.allParticipantsCache = null; // ✅ NOVÉ - cache pre všetkých používateľov
 
     this.clearAllData = () => {
       this.cache.clear();
+      this.allParticipantsCache = null; // ✅ NOVÉ
       Object.keys(localStorage)
         .filter(
           key =>
@@ -19,7 +21,7 @@ class DataManager {
         .forEach(key => localStorage.removeItem(key));
       sessionStorage.removeItem('participantCode');
       sessionStorage.removeItem('referralCode');
-      console.log('❌ Všechna data byla smazána.');
+      console.log('❌ Všetky dáta boli vymazané.');
     };
   }
 
@@ -116,7 +118,7 @@ class DataManager {
       const result = await response.json();
       console.log(`✅ Batch unlock ${missionId} na serveri (${result.modifiedCount} používateľov)`);
 
-      await this.syncAllFromServer();
+      await this.fetchAllParticipantsData(); // ✅ OPRAVENÉ
       this.cache.clear();
       
       window.dispatchEvent(new StorageEvent('storage', {
@@ -152,7 +154,7 @@ class DataManager {
       const result = await response.json();
       console.log(`✅ Batch lock ${missionId} na serveri (${result.modifiedCount} používateľov)`);
 
-      await this.syncAllFromServer();
+      await this.fetchAllParticipantsData(); // ✅ OPRAVENÉ
       this.cache.clear();
       
       window.dispatchEvent(new StorageEvent('storage', {
@@ -170,9 +172,10 @@ class DataManager {
     }
   }
 
-  async syncAllFromServer() {
+  // ✅ NOVÁ METÓDA - Fetch všetkých používateľov z backendu
+  async fetchAllParticipantsData() {
     try {
-      console.log('🔄 Synchronizujem dáta zo servera...');
+      console.log('📥 Načítavam všetkých používateľov z backendu...');
       const resp = await fetch('/api/progress?code=all');
       
       if (!resp.ok) {
@@ -182,19 +185,29 @@ class DataManager {
       
       const allData = await resp.json();
       
+      // ✅ Ulož do cache
+      this.allParticipantsCache = allData;
+      
+      // Ulož aj do localStorage
       localStorage.setItem(this.centralStorageKey, JSON.stringify(allData));
       
+      // Ulož každého používateľa samostatne
       Object.entries(allData).forEach(([code, data]) => {
         localStorage.setItem(`fullProgress_${code}`, JSON.stringify(data));
       });
       
-      console.log(`✅ Synchronizovaných ${Object.keys(allData).length} používateľov zo servera`);
+      console.log(`✅ Načítaných ${Object.keys(allData).length} používateľov z backendu`);
       return allData;
       
     } catch (e) {
-      console.warn('⚠️ Sync všetkých dáta zo servera zlyhal:', e);
+      console.warn('⚠️ Fetch všetkých dát zlyhal:', e);
       return this.getAllParticipantsData();
     }
+  }
+
+  // ✅ ALIAS pre spätnu kompatibilitu
+  async syncAllFromServer() {
+    return await this.fetchAllParticipantsData();
   }
 
   async loadUserProgress(participantCode) {
@@ -322,7 +335,8 @@ class DataManager {
       mission2_completed: false,
       mission2_unlocked: false,
       mission3_completed: false,
-      mission3_unlocked: false
+      mission3_unlocked: false,
+      responses: {} // ✅ PRIDANÉ
     };
   }
 
@@ -397,9 +411,17 @@ class DataManager {
     const all = this.getAllParticipantsData();
     all[participantCode] = data;
     localStorage.setItem(this.centralStorageKey, JSON.stringify(all));
+    // ✅ Aktualizuj aj cache
+    if (this.allParticipantsCache) {
+      this.allParticipantsCache[participantCode] = data;
+    }
   }
 
+  // ✅ OPRAVENÉ - používa cache ak existuje
   getAllParticipantsData() {
+    if (this.allParticipantsCache) {
+      return this.allParticipantsCache;
+    }
     return JSON.parse(localStorage.getItem(this.centralStorageKey) || '{}');
   }
 
