@@ -63,7 +63,7 @@ const COMPONENT_ID = 'mission1_intervention';
 
 const Intervention1 = () => {
   const navigate = useNavigate();
-  const { dataManager, userId, addPoints } = useUserStats();
+  const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
   const [startTime] = useState(Date.now());
@@ -127,7 +127,7 @@ const Intervention1 = () => {
         }
       );
       
-      await addPoints(15, 'intervention1');
+
       navigate('/mission1/postsb');
       
     } catch (error) {

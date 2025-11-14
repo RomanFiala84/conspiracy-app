@@ -1,14 +1,16 @@
 // src/App.js
-// OPRAVENÁ VERZIA - useLocation funguje správne
+// FINÁLNA VERZIA - S Page Transitions
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
+import { AnimatePresence } from 'framer-motion';
 import { lightTheme, darkTheme } from './styles/theme';
 import ScrollToTop from './styles/ScrollToTop';
 import { GlobalStyles } from './styles/GlobalStyles';
 import ThemeToggle from './styles/ThemeToggle';
 import { UserStatsProvider } from './contexts/UserStatsContext';
+import PageTransition from './components/shared/PageTransition';
 
 // ═══════════════════════════════════════════════════════════
 // MAIN COMPONENTS
@@ -135,96 +137,102 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// ✅ OPRAVENÉ - AppContent už nepoužíva useLocation
+// ✅ AppContent - S AnimatePresence pre page transitions
 function AppContent() {
+  const location = useLocation();
+
   return (
-    <Routes>
-      {/* ═══════════════════════════════════════════════════════════
-          MAIN FLOW
-          ═══════════════════════════════════════════════════════════ */}
-      <Route path="/" element={<Instruction />} />
-      <Route path="/instruction" element={<Instruction />} />
-      <Route path="/intro" element={<Intro />} />
-      <Route path="/mainmenu" element={<MainMenu />} />
-      
-      {/* ═══════════════════════════════════════════════════════════
-          ADMIN
-          ═══════════════════════════════════════════════════════════ */}
-      <Route path="/admin" element={<AdminPanel />} />
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* ═══════════════════════════════════════════════════════════
+            MAIN FLOW
+            ═══════════════════════════════════════════════════════════ */}
+        <Route path="/" element={<PageTransition><Instruction /></PageTransition>} />
+        <Route path="/instruction" element={<PageTransition><Instruction /></PageTransition>} />
+        <Route path="/intro" element={<PageTransition><Intro /></PageTransition>} />
+        <Route path="/mainmenu" element={<PageTransition><MainMenu /></PageTransition>} />
+        
+        {/* ═══════════════════════════════════════════════════════════
+            ADMIN
+            ═══════════════════════════════════════════════════════════ */}
+        <Route path="/admin" element={<PageTransition><AdminPanel /></PageTransition>} />
 
-      {/* ═══════════════════════════════════════════════════════════
-          SPECIAL AGENT MISSION (Mission 0)
-          ═══════════════════════════════════════════════════════════ */}
-      <Route path="/mission0/intro" element={<IntroMission0 />} />
-      <Route path="/mission0/questionnaire" element={<Questionnaire0 />} />
-      <Route path="/mission0/outro" element={<OutroMission0 />} />
+        {/* ═══════════════════════════════════════════════════════════
+            SPECIAL AGENT MISSION (Mission 0)
+            ═══════════════════════════════════════════════════════════ */}
+        <Route path="/mission0/intro" element={<PageTransition><IntroMission0 /></PageTransition>} />
+        <Route path="/mission0/questionnaire" element={<PageTransition><Questionnaire0 /></PageTransition>} />
+        <Route path="/mission0/outro" element={<PageTransition><OutroMission0 /></PageTransition>} />
 
-      {/* ═══════════════════════════════════════════════════════════
-          MISSION 1
-          ═══════════════════════════════════════════════════════════ */}
-      <Route path="/mission1/intro" element={<IntroMission1 />} />
-      <Route path="/mission1/questionnaire1a" element={<Questionnaire1A />} />
-      <Route path="/mission1/prevention" element={<Prevention1 />} />
-      <Route path="/mission1/postsa" element={<PostsA1 />} />
-      <Route path="/mission1/intervention" element={<Intervention1 />} />
-      <Route path="/mission1/postsb" element={<PostsB1 />} />
-      <Route path="/mission1/questionnaire1b" element={<Questionnaire1B />} />
-      <Route path="/mission1/outro" element={<OutroMission1 />} />
+        {/* ═══════════════════════════════════════════════════════════
+            MISSION 1
+            ═══════════════════════════════════════════════════════════ */}
+        <Route path="/mission1/intro" element={<PageTransition><IntroMission1 /></PageTransition>} />
+        <Route path="/mission1/questionnaire1a" element={<PageTransition><Questionnaire1A /></PageTransition>} />
+        <Route path="/mission1/prevention" element={<PageTransition><Prevention1 /></PageTransition>} />
+        <Route path="/mission1/postsa" element={<PageTransition><PostsA1 /></PageTransition>} />
+        <Route path="/mission1/intervention" element={<PageTransition><Intervention1 /></PageTransition>} />
+        <Route path="/mission1/postsb" element={<PageTransition><PostsB1 /></PageTransition>} />
+        <Route path="/mission1/questionnaire1b" element={<PageTransition><Questionnaire1B /></PageTransition>} />
+        <Route path="/mission1/outro" element={<PageTransition><OutroMission1 /></PageTransition>} />
 
-      {/* ═══════════════════════════════════════════════════════════
-          MISSION 2
-          ═══════════════════════════════════════════════════════════ */}
-      <Route path="/mission2/intro" element={<IntroMission2 />} />
-      <Route path="/mission2/questionnaire2a" element={<Questionnaire2A />} />
-      <Route path="/mission2/prevention" element={<Prevention2 />} />
-      <Route path="/mission2/postsa" element={<PostsA2 />} />
-      <Route path="/mission2/intervention" element={<Intervention2 />} />
-      <Route path="/mission2/postsb" element={<PostsB2 />} />
-      <Route path="/mission2/questionnaire2b" element={<Questionnaire2B />} />
-      <Route path="/mission2/outro" element={<OutroMission2 />} />
+        {/* ═══════════════════════════════════════════════════════════
+            MISSION 2
+            ═══════════════════════════════════════════════════════════ */}
+        <Route path="/mission2/intro" element={<PageTransition><IntroMission2 /></PageTransition>} />
+        <Route path="/mission2/questionnaire2a" element={<PageTransition><Questionnaire2A /></PageTransition>} />
+        <Route path="/mission2/prevention" element={<PageTransition><Prevention2 /></PageTransition>} />
+        <Route path="/mission2/postsa" element={<PageTransition><PostsA2 /></PageTransition>} />
+        <Route path="/mission2/intervention" element={<PageTransition><Intervention2 /></PageTransition>} />
+        <Route path="/mission2/postsb" element={<PageTransition><PostsB2 /></PageTransition>} />
+        <Route path="/mission2/questionnaire2b" element={<PageTransition><Questionnaire2B /></PageTransition>} />
+        <Route path="/mission2/outro" element={<PageTransition><OutroMission2 /></PageTransition>} />
 
-      {/* ═══════════════════════════════════════════════════════════
-          MISSION 3
-          ═══════════════════════════════════════════════════════════ */}
-      <Route path="/mission3/intro" element={<IntroMission3 />} />
-      <Route path="/mission3/questionnaire3a" element={<Questionnaire3A />} />
-      <Route path="/mission3/prevention" element={<Prevention3 />} />
-      <Route path="/mission3/postsa" element={<PostsA3 />} />
-      <Route path="/mission3/intervention" element={<Intervention3 />} />
-      <Route path="/mission3/postsb" element={<PostsB3 />} />
-      <Route path="/mission3/questionnaire3b" element={<Questionnaire3B />} />
-      <Route path="/mission3/outro" element={<OutroMission3 />} />
+        {/* ═══════════════════════════════════════════════════════════
+            MISSION 3
+            ═══════════════════════════════════════════════════════════ */}
+        <Route path="/mission3/intro" element={<PageTransition><IntroMission3 /></PageTransition>} />
+        <Route path="/mission3/questionnaire3a" element={<PageTransition><Questionnaire3A /></PageTransition>} />
+        <Route path="/mission3/prevention" element={<PageTransition><Prevention3 /></PageTransition>} />
+        <Route path="/mission3/postsa" element={<PageTransition><PostsA3 /></PageTransition>} />
+        <Route path="/mission3/intervention" element={<PageTransition><Intervention3 /></PageTransition>} />
+        <Route path="/mission3/postsb" element={<PageTransition><PostsB3 /></PageTransition>} />
+        <Route path="/mission3/questionnaire3b" element={<PageTransition><Questionnaire3B /></PageTransition>} />
+        <Route path="/mission3/outro" element={<PageTransition><OutroMission3 /></PageTransition>} />
 
-      {/* ✅ 404 Page */}
-      <Route path="*" element={
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <h1 style={{ fontSize: '72px', marginBottom: '16px' }}>404</h1>
-          <p style={{ marginBottom: '24px' }}>Stránka nebola nájdená</p>
-          <button
-            onClick={() => window.location.href = '/'}
-            style={{
-              background: '#9d4edd',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 24px',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            ← Späť na hlavnú stránku
-          </button>
-        </div>
-      } />
-    </Routes>
+        {/* ✅ 404 Page */}
+        <Route path="*" element={
+          <PageTransition>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100vh',
+              padding: '20px',
+              textAlign: 'center'
+            }}>
+              <h1 style={{ fontSize: '72px', marginBottom: '16px' }}>404</h1>
+              <p style={{ marginBottom: '24px' }}>Stránka nebola nájdená</p>
+              <button
+                onClick={() => window.location.href = '/'}
+                style={{
+                  background: '#9d4edd',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
+              >
+                ← Späť na hlavnú stránku
+              </button>
+            </div>
+          </PageTransition>
+        } />
+      </Routes>
+    </AnimatePresence>
   );
 }
 
@@ -268,7 +276,7 @@ function App() {
               <ThemeToggle themeName={themeName} onToggle={toggleTheme} />
             </div>
 
-            {/* ✅ OPRAVENÉ - AppContent je VNÚTRI BrowserRouter */}
+            {/* ✅ AppContent je VNÚTRI BrowserRouter - môže použiť useLocation */}
             <AppContent />
           </BrowserRouter>
         </UserStatsProvider>

@@ -1,5 +1,5 @@
 // src/components/admin/AdminPanel.js
-// OPTIMALIZOVANÁ VERZIA - Lepší dizajn, responzívne, nové button varianty
+// FINÁLNA VERZIA s blokovaním a zoznamom používateľov v súhrne
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -166,7 +166,7 @@ const UserTable = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 800px;
+  min-width: 1000px;
 `;
 
 const Th = styled.th`
@@ -187,11 +187,18 @@ const Td = styled.td`
   padding: 10px 8px;
   border-bottom: 1px solid ${p => p.theme.BORDER_COLOR};
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  background: ${p => p.blocked ? 'rgba(239, 68, 68, 0.1)' : 'transparent'};
   
   &:first-child {
     font-weight: 600;
-    color: ${p => p.theme.ACCENT_COLOR};
+    color: ${p => p.blocked ? '#ef4444' : p.theme.ACCENT_COLOR};
   }
+`;
+
+const BlockButton = styled(StyledButton)`
+  font-size: 11px;
+  padding: 4px 8px;
+  min-width: 80px;
 `;
 
 const MissionRow = styled.div`
@@ -274,6 +281,7 @@ const AdminPanel = () => {
 
   const [stats, setStats] = useState({
     total: 0,
+    blocked: 0,
     group0: 0,
     group1: 0,
     group2: 0,
@@ -296,6 +304,7 @@ const AdminPanel = () => {
     setAllUsers(participants);
     setStats({
       total: participants.length,
+      blocked: participants.filter(p => p.blocked).length,
       group0: participants.filter(p => p.group_assignment === '0').length,
       group1: participants.filter(p => p.group_assignment === '1').length,
       group2: participants.filter(p => p.group_assignment === '2').length,
@@ -315,6 +324,20 @@ const AdminPanel = () => {
     loadStats();
   }, [userId, dataManager, navigate, loadStats]);
 
+  const handleToggleBlock = async (participantCode, currentBlockedState) => {
+    const action = currentBlockedState ? 'odblokovať' : 'blokovať';
+    if (!window.confirm(`Naozaj chcete ${action} používateľa ${participantCode}?`)) return;
+
+    try {
+      await dataManager.setBlockedState(participantCode, !currentBlockedState);
+      alert(`✅ Používateľ ${currentBlockedState ? 'odblokovaný' : 'blokovaný'}!`);
+      await loadStats();
+    } catch (error) {
+      alert(`❌ Chyba: ${error.message}`);
+    }
+  };
+
+  // ✅ FINÁLNY EXPORT s ID používateľov v súhrne
   const handleExportExcel = async () => {
     setIsExporting(true);
     
@@ -329,6 +352,7 @@ const AdminPanel = () => {
         return;
       }
 
+      // Zber komponentov a otázok
       const allComponentIds = new Set();
       const questionIdsByComponent = {};
 
@@ -348,40 +372,69 @@ const AdminPanel = () => {
         }
       });
 
+      // ✅ SHEET 1: Detailné dáta účastníkov
       const rows = participants.map(p => {
+        const missionPoints = p.user_stats_mission_points || 0;
+        const bonusPoints = (p.referrals_count || 0) * 10;
+        const totalPoints = missionPoints + bonusPoints;
+        
         const row = {
-          participant_code: p.participant_code || '',
-          group_assignment: p.group_assignment || '',
-          sharing_code: p.sharing_code || '',
-          referral_code: p.referral_code || '',
-          timestamp_start: p.timestamp_start || '',
-          timestamp_last_update: p.timestamp_last_update || '',
-          user_stats_points: p.user_stats_points || 0,
-          user_stats_mission_points: p.user_stats_mission_points || 0,
-          user_stats_level: p.user_stats_level || 1,
-          referrals_count: p.referrals_count || 0,
-          mission0_completed: p.mission0_completed || false,
-          mission1_completed: p.mission1_completed || false,
-          mission2_completed: p.mission2_completed || false,
-          mission3_completed: p.mission3_completed || false,
-          instruction_completed: p.instruction_completed || false,
-          intro_completed: p.intro_completed || false
+          'Kód účastníka': p.participant_code || '',
+          'Blokovaný': p.blocked ? 'ÁNO' : 'NIE',
+          'Blokovaný dňa': p.blocked_at ? new Date(p.blocked_at).toLocaleString('sk-SK') : '',
+          'Skupina': p.group_assignment || '',
+          'Sharing kód': p.sharing_code || '',
+          'Použitý referral kód': p.used_referral_code || '',
+          'Odporučil ho': p.referred_by || '',
+          'Počet odporučení': p.referrals_count || 0,
+          'Odporučení používatelia': (p.referred_users || []).join(', '),
+          'Registrovaný': p.timestamp_start ? new Date(p.timestamp_start).toLocaleString('sk-SK') : '',
+          'Posledná aktualizácia': p.timestamp_last_update ? new Date(p.timestamp_last_update).toLocaleString('sk-SK') : '',
+          'Body za misie': missionPoints,
+          'Bonusové body': bonusPoints,
+          'Celkové body': totalPoints,
+          'Level': p.user_stats_level || 1,
+          'Inštrukcie dokončené': p.instruction_completed ? 'ÁNO' : 'NIE',
+          'Intro dokončené': p.intro_completed ? 'ÁNO' : 'NIE',
+          'Návštevy hlavného menu': p.mainmenu_visits || 0,
+          'Misia 0 - Odomknutá': p.mission0_unlocked ? 'ÁNO' : 'NIE',
+          'Misia 0 - Dokončená': p.mission0_completed ? 'ÁNO' : 'NIE',
+          'Misia 1 - Odomknutá': p.mission1_unlocked ? 'ÁNO' : 'NIE',
+          'Misia 1 - Dokončená': p.mission1_completed ? 'ÁNO' : 'NIE',
+          'Misia 2 - Odomknutá': p.mission2_unlocked ? 'ÁNO' : 'NIE',
+          'Misia 2 - Dokončená': p.mission2_completed ? 'ÁNO' : 'NIE',
+          'Misia 3 - Odomknutá': p.mission3_unlocked ? 'ÁNO' : 'NIE',
+          'Misia 3 - Dokončená': p.mission3_completed ? 'ÁNO' : 'NIE',
+          'Všetky misie dokončené': p.all_missions_completed ? 'ÁNO' : 'NIE',
         };
 
+        // Odpovede na otázky
         allComponentIds.forEach(componentId => {
           const componentData = p.responses?.[componentId];
           if (componentData) {
             const questionIds = questionIdsByComponent[componentId];
             questionIds.forEach(qId => {
-              const columnName = `${componentId}__${qId}`;
-              row[columnName] = componentData.answers?.[qId] ?? '';
+              const columnName = `[${componentId}] ${qId}`;
+              const answer = componentData.answers?.[qId];
+              
+              if (Array.isArray(answer)) {
+                row[columnName] = answer.join('; ');
+              } else if (typeof answer === 'object' && answer !== null) {
+                row[columnName] = JSON.stringify(answer);
+              } else {
+                row[columnName] = answer ?? '';
+              }
             });
 
             if (componentData.metadata) {
-              row[`${componentId}__started_at`] = componentData.metadata.started_at || '';
-              row[`${componentId}__completed_at`] = componentData.metadata.completed_at || '';
-              row[`${componentId}__time_spent_seconds`] = componentData.metadata.time_spent_seconds || '';
-              row[`${componentId}__device`] = componentData.metadata.device || '';
+              row[`[${componentId}] Začiatok`] = componentData.metadata.started_at 
+                ? new Date(componentData.metadata.started_at).toLocaleString('sk-SK') 
+                : '';
+              row[`[${componentId}] Koniec`] = componentData.metadata.completed_at 
+                ? new Date(componentData.metadata.completed_at).toLocaleString('sk-SK') 
+                : '';
+              row[`[${componentId}] Čas (sekundy)`] = componentData.metadata.time_spent_seconds || '';
+              row[`[${componentId}] Zariadenie`] = componentData.metadata.device || '';
             }
           }
         });
@@ -391,24 +444,80 @@ const AdminPanel = () => {
       const ws = XLSX.utils.json_to_sheet(rows);
       
       if (rows.length > 0) {
-        const colWidths = [];
         const headers = Object.keys(rows[0]);
-        headers.forEach((header, i) => {
+        const colWidths = headers.map(header => {
           const maxLen = Math.max(
             header.length,
             ...rows.map(row => String(row[header] || '').length)
           );
-          colWidths[i] = { wch: Math.min(maxLen + 2, 50) };
+          return { wch: Math.min(maxLen + 2, 50) };
         });
         ws['!cols'] = colWidths;
       }
+      ws['!freeze'] = { xSplit: 1, ySplit: 1 };
 
+      // ✅ SHEET 2: Súhrn s agregovanými štatistikami + zoznam používateľov
+      const summaryData = [
+        ['=== CELKOVÁ ŠTATISTIKA ==='],
+        [''],
+        ['Štatistika', 'Hodnota'],
+        ['Celkový počet účastníkov', participants.length],
+        ['Blokovaní', participants.filter(p => p.blocked).length],
+        ['Aktívni', participants.filter(p => !p.blocked).length],
+        [''],
+        ['Skupina 0', participants.filter(p => p.group_assignment === '0').length],
+        ['Skupina 1', participants.filter(p => p.group_assignment === '1').length],
+        ['Skupina 2', participants.filter(p => p.group_assignment === '2').length],
+        [''],
+        ['Misia 0 dokončená', participants.filter(p => p.mission0_completed).length],
+        ['Misia 1 dokončená', participants.filter(p => p.mission1_completed).length],
+        ['Misia 2 dokončená', participants.filter(p => p.mission2_completed).length],
+        ['Misia 3 dokončená', participants.filter(p => p.mission3_completed).length],
+        ['Všetky misie dokončené', participants.filter(p => p.all_missions_completed).length],
+        [''],
+        ['Celkové body (misie)', participants.reduce((sum, p) => sum + (p.user_stats_mission_points || 0), 0)],
+        ['Celkové bonusové body', participants.reduce((sum, p) => sum + ((p.referrals_count || 0) * 10), 0)],
+        ['Priemerné body na používateľa', Math.round(participants.reduce((sum, p) => {
+          const mp = p.user_stats_mission_points || 0;
+          const bp = (p.referrals_count || 0) * 10;
+          return sum + mp + bp;
+        }, 0) / participants.length)],
+        [''],
+        [''],
+        ['=== ZOZNAM VŠETKÝCH POUŽÍVATEĽOV ==='],
+        [''],
+        ['Kód účastníka', 'Skupina', 'Celkové body', 'Status', 'Všetky misie', 'Registrovaný'],
+      ];
+
+      // ✅ Pridanie všetkých používateľov (jeden riadok = jeden používateľ)
+      participants.forEach(p => {
+        const missionPoints = p.user_stats_mission_points || 0;
+        const bonusPoints = (p.referrals_count || 0) * 10;
+        const totalPoints = missionPoints + bonusPoints;
+        
+        summaryData.push([
+          p.participant_code,
+          p.group_assignment,
+          totalPoints,
+          p.blocked ? 'BLOKOVANÝ' : 'Aktívny',
+          p.all_missions_completed ? 'ÁNO' : 'NIE',
+          p.timestamp_start ? new Date(p.timestamp_start).toLocaleDateString('sk-SK') : ''
+        ]);
+      });
+      
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+      wsSummary['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+
+      // Vytvorenie workbooku
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'All Data');
-      const filename = `conspiracy_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.utils.book_append_sheet(wb, ws, 'Účastníci');
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Súhrn');
+      
+      const now = new Date();
+      const filename = `conspiracy_export_${now.toISOString().slice(0, 10)}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.xlsx`;
       XLSX.writeFile(wb, filename);
       
-      alert(`✅ Export úspešný!\n\n${rows.length} účastníkov\n${allComponentIds.size} komponentov`);
+      alert(`✅ Export úspešný!\n\n📊 ${rows.length} účastníkov\n📝 ${allComponentIds.size} komponentov\n📄 2 sheety (Účastníci + Súhrn)`);
       
     } catch (error) {
       console.error('❌ Chyba pri exporte:', error);
@@ -466,7 +575,7 @@ const AdminPanel = () => {
 
   if (loading && allUsers.length === 0) {
     return (
-      <Layout>
+      <Layout showLevelDisplay={false}>
         <LoadingOverlay>
           <LoadingSpinner>
             Načítavam admin panel...
@@ -477,7 +586,7 @@ const AdminPanel = () => {
   }
 
   return (
-    <Layout>
+    <Layout showLevelDisplay={false}>
       <Container>
         <Header>
           <Title>⚙️ Admin Panel</Title>
@@ -486,13 +595,16 @@ const AdminPanel = () => {
           </RefreshButton>
         </Header>
 
-        {/* Štatistiky */}
         <Section>
           <SectionTitle>📊 Prehľad štatistík</SectionTitle>
           <StatsGrid>
             <StatCard>
               <StatLabel>Celkom účastníkov</StatLabel>
               <StatValue>{stats.total}</StatValue>
+            </StatCard>
+            <StatCard style={{ borderColor: '#ef4444' }}>
+              <StatLabel>Blokovaní</StatLabel>
+              <StatValue style={{ color: '#ef4444' }}>{stats.blocked}</StatValue>
             </StatCard>
             <StatCard>
               <StatLabel>Skupina 0</StatLabel>
@@ -526,11 +638,10 @@ const AdminPanel = () => {
         </Section>
 
         <GridLayout>
-          {/* Export */}
           <Section>
             <SectionTitle>💾 Export dát</SectionTitle>
             <InfoText>
-              Export obsahuje všetky odpovede, metadata a progress zo všetkých účastníkov.
+              Export obsahuje 2 sheety: detailné dáta všetkých účastníkov a súhrn so štatistikami + zoznamom ID používateľov.
             </InfoText>
             <StyledButton 
               variant="success"
@@ -542,15 +653,12 @@ const AdminPanel = () => {
             </StyledButton>
           </Section>
 
-          {/* Správa misií */}
           <Section>
             <SectionTitle>🔓 Správa misií</SectionTitle>
             <InfoText>Odomknúť/zamknúť misie pre všetkých.</InfoText>
             {[0, 1, 2, 3].map(missionId => (
               <MissionRow key={missionId}>
-                <MissionLabel>
-                  🎯 Misia {missionId}
-                </MissionLabel>
+                <MissionLabel>🎯 Misia {missionId}</MissionLabel>
                 <MissionButtons>
                   <StyledButton 
                     variant="success"
@@ -572,7 +680,6 @@ const AdminPanel = () => {
           </Section>
         </GridLayout>
 
-        {/* Používatelia */}
         <Section>
           <SectionTitle>👥 Zoznam účastníkov ({allUsers.length})</SectionTitle>
           {allUsers.length === 0 ? (
@@ -583,37 +690,59 @@ const AdminPanel = () => {
                 <thead>
                   <tr>
                     <Th>Kód</Th>
+                    <Th>Status</Th>
                     <Th>Skupina</Th>
-                    <Th>Body</Th>
+                    <Th>Misie</Th>
+                    <Th>Bonus</Th>
+                    <Th>Spolu</Th>
+                    <Th>Refs</Th>
                     <Th>M0</Th>
                     <Th>M1</Th>
                     <Th>M2</Th>
                     <Th>M3</Th>
                     <Th>Registrovaný</Th>
-                    <Th>Posledná aktivita</Th>
+                    <Th>Akcia</Th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allUsers.map(u => (
-                    <tr key={u.participant_code}>
-                      <Td>{u.participant_code}</Td>
-                      <Td>{u.group_assignment}</Td>
-                      <Td>{u.user_stats_points || 0}</Td>
-                      <Td>{u.mission0_completed ? '✔' : '–'}</Td>
-                      <Td>{u.mission1_completed ? '✔' : '–'}</Td>
-                      <Td>{u.mission2_completed ? '✔' : '–'}</Td>
-                      <Td>{u.mission3_completed ? '✔' : '–'}</Td>
-                      <Td>{u.timestamp_start?.slice(0, 10)}</Td>
-                      <Td>{u.timestamp_last_update?.slice(0, 16)?.replace('T', ' ')}</Td>
-                    </tr>
-                  ))}
+                  {allUsers.map(u => {
+                    const missionPoints = u.user_stats_mission_points || 0;
+                    const bonusPoints = (u.referrals_count || 0) * 10;
+                    const totalPoints = missionPoints + bonusPoints;
+                    const isBlocked = u.blocked || false;
+                    
+                    return (
+                      <tr key={u.participant_code}>
+                        <Td blocked={isBlocked}>{u.participant_code}</Td>
+                        <Td blocked={isBlocked}>{isBlocked ? '🚫' : '✅'}</Td>
+                        <Td blocked={isBlocked}>{u.group_assignment}</Td>
+                        <Td blocked={isBlocked}>{missionPoints}</Td>
+                        <Td blocked={isBlocked}>{bonusPoints}</Td>
+                        <Td blocked={isBlocked}><strong>{totalPoints}</strong></Td>
+                        <Td blocked={isBlocked}>{u.referrals_count || 0}</Td>
+                        <Td blocked={isBlocked}>{u.mission0_completed ? '✔' : '–'}</Td>
+                        <Td blocked={isBlocked}>{u.mission1_completed ? '✔' : '–'}</Td>
+                        <Td blocked={isBlocked}>{u.mission2_completed ? '✔' : '–'}</Td>
+                        <Td blocked={isBlocked}>{u.mission3_completed ? '✔' : '–'}</Td>
+                        <Td blocked={isBlocked}>{u.timestamp_start?.slice(0, 10)}</Td>
+                        <Td blocked={isBlocked}>
+                          <BlockButton
+                            variant={isBlocked ? "outline" : "danger"}
+                            size="small"
+                            onClick={() => handleToggleBlock(u.participant_code, isBlocked)}
+                          >
+                            {isBlocked ? '✅ Odblokovať' : '🚫 Blokovať'}
+                          </BlockButton>
+                        </Td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </UserTable>
             </TableWrapper>
           )}
         </Section>
 
-        {/* Danger Zone */}
         <DangerSection>
           <SectionTitle style={{ color: '#ef4444' }}>⚠️ Danger Zone</SectionTitle>
           <InfoText>Tieto akcie sú nevratné a vymažú všetky dáta!</InfoText>
@@ -626,7 +755,6 @@ const AdminPanel = () => {
           </StyledButton>
         </DangerSection>
 
-        {/* Navigácia */}
         <ButtonGroup>
           <StyledButton variant="ghost" onClick={() => navigate('/mainmenu')}>
             ← Späť na hlavné menu

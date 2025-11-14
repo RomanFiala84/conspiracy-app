@@ -1,5 +1,5 @@
 // src/utils/DataManager.js
-// OPRAVENÁ VERZIA - Fix referral validácie a sync
+// VERZIA s blokovaním používateľov
 
 import * as XLSX from 'xlsx';
 
@@ -31,6 +31,7 @@ class DataManager {
   getVariableList() {
     return [
       'participant_code',
+      'blocked', // ✅ PRIDANÉ
       'group_assignment',
       'sharing_code',
       'referral_code',
@@ -59,6 +60,41 @@ class DataManager {
       'mission3_completed',
       'all_missions_completed'
     ];
+  }
+
+  // ✅ NOVÁ METÓDA - Kontrola blokovania
+  async isUserBlocked(participantCode) {
+    try {
+      const userData = await this.loadUserProgress(participantCode);
+      return userData?.blocked || false;
+    } catch (error) {
+      console.error('Error checking blocked status:', error);
+      return false;
+    }
+  }
+
+  // ✅ NOVÁ METÓDA - Nastavenie blokovania/odblokovania
+  async setBlockedState(participantCode, blocked) {
+    try {
+      console.log(`${blocked ? '🚫 Blokovanie' : '✅ Odblokovanie'} používateľa ${participantCode}...`);
+      
+      const userData = await this.loadUserProgress(participantCode);
+      if (!userData) {
+        throw new Error('Používateľ nenájdený');
+      }
+
+      userData.blocked = blocked;
+      userData.blocked_at = blocked ? new Date().toISOString() : null;
+      
+      await this.saveProgress(participantCode, userData);
+      
+      console.log(`✅ Používateľ ${participantCode} ${blocked ? 'zablokovaný' : 'odblokovaný'}`);
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Error setting blocked state:', error);
+      throw error;
+    }
   }
 
   // ✅ OPRAVENÉ - Sync pred validáciou
@@ -383,6 +419,12 @@ class DataManager {
     if (!['0', '1', '2'].includes(data.group_assignment)) {
       data.group_assignment = Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2';
     }
+    
+    // ✅ PRIDANÉ - Default pre blocked
+    if (data.blocked === undefined) {
+      data.blocked = false;
+    }
+    
     const defaults = this.getDefaultFields();
     Object.entries(defaults).forEach(([k, v]) => {
       if (data[k] == null) data[k] = v;
@@ -397,6 +439,8 @@ class DataManager {
       current_progress_step: 'instruction',
       session_count: 1,
       total_time_spent: 0,
+      blocked: false, // ✅ PRIDANÉ
+      blocked_at: null, // ✅ PRIDANÉ
       instruction_completed: false,
       intro_completed: false,
       user_stats_points: 0,

@@ -1,5 +1,5 @@
 // src/components/main/MainMenu.js
-// UPRAVENÁ VERZIA - Misie pod sebou, sharing section na konci
+// VERZIA s možnosťou kopírovania linku s automatickým kódom
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -104,7 +104,6 @@ const SectionTitle = styled.h2`
   }
 `;
 
-// ✅ NOVÉ - Misie pod sebou namiesto grid
 const MissionsList = styled.div`
   display: flex;
   flex-direction: column;
@@ -241,7 +240,6 @@ const ButtonGroup = styled.div`
   }
 `;
 
-// ✅ Sharing section presunutá na koniec
 const SharingSection = styled.div`
   background: linear-gradient(135deg, 
     ${p => p.theme.ACCENT_COLOR}22, 
@@ -299,6 +297,48 @@ const SharingCode = styled.code`
   @media (max-width: 480px) {
     font-size: 28px;
     letter-spacing: 3px;
+  }
+`;
+
+// ✅ NOVÉ - Styled komponenty pre link
+const LinkDisplay = styled.div`
+  background: ${p => p.theme.INPUT_BACKGROUND};
+  border: 2px solid ${p => p.theme.BORDER_COLOR};
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  word-break: break-all;
+  text-align: left;
+`;
+
+const LinkLabel = styled.div`
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+`;
+
+const LinkText = styled.code`
+  font-size: 14px;
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
+`;
+
+const ShareButtonsGroup = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
   }
 `;
 
@@ -422,7 +462,7 @@ const MainMenu = () => {
   const [missions, setMissions] = useState([]);
   const [modal, setModal] = useState({ open: false, type: '' });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [copySuccess, setCopySuccess] = useState('');
   const [userProgress, setUserProgress] = useState(null);
   const isAdmin = dataManager.isAdmin(userId);
 
@@ -477,12 +517,28 @@ const MainMenu = () => {
     }
   };
 
+  // ✅ NOVÁ FUNKCIA - Generovanie linku s referral kódom
+  const generateReferralLink = () => {
+    const baseUrl = window.location.origin;
+    const referralCode = userProgress?.sharing_code;
+    return `${baseUrl}/?ref=${referralCode}`;
+  };
+
+  // ✅ UPRAVENÉ - Kopírovanie kódu
   const handleCopyCode = () => {
     if (userProgress?.sharing_code) {
       navigator.clipboard.writeText(userProgress.sharing_code);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      setCopySuccess('code');
+      setTimeout(() => setCopySuccess(''), 2000);
     }
+  };
+
+  // ✅ NOVÁ FUNKCIA - Kopírovanie linku
+  const handleCopyLink = () => {
+    const link = generateReferralLink();
+    navigator.clipboard.writeText(link);
+    setCopySuccess('link');
+    setTimeout(() => setCopySuccess(''), 2000);
   };
 
   const handleUnlock = async (id) => {
@@ -548,7 +604,6 @@ const MainMenu = () => {
           </StatsCard>
         </Header>
 
-        {/* ✅ Misie pod sebou */}
         <SectionTitle>📋 Misie</SectionTitle>
         <MissionsList>
           {missions.map(m => (
@@ -593,7 +648,6 @@ const MainMenu = () => {
           ))}
         </MissionsList>
 
-        {/* Navigation Buttons */}
         <ButtonGroup>
           <StyledButton variant="ghost" size="small" onClick={() => openModal('help')}>
             ❓ Pomoc
@@ -616,7 +670,7 @@ const MainMenu = () => {
           </StyledButton>
         </ButtonGroup>
 
-        {/* ✅ Sharing Section na konci */}
+        {/* ✅ UPRAVENÁ Sharing Section s linkom */}
         <SharingSection>
           <SharingTitle>🎁 Zdieľajte a získajte body!</SharingTitle>
           
@@ -627,16 +681,30 @@ const MainMenu = () => {
             </SharingCode>
           </SharingCodeDisplay>
           
-          <StyledButton 
-            variant="accent"
-            onClick={handleCopyCode}
-            style={{ marginBottom: '12px' }}
-          >
-            {copySuccess ? '✅ Skopírované!' : '📋 Kopírovať kód'}
-          </StyledButton>
+          {/* ✅ NOVÉ - Link s automatickým kódom */}
+          <LinkDisplay>
+            <LinkLabel>🔗 Link s automatickým kódom:</LinkLabel>
+            <LinkText>{generateReferralLink()}</LinkText>
+          </LinkDisplay>
+          
+          {/* ✅ NOVÉ - Dve tlačidlá na kopírovanie */}
+          <ShareButtonsGroup>
+            <StyledButton 
+              variant="accent"
+              onClick={handleCopyCode}
+            >
+              {copySuccess === 'code' ? '✅ Kód skopírovaný!' : '📋 Kopírovať kód'}
+            </StyledButton>
+            <StyledButton 
+              variant="success"
+              onClick={handleCopyLink}
+            >
+              {copySuccess === 'link' ? '✅ Link skopírovaný!' : '🔗 Kopírovať link'}
+            </StyledButton>
+          </ShareButtonsGroup>
           
           <SharingInfo>
-            Zdieľajte tento kód s priateľmi!<br/>
+            Zdieľajte kód alebo link s priateľmi!<br/>
             Za každého nového používateľa získate <strong>+10 bodov</strong> 🎉
           </SharingInfo>
           
@@ -654,7 +722,6 @@ const MainMenu = () => {
           )}
         </SharingSection>
 
-        {/* Modal */}
         {modal.open && (
           <ModalOverlay onClick={closeModal}>
             <ModalContent onClick={e => e.stopPropagation()}>
