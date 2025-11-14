@@ -1,5 +1,5 @@
 // src/utils/DataManager.js
-// VERZIA s blokovaním používateľov
+// OPRAVENÁ VERZIA - Zachováva unlocked stavy
 
 import * as XLSX from 'xlsx';
 
@@ -31,7 +31,7 @@ class DataManager {
   getVariableList() {
     return [
       'participant_code',
-      'blocked', // ✅ PRIDANÉ
+      'blocked',
       'group_assignment',
       'sharing_code',
       'referral_code',
@@ -62,7 +62,6 @@ class DataManager {
     ];
   }
 
-  // ✅ NOVÁ METÓDA - Kontrola blokovania
   async isUserBlocked(participantCode) {
     try {
       const userData = await this.loadUserProgress(participantCode);
@@ -73,7 +72,6 @@ class DataManager {
     }
   }
 
-  // ✅ NOVÁ METÓDA - Nastavenie blokovania/odblokovania
   async setBlockedState(participantCode, blocked) {
     try {
       console.log(`${blocked ? '🚫 Blokovanie' : '✅ Odblokovanie'} používateľa ${participantCode}...`);
@@ -97,12 +95,10 @@ class DataManager {
     }
   }
 
-  // ✅ OPRAVENÉ - Sync pred validáciou
   async validateReferralCode(code) {
     if (!code) return false;
     
     try {
-      // ✅ Sync najprv aby sme mali aktuálne dáta
       await this.syncAllFromServer();
       
       const all = this.getAllParticipantsData();
@@ -116,12 +112,10 @@ class DataManager {
     }
   }
 
-  // ✅ OPRAVENÉ - Alias pre validateReferralCode
   async validateSharingCode(code) {
     return await this.validateReferralCode(code);
   }
 
-  // ✅ OPRAVENÉ - Získanie sharing kódu používateľa
   async getUserSharingCode(userId) {
     try {
       const userData = await this.loadUserProgress(userId);
@@ -132,23 +126,19 @@ class DataManager {
     }
   }
 
-  // ✅ OPRAVENÉ - Kompletná referral logika
   async processReferral(participantCode, referralCode) {
     try {
       console.log(`🎁 Processing referral: ${participantCode} → ${referralCode}`);
       
-      // ✅ 1. Sync najprv
       await this.syncAllFromServer();
       const all = this.getAllParticipantsData();
       
-      // ✅ 2. Validácia referral kódu
       const isValid = await this.validateReferralCode(referralCode);
       if (!isValid) {
         console.warn(`⚠️ Referral kód ${referralCode} neexistuje v systéme`);
         throw new Error('Tento referral kód neexistuje v systéme');
       }
       
-      // ✅ 3. Nájdi majiteľa referral kódu
       const entry = Object.entries(all).find(([_, d]) => 
         d.sharing_code === referralCode.toUpperCase()
       );
@@ -161,43 +151,35 @@ class DataManager {
       const [refCode, refData] = entry;
       console.log(`✅ Referral kód patrí používateľovi: ${refCode}`);
       
-      // ✅ 4. Načítaj progress nového používateľa
       const newUserData = await this.loadUserProgress(participantCode);
       
-      // ✅ 5. Skontroluj, či používateľ už nepoužil referral kód
       if (newUserData?.used_referral_code) {
         console.warn(`⚠️ ${participantCode} už použil referral kód: ${newUserData.used_referral_code}`);
         throw new Error('Už ste použili referral kód. Môžete ho použiť iba raz.');
       }
       
-      // ✅ 6. Zabráň použitiu vlastného kódu
       if (refCode === participantCode) {
         console.warn(`⚠️ ${participantCode} sa pokúsil použiť svoj vlastný referral kód`);
         throw new Error('Nemôžete použiť svoj vlastný zdieľací kód!');
       }
       
-      // ✅ 7. Zabráň duplicitným záznamom v referred_users
       refData.referred_users = refData.referred_users || [];
       if (refData.referred_users.includes(participantCode)) {
         console.warn(`⚠️ ${participantCode} už bol pridaný do referred_users pre ${refCode}`);
         throw new Error('Tento referral už bol spracovaný');
       }
       
-      // ✅ 8. Aktualizuj referrera (počet referralov)
       refData.referrals_count = (refData.referrals_count || 0) + 1;
       refData.referred_users.push(participantCode);
       
-      // ✅ 9. Prepočítaj body referrera
       const missionPoints = refData.user_stats_mission_points || 0;
       const bonusPoints = refData.referrals_count * 10;
       refData.user_stats_points = missionPoints + bonusPoints;
       
-      // ✅ 10. Aktualizuj nového používateľa
       newUserData.used_referral_code = referralCode.toUpperCase();
       newUserData.referred_by = refCode;
       newUserData.referral_code = referralCode.toUpperCase();
       
-      // ✅ 11. Ulož obe zmeny
       await this.saveProgress(refCode, refData);
       await this.saveProgress(participantCode, newUserData);
       
@@ -411,25 +393,63 @@ class DataManager {
     }
   }
 
+  // ✅ OPRAVENÉ - Zachováva existujúce boolean hodnoty vrátane false
   validateAndFixData(data, participantCode) {
     data.participant_code = participantCode;
+    
     if (!data.sharing_code) {
       data.sharing_code = this.generatePersistentSharingCode(participantCode);
     }
+    
     if (!['0', '1', '2'].includes(data.group_assignment)) {
       data.group_assignment = Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2';
     }
     
-    // ✅ PRIDANÉ - Default pre blocked
     if (data.blocked === undefined) {
       data.blocked = false;
     }
     
     const defaults = this.getDefaultFields();
+    
+    // ✅ KĽÚČOVÁ OPRAVA - Pole, ktoré sa NIKDY NEPREPÍŠU (zachovajú existujúce hodnoty)
+    const preserveFields = [
+      'mission0_unlocked',
+      'mission1_unlocked',
+      'mission2_unlocked',
+      'mission3_unlocked',
+      'mission0_completed',
+      'mission1_completed',
+      'mission2_completed',
+      'mission3_completed',
+      'all_missions_completed',
+      'instruction_completed',
+      'intro_completed'
+    ];
+    
     Object.entries(defaults).forEach(([k, v]) => {
-      if (data[k] == null) data[k] = v;
+      // ✅ Ak je to preserve field, zachovaj existujúcu hodnotu (aj false!)
+      if (preserveFields.includes(k)) {
+        if (data[k] === undefined) {
+          data[k] = v;
+        }
+        // Inak nech zostane pôvodná hodnota (true alebo false)
+      } else {
+        // Pre ostatné fieldy použij bežnú logiku
+        if (data[k] == null) {
+          data[k] = v;
+        }
+      }
     });
+    
     data.timestamp_last_update = new Date().toISOString();
+    
+    console.log(`🔍 ValidateAndFixData pre ${participantCode} - unlocked stavy:`, {
+      m0: data.mission0_unlocked,
+      m1: data.mission1_unlocked,
+      m2: data.mission2_unlocked,
+      m3: data.mission3_unlocked
+    });
+    
     return data;
   }
 
@@ -439,8 +459,8 @@ class DataManager {
       current_progress_step: 'instruction',
       session_count: 1,
       total_time_spent: 0,
-      blocked: false, // ✅ PRIDANÉ
-      blocked_at: null, // ✅ PRIDANÉ
+      blocked: false,
+      blocked_at: null,
       instruction_completed: false,
       intro_completed: false,
       user_stats_points: 0,
@@ -520,6 +540,14 @@ class DataManager {
   }
 
   async saveProgress(participantCode, data) {
+    // ✅ PRIDANÝ DEBUG LOG
+    console.log(`💾 Ukladám progress pre ${participantCode} - unlocked stavy:`, {
+      m0: data.mission0_unlocked,
+      m1: data.mission1_unlocked,
+      m2: data.mission2_unlocked,
+      m3: data.mission3_unlocked
+    });
+    
     data.timestamp_last_update = new Date().toISOString();
     this.cache.set(participantCode, data);
     localStorage.setItem(`fullProgress_${participantCode}`, JSON.stringify(data));

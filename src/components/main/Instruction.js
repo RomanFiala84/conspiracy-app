@@ -1,7 +1,7 @@
 // src/components/main/Instruction.js
-// VERZIA s kontrolou blokovania používateľa
+// VERZIA s možnosťou prepísania kódu pre blokovaného používateľa + auto-scroll
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../styles/Layout';
@@ -223,7 +223,7 @@ const ButtonContainer = styled.div`
   }
 `;
 
-// ✅ NOVÝ - Styled komponent pre blokovaciu hlášku
+// ✅ UPRAVENÝ - Blokovacia hláška s možnosťou prepísania kódu
 const BlockedWarning = styled.div`
   background: linear-gradient(135deg, #ef4444, #dc2626);
   border: 2px solid #b91c1c;
@@ -235,6 +235,7 @@ const BlockedWarning = styled.div`
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
   text-align: center;
   animation: shake 0.5s ease-in-out;
+  scroll-margin-top: 20px; // ✅ PRIDANÉ pre scroll offset
   
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -293,6 +294,16 @@ const ContactInfo = styled.div`
   }
 `;
 
+// ✅ NOVÉ - Tlačidlo na vymazanie kódu
+const ClearCodeButton = styled(StyledButton)`
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+`;
+
 export default function Instruction() {
   const navigate = useNavigate();
   const { login, dataManager } = useUserStats();
@@ -305,7 +316,10 @@ export default function Instruction() {
   const [referralAlreadyUsed, setReferralAlreadyUsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false); // ✅ NOVÝ STATE
+  const [isBlocked, setIsBlocked] = useState(false);
+  
+  // ✅ NOVÝ REF pre scroll
+  const blockedWarningRef = useRef(null);
 
   const validateParticipantCode = (code) => {
     const upperCode = code.toUpperCase().trim();
@@ -327,7 +341,7 @@ export default function Instruction() {
     return { valid: false, type: null };
   };
 
-  // ✅ ROZŠÍRENÉ - Kontrola referral status + blokovania
+  // ✅ ROZŠÍRENÉ - Auto-scroll pri blokovaní
   const checkReferralStatus = async (userCode) => {
     if (!userCode || userCode.length !== 6) return false;
     
@@ -339,6 +353,15 @@ export default function Instruction() {
       if (userData?.blocked) {
         console.log(`🚫 Používateľ ${userCode} je blokovaný`);
         setIsBlocked(true);
+        
+        // ✅ NOVÉ - Auto-scroll k blokovacej hláške
+        setTimeout(() => {
+          blockedWarningRef.current?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }, 100);
+        
         return true;
       } else {
         setIsBlocked(false);
@@ -436,6 +459,17 @@ export default function Instruction() {
     }
   };
 
+  // ✅ NOVÁ FUNKCIA - Vymazanie kódu pre zmenu používateľa
+  const handleClearCode = () => {
+    setParticipantCode('');
+    setIsBlocked(false);
+    setReferralAlreadyUsed(false);
+    setErrors({});
+    setConsentGiven(false);
+    setHasReferral(false);
+    setReferralCode('');
+  };
+
   return (
     <Layout showLevelDisplay={false}>
       <Container>
@@ -444,13 +478,13 @@ export default function Instruction() {
           Zadajte svoj kód účastníka a prípadne referral kód od priateľa
         </Subtitle>
 
-        {/* ✅ NOVÉ - Blokovacia hláška */}
+        {/* ✅ UPRAVENÁ - Blokovacia hláška s možnosťou prepísania */}
         {isBlocked && (
-          <BlockedWarning>
+          <BlockedWarning ref={blockedWarningRef}>
             <BlockedIcon>🚫</BlockedIcon>
             <BlockedTitle>Prístup zamietnutý</BlockedTitle>
             <BlockedMessage>
-              Váš účet bol zablokovaný administrátorom.
+              Účet <strong>{participantCode}</strong> bol zablokovaný administrátorom.
             </BlockedMessage>
             <BlockedMessage>
               Nemôžete sa prihlásiť do aplikácie, kým vám administrátor účet neodblokuje.
@@ -459,6 +493,15 @@ export default function Instruction() {
               <strong>Máte otázky?</strong><br/>
               Kontaktujte administrátora na <strong>support@example.com</strong>
             </ContactInfo>
+            
+            {/* ✅ NOVÉ - Tlačidlo na prepísanie kódu */}
+            <ClearCodeButton
+              variant="ghost"
+              size="small"
+              onClick={handleClearCode}
+            >
+              ↻ Použiť iný účet
+            </ClearCodeButton>
           </BlockedWarning>
         )}
 
@@ -488,7 +531,7 @@ export default function Instruction() {
                 setConsentGiven(e.target.checked);
                 setErrors(prev => ({ ...prev, consent: null }));
               }}
-              disabled={isBlocked} // ✅ PRIDANÉ
+              disabled={isBlocked}
             />
             <label>Súhlasím s účasťou v prieskume</label>
           </CheckboxContainer>
@@ -510,17 +553,18 @@ export default function Instruction() {
                 await checkReferralStatus(newCode);
               } else {
                 setReferralAlreadyUsed(false);
-                setIsBlocked(false); // ✅ PRIDANÉ
+                setIsBlocked(false);
               }
             }}
             placeholder="napr. RMIL11"
             $hasError={!!errors.participant}
             maxLength={6}
-            disabled={isLoading || isBlocked} // ✅ ROZŠÍRENÉ
+            disabled={isLoading} // ✅ UPRAVENÉ - Povoliť úpravu aj pri blokovaní
           />
           {errors.participant && <ErrorText>{errors.participant}</ErrorText>}
           {isCheckingCode && <Note>🔄 Kontrolujem používateľa...</Note>}
           {!isCheckingCode && !isBlocked && <Note>Zadajte kód podľa inštrukcií vyššie</Note>}
+          {isBlocked && <Note style={{color: '#ef4444'}}>⚠️ Tento účet je zablokovaný. Môžete zadať iný kód.</Note>}
         </FormCard>
 
         <CheckboxContainer $disabled={referralAlreadyUsed || isLoading || isBlocked}>
@@ -533,7 +577,7 @@ export default function Instruction() {
                 setErrors(prev => ({ ...prev, referral: null }));
               }
             }}
-            disabled={referralAlreadyUsed || isLoading || isBlocked} // ✅ ROZŠÍRENÉ
+            disabled={referralAlreadyUsed || isLoading || isBlocked}
           />
           <label>
             Mám referral kód od priateľa
@@ -577,7 +621,7 @@ export default function Instruction() {
             size="large"
             fullWidth
             loading={isLoading}
-            disabled={isLoading || isCheckingCode || isBlocked} // ✅ ROZŠÍRENÉ
+            disabled={isLoading || isCheckingCode || isBlocked}
             onClick={handleStart}
           >
             → Prihlásiť sa
