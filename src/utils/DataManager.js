@@ -1,5 +1,5 @@
 // src/utils/DataManager.js
-// FINÁLNA VERZIA - Všetky funkcie zachované + optimalizácia
+// OPRAVENÁ VERZIA - Fix referral validácie a sync
 
 import * as XLSX from 'xlsx';
 
@@ -61,16 +61,31 @@ class DataManager {
     ];
   }
 
+  // ✅ OPRAVENÉ - Sync pred validáciou
   async validateReferralCode(code) {
-    const all = this.getAllParticipantsData();
-    return Object.values(all).some(d => d.sharing_code === code.toUpperCase());
+    if (!code) return false;
+    
+    try {
+      // ✅ Sync najprv aby sme mali aktuálne dáta
+      await this.syncAllFromServer();
+      
+      const all = this.getAllParticipantsData();
+      const exists = Object.values(all).some(d => d.sharing_code === code.toUpperCase());
+      
+      console.log(`🔍 Validating referral code ${code}: ${exists ? 'FOUND' : 'NOT FOUND'}`);
+      return exists;
+    } catch (error) {
+      console.error('Error validating referral code:', error);
+      return false;
+    }
   }
 
+  // ✅ OPRAVENÉ - Alias pre validateReferralCode
   async validateSharingCode(code) {
-    const all = this.getAllParticipantsData();
-    return Object.values(all).some(d => d.sharing_code === code.toUpperCase());
+    return await this.validateReferralCode(code);
   }
 
+  // ✅ OPRAVENÉ - Získanie sharing kódu používateľa
   async getUserSharingCode(userId) {
     try {
       const userData = await this.loadUserProgress(userId);
@@ -81,66 +96,84 @@ class DataManager {
     }
   }
 
-  // ✅ OPRAVENÁ FUNKCIA - Lepšia ochrana proti zneužitiu
+  // ✅ OPRAVENÉ - Kompletná referral logika
   async processReferral(participantCode, referralCode) {
     try {
       console.log(`🎁 Processing referral: ${participantCode} → ${referralCode}`);
       
-      // ✅ 1. Načítaj aktuálne dáta
+      // ✅ 1. Sync najprv
       await this.syncAllFromServer();
       const all = this.getAllParticipantsData();
       
-      const newUserData = await this.loadUserProgress(participantCode);
-      
-      // ✅ 2. Skontroluj, či používateľ už nepoužil referral kód
-      if (newUserData?.used_referral_code) {
-        console.warn(`⚠️ Používateľ ${participantCode} už použil referral kód: ${newUserData.used_referral_code}`);
-        throw new Error('Tento používateľ už použil referral kód');
+      // ✅ 2. Validácia referral kódu
+      const isValid = await this.validateReferralCode(referralCode);
+      if (!isValid) {
+        console.warn(`⚠️ Referral kód ${referralCode} neexistuje v systéme`);
+        throw new Error('Tento referral kód neexistuje v systéme');
       }
       
-      // ✅ 3. Nájdi referrera
-      const entry = Object.entries(all).find(([_, d]) => d.sharing_code === referralCode.toUpperCase());
+      // ✅ 3. Nájdi majiteľa referral kódu
+      const entry = Object.entries(all).find(([_, d]) => 
+        d.sharing_code === referralCode.toUpperCase()
+      );
       
       if (!entry) {
-        console.warn(`⚠️ Referral kód ${referralCode} neexistuje`);
+        console.warn(`⚠️ Referral kód ${referralCode} nenájdený (unexpected)`);
         throw new Error('Neplatný referral kód');
       }
       
       const [refCode, refData] = entry;
+      console.log(`✅ Referral kód patrí používateľovi: ${refCode}`);
       
-      // ✅ 4. Zabráň použitiu vlastného kódu
-      if (refCode === participantCode) {
-        console.warn(`⚠️ ${participantCode} sa pokúsil použiť svoj vlastný referral kód`);
-        throw new Error('Nemôžete použiť svoj vlastný zdieľací kód');
+      // ✅ 4. Načítaj progress nového používateľa
+      const newUserData = await this.loadUserProgress(participantCode);
+      
+      // ✅ 5. Skontroluj, či používateľ už nepoužil referral kód
+      if (newUserData?.used_referral_code) {
+        console.warn(`⚠️ ${participantCode} už použil referral kód: ${newUserData.used_referral_code}`);
+        throw new Error('Už ste použili referral kód. Môžete ho použiť iba raz.');
       }
       
-      // ✅ 5. NOVÉ - Zabráň duplicitným záznamom v referred_users
+      // ✅ 6. Zabráň použitiu vlastného kódu
+      if (refCode === participantCode) {
+        console.warn(`⚠️ ${participantCode} sa pokúsil použiť svoj vlastný referral kód`);
+        throw new Error('Nemôžete použiť svoj vlastný zdieľací kód!');
+      }
+      
+      // ✅ 7. Zabráň duplicitným záznamom v referred_users
       refData.referred_users = refData.referred_users || [];
       if (refData.referred_users.includes(participantCode)) {
         console.warn(`⚠️ ${participantCode} už bol pridaný do referred_users pre ${refCode}`);
         throw new Error('Tento referral už bol spracovaný');
       }
       
-      // ✅ 6. Aktualizuj referrera (bez bodov - pridajú sa cez context)
+      // ✅ 8. Aktualizuj referrera (počet referralov)
       refData.referrals_count = (refData.referrals_count || 0) + 1;
       refData.referred_users.push(participantCode);
       
-      // ✅ 7. Aktualizuj nového používateľa
+      // ✅ 9. Prepočítaj body referrera
+      const missionPoints = refData.user_stats_mission_points || 0;
+      const bonusPoints = refData.referrals_count * 10;
+      refData.user_stats_points = missionPoints + bonusPoints;
+      
+      // ✅ 10. Aktualizuj nového používateľa
       newUserData.used_referral_code = referralCode.toUpperCase();
       newUserData.referred_by = refCode;
       newUserData.referral_code = referralCode.toUpperCase();
       
-      // ✅ 8. Ulož obe zmeny
+      // ✅ 11. Ulož obe zmeny
       await this.saveProgress(refCode, refData);
       await this.saveProgress(participantCode, newUserData);
       
-      console.log(`✅ Referral processed: ${refCode} získal referral (celkom: ${refData.referrals_count} referralov)`);
-      console.log(`✅ ${participantCode} označený ako referral použitý`);
+      console.log(`✅ Referral spracovaný úspešne!`);
+      console.log(`   - ${refCode}: ${refData.referrals_count} referralov, +${bonusPoints} bodov`);
+      console.log(`   - ${participantCode}: označený ako použil referral`);
       
       return {
         success: true,
         referrerCode: refCode,
-        referrerCount: refData.referrals_count
+        referrerCount: refData.referrals_count,
+        bonusPoints: bonusPoints
       };
       
     } catch (error) {
