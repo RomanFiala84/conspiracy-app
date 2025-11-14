@@ -1,5 +1,5 @@
 // src/utils/DataManager.js
-// OPRAVENÁ VERZIA - Zachováva unlocked stavy
+// FINÁLNA VERZIA - Vždy načíta blocked state zo servera + preserveFields
 
 import * as XLSX from 'xlsx';
 
@@ -62,29 +62,48 @@ class DataManager {
     ];
   }
 
+  // ✅ OPRAVENÉ - Načíta PRIAMO zo servera, preskočí cache
   async isUserBlocked(participantCode) {
     try {
-      const userData = await this.loadUserProgress(participantCode);
+      console.log(`🔍 Kontrolujem blocked status pre ${participantCode} (priamo zo servera)...`);
+      const resp = await fetch(`${this.apiBase}?code=${participantCode}`);
+      
+      if (!resp.ok) {
+        console.warn(`⚠️ Could not check blocked status from server: ${resp.status}`);
+        return false;
+      }
+      
+      const userData = await resp.json();
+      console.log(`   → Blocked status: ${userData?.blocked ? 'ZABLOKOVANÝ' : 'Aktívny'}`);
       return userData?.blocked || false;
+      
     } catch (error) {
-      console.error('Error checking blocked status:', error);
+      console.error('❌ Error checking blocked status:', error);
       return false;
     }
   }
 
+  // ✅ OPRAVENÉ - Clear cache po blokovaní
   async setBlockedState(participantCode, blocked) {
     try {
       console.log(`${blocked ? '🚫 Blokovanie' : '✅ Odblokovanie'} používateľa ${participantCode}...`);
       
-      const userData = await this.loadUserProgress(participantCode);
-      if (!userData) {
-        throw new Error('Používateľ nenájdený');
+      // Načítaj priamo zo servera
+      const resp = await fetch(`${this.apiBase}?code=${participantCode}`);
+      if (!resp.ok) {
+        throw new Error('Používateľ nenájdený na serveri');
       }
-
+      
+      const userData = await resp.json();
       userData.blocked = blocked;
       userData.blocked_at = blocked ? new Date().toISOString() : null;
       
+      // Ulož na server
       await this.saveProgress(participantCode, userData);
+      
+      // ✅ KRITICKÉ - Vymaž cache a refresh zo servera
+      this.cache.delete(participantCode);
+      await this.fetchAllParticipantsData();
       
       console.log(`✅ Používateľ ${participantCode} ${blocked ? 'zablokovaný' : 'odblokovaný'}`);
       return true;
@@ -304,19 +323,44 @@ class DataManager {
     return await this.fetchAllParticipantsData();
   }
 
-  async loadUserProgress(participantCode) {
+  // ✅ OPRAVENÉ - Vždy načíta fresh data zo servera, preskočí localStorage cache
+  async loadUserProgress(participantCode, forceServerFetch = false) {
     if (!participantCode) return null;
-    if (this.cache.has(participantCode)) {
+    
+    // ✅ Pri force fetch preskočiť cache úplne
+    if (!forceServerFetch && this.cache.has(participantCode)) {
+      console.log(`📦 Používam cache pre ${participantCode}`);
       return this.cache.get(participantCode);
     }
 
     try {
+      console.log(`📡 Načítavam ${participantCode} zo servera...`);
       const resp = await fetch(`${this.apiBase}?code=${participantCode}`);
 
       if (!resp.ok) {
         if (resp.status === 404) {
-          console.log(`🆕 Používateľ ${participantCode} neexistuje, vytváram nový záznam...`);
-          const rec = this.createNewUserRecord(participantCode);
+          console.log(`🆕 Používateľ ${participantCode} neexistuje na serveri`);
+          console.log(`   Backend ho automaticky vytvorí...`);
+          
+          await new Promise(resolve => setTimeout(resolve, 100));
+          const retryResp = await fetch(`${this.apiBase}?code=${participantCode}`);
+          
+          if (retryResp.ok) {
+            const data = await retryResp.json();
+            console.log(`✅ Backend vytvoril ${participantCode}:`, {
+              blocked: data.blocked,
+              m0: data.mission0_unlocked,
+              m1: data.mission1_unlocked,
+              m2: data.mission2_unlocked,
+              m3: data.mission3_unlocked
+            });
+            const prog = this.validateAndFixData(data, participantCode);
+            this._cacheAndStore(participantCode, prog);
+            return prog;
+          }
+          
+          console.warn('⚠️ Retry zlyhal, vytváram lokálne');
+          const rec = await this.createNewUserRecord(participantCode);
           await this.syncToServer(participantCode, rec);
           return rec;
         }
@@ -325,9 +369,19 @@ class DataManager {
       }
 
       const data = await resp.json();
+      
+      console.log(`📥 Dáta zo servera pre ${participantCode}:`, {
+        blocked: data.blocked,
+        blocked_at: data.blocked_at,
+        mission0_unlocked: data.mission0_unlocked,
+        mission1_unlocked: data.mission1_unlocked,
+        mission2_unlocked: data.mission2_unlocked,
+        mission3_unlocked: data.mission3_unlocked
+      });
+      
       if (!data || Object.keys(data).length === 0) {
-        console.log(`🆕 Server vrátil prázdne dáta, registrujem nového používateľa...`);
-        const rec = this.createNewUserRecord(participantCode);
+        console.log(`🆕 Server vrátil prázdne dáta`);
+        const rec = await this.createNewUserRecord(participantCode);
         await this.syncToServer(participantCode, rec);
         return rec;
       }
@@ -335,36 +389,40 @@ class DataManager {
       const prog = this.validateAndFixData(data.progress || data, participantCode);
       this._cacheAndStore(participantCode, prog);
       return prog;
+      
     } catch (error) {
-      console.warn('Server nedostupný, používam localStorage:', error.message);
-    }
-
-    const saved = localStorage.getItem(`fullProgress_${participantCode}`);
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        const prog = this.validateAndFixData(data, participantCode);
-        this.cache.set(participantCode, prog);
-        this.syncToServer(participantCode, prog).catch(e =>
-          console.warn('Background sync failed:', e)
-        );
-        return prog;
-      } catch (e) {
-        console.error('localStorage data corrupted:', e);
+      console.warn('⚠️ Server nedostupný, používam localStorage:', error.message);
+      
+      // Fallback na localStorage
+      const saved = localStorage.getItem(`fullProgress_${participantCode}`);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          console.log(`📦 Načítaný zo localStorage: ${participantCode}`);
+          const prog = this.validateAndFixData(data, participantCode);
+          this.cache.set(participantCode, prog);
+          
+          this.syncToServer(participantCode, prog).catch(e =>
+            console.warn('Background sync failed:', e)
+          );
+          return prog;
+        } catch (e) {
+          console.error('localStorage data corrupted:', e);
+        }
       }
-    }
 
-    const central = this.getAllParticipantsData();
-    if (central[participantCode]) {
-      const prog = this.validateAndFixData(central[participantCode], participantCode);
-      this._cacheAndStore(participantCode, prog);
-      return prog;
-    }
+      const central = this.getAllParticipantsData();
+      if (central[participantCode]) {
+        const prog = this.validateAndFixData(central[participantCode], participantCode);
+        this._cacheAndStore(participantCode, prog);
+        return prog;
+      }
 
-    console.log(`🆕 Lokálne vytváram nového používateľa ${participantCode}`);
-    const rec = this.createNewUserRecord(participantCode);
-    await this.syncToServer(participantCode, rec);
-    return rec;
+      console.log(`🆕 Lokálne vytváram nového používateľa ${participantCode}`);
+      const rec = await this.createNewUserRecord(participantCode);
+      await this.syncToServer(participantCode, rec);
+      return rec;
+    }
   }
 
   async syncToServer(participantCode, data) {
@@ -377,15 +435,10 @@ class DataManager {
 
       if (!resp.ok) {
         console.warn(`Sync failed for ${participantCode}: HTTP ${resp.status}`);
-        if (resp.status === 404) {
-          console.log(`🆕 Používateľ ${participantCode} neexistuje, vytváram ho na serveri...`);
-          const rec = this.createNewUserRecord(participantCode);
-          return await this.syncToServer(participantCode, rec);
-        }
         return false;
       }
 
-      console.log(`✅ Synced ${participantCode}`);
+      console.log(`✅ Synced ${participantCode} - blocked: ${data.blocked}`);
       return true;
     } catch (error) {
       console.warn('Sync na server zlyhal:', error.message);
@@ -393,7 +446,7 @@ class DataManager {
     }
   }
 
-  // ✅ OPRAVENÉ - Zachováva existujúce boolean hodnoty vrátane false
+  // ✅ OPRAVENÉ - Pridané 'blocked' a 'blocked_at' do preserveFields
   validateAndFixData(data, participantCode) {
     data.participant_code = participantCode;
     
@@ -405,14 +458,12 @@ class DataManager {
       data.group_assignment = Math.random() < 0.33 ? '0' : Math.random() < 0.66 ? '1' : '2';
     }
     
-    if (data.blocked === undefined) {
-      data.blocked = false;
-    }
-    
     const defaults = this.getDefaultFields();
     
-    // ✅ KĽÚČOVÁ OPRAVA - Pole, ktoré sa NIKDY NEPREPÍŠU (zachovajú existujúce hodnoty)
+    // ✅ KRITICKÉ - Pole, ktoré sa NIKDY NEPREPÍŠU
     const preserveFields = [
+      'blocked',          // ✅ PRIDANÉ - Zachováva blocked state zo servera
+      'blocked_at',       // ✅ PRIDANÉ - Zachováva blocked timestamp
       'mission0_unlocked',
       'mission1_unlocked',
       'mission2_unlocked',
@@ -427,14 +478,12 @@ class DataManager {
     ];
     
     Object.entries(defaults).forEach(([k, v]) => {
-      // ✅ Ak je to preserve field, zachovaj existujúcu hodnotu (aj false!)
       if (preserveFields.includes(k)) {
+        // Zachovaj existujúcu hodnotu (aj false!)
         if (data[k] === undefined) {
           data[k] = v;
         }
-        // Inak nech zostane pôvodná hodnota (true alebo false)
       } else {
-        // Pre ostatné fieldy použij bežnú logiku
         if (data[k] == null) {
           data[k] = v;
         }
@@ -443,7 +492,9 @@ class DataManager {
     
     data.timestamp_last_update = new Date().toISOString();
     
-    console.log(`🔍 ValidateAndFixData pre ${participantCode} - unlocked stavy:`, {
+    console.log(`🔍 ValidateAndFixData pre ${participantCode}:`, {
+      blocked: data.blocked,
+      blocked_at: data.blocked_at,
       m0: data.mission0_unlocked,
       m1: data.mission1_unlocked,
       m2: data.mission2_unlocked,
@@ -486,7 +537,9 @@ class DataManager {
     };
   }
 
-  createNewUserRecord(participantCode) {
+  async createNewUserRecord(participantCode) {
+    console.log(`🆕 Vytváram nového používateľa ${participantCode} (lokálne)...`);
+    
     const defaults = this.getDefaultFields();
     const rec = {
       participant_code: participantCode,
@@ -495,7 +548,10 @@ class DataManager {
       referral_code: sessionStorage.getItem('referralCode') || null,
       ...defaults
     };
-    this.saveProgress(participantCode, rec);
+    
+    this._cacheAndStore(participantCode, rec);
+    
+    console.log(`✅ Lokálne vytvorený používateľ ${participantCode}`);
     return rec;
   }
 
@@ -540,8 +596,8 @@ class DataManager {
   }
 
   async saveProgress(participantCode, data) {
-    // ✅ PRIDANÝ DEBUG LOG
-    console.log(`💾 Ukladám progress pre ${participantCode} - unlocked stavy:`, {
+    console.log(`💾 Ukladám progress pre ${participantCode}:`, {
+      blocked: data.blocked,
       m0: data.mission0_unlocked,
       m1: data.mission1_unlocked,
       m2: data.mission2_unlocked,

@@ -1,7 +1,7 @@
 // src/components/main/Instruction.js
-// VERZIA s možnosťou prepísania kódu pre blokovaného používateľa + auto-scroll
+// FINÁLNA VERZIA - Automatické načítanie referral kódu z URL + blokovanie
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../styles/Layout';
@@ -223,7 +223,6 @@ const ButtonContainer = styled.div`
   }
 `;
 
-// ✅ UPRAVENÝ - Blokovacia hláška s možnosťou prepísania kódu
 const BlockedWarning = styled.div`
   background: linear-gradient(135deg, #ef4444, #dc2626);
   border: 2px solid #b91c1c;
@@ -235,7 +234,7 @@ const BlockedWarning = styled.div`
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
   text-align: center;
   animation: shake 0.5s ease-in-out;
-  scroll-margin-top: 20px; // ✅ PRIDANÉ pre scroll offset
+  scroll-margin-top: 20px;
   
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -294,13 +293,49 @@ const ContactInfo = styled.div`
   }
 `;
 
-// ✅ NOVÉ - Tlačidlo na vymazanie kódu
 const ClearCodeButton = styled(StyledButton)`
   margin-top: 16px;
   background: rgba(255, 255, 255, 0.2);
   
   &:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+`;
+
+// ✅ NOVÝ - Highlight pre automaticky vyplnený kód
+const ReferralNotice = styled.div`
+  background: ${p => `${p.theme.ACCENT_COLOR}22`};
+  border: 2px solid ${p => p.theme.ACCENT_COLOR};
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  animation: slideIn 0.5s ease-out;
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const ReferralNoticeText = styled.div`
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  font-size: 14px;
+  margin-bottom: 8px;
+  
+  strong {
+    color: ${p => p.theme.ACCENT_COLOR};
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 2px;
   }
 `;
 
@@ -317,9 +352,35 @@ export default function Instruction() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [referralFromUrl, setReferralFromUrl] = useState(false);
   
-  // ✅ NOVÝ REF pre scroll
   const blockedWarningRef = useRef(null);
+
+  // ✅ NOVÝ useEffect - Načítanie referral kódu z URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    
+    if (refCode && refCode.length === 6) {
+      console.log(`🔗 URL obsahuje referral code: ${refCode}`);
+      
+      const upperRef = refCode.toUpperCase();
+      
+      // Ulož do sessionStorage
+      sessionStorage.setItem('referralCode', upperRef);
+      
+      // ✅ Automaticky vyplň referral pole
+      setReferralCode(upperRef);
+      setHasReferral(true);
+      setReferralFromUrl(true);
+      
+      console.log(`✅ Referral kód automaticky vyplnený: ${upperRef}`);
+      
+      // ✅ Vymaž ref parameter z URL (bez reload)
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
 
   const validateParticipantCode = (code) => {
     const upperCode = code.toUpperCase().trim();
@@ -341,20 +402,20 @@ export default function Instruction() {
     return { valid: false, type: null };
   };
 
-  // ✅ ROZŠÍRENÉ - Auto-scroll pri blokovaní
+  // ✅ OPRAVENÉ - Force fetch zo servera
   const checkReferralStatus = async (userCode) => {
     if (!userCode || userCode.length !== 6) return false;
     
     try {
       setIsCheckingCode(true);
-      const userData = await dataManager.loadUserProgress(userCode);
       
-      // ✅ Kontrola blokovania
+      // ✅ Force refresh zo servera (preskočí cache)
+      const userData = await dataManager.loadUserProgress(userCode, true);
+      
       if (userData?.blocked) {
         console.log(`🚫 Používateľ ${userCode} je blokovaný`);
         setIsBlocked(true);
         
-        // ✅ NOVÉ - Auto-scroll k blokovacej hláške
         setTimeout(() => {
           blockedWarningRef.current?.scrollIntoView({ 
             behavior: 'smooth', 
@@ -387,7 +448,6 @@ export default function Instruction() {
   const validate = async () => {
     const e = {};
     
-    // ✅ NOVÁ VALIDÁCIA - Kontrola blokovania
     if (isBlocked) {
       e.blocked = 'Tento účet bol zablokovaný administrátorom.';
       return e;
@@ -459,7 +519,6 @@ export default function Instruction() {
     }
   };
 
-  // ✅ NOVÁ FUNKCIA - Vymazanie kódu pre zmenu používateľa
   const handleClearCode = () => {
     setParticipantCode('');
     setIsBlocked(false);
@@ -468,6 +527,7 @@ export default function Instruction() {
     setConsentGiven(false);
     setHasReferral(false);
     setReferralCode('');
+    setReferralFromUrl(false);
   };
 
   return (
@@ -478,7 +538,18 @@ export default function Instruction() {
           Zadajte svoj kód účastníka a prípadne referral kód od priateľa
         </Subtitle>
 
-        {/* ✅ UPRAVENÁ - Blokovacia hláška s možnosťou prepísania */}
+        {/* ✅ NOVÉ - Indikátor automaticky vyplneného kódu */}
+        {referralFromUrl && referralCode && (
+          <ReferralNotice>
+            <ReferralNoticeText>
+              🎁 Referral kód automaticky vyplnený: <strong>{referralCode}</strong>
+            </ReferralNoticeText>
+            <ReferralNoticeText style={{ marginTop: '8px', fontSize: '13px' }}>
+              Váš priateľ dostane +10 bodov za odporúčanie!
+            </ReferralNoticeText>
+          </ReferralNotice>
+        )}
+
         {isBlocked && (
           <BlockedWarning ref={blockedWarningRef}>
             <BlockedIcon>🚫</BlockedIcon>
@@ -494,7 +565,6 @@ export default function Instruction() {
               Kontaktujte administrátora na <strong>support@example.com</strong>
             </ContactInfo>
             
-            {/* ✅ NOVÉ - Tlačidlo na prepísanie kódu */}
             <ClearCodeButton
               variant="ghost"
               size="small"
@@ -559,7 +629,7 @@ export default function Instruction() {
             placeholder="napr. RMIL11"
             $hasError={!!errors.participant}
             maxLength={6}
-            disabled={isLoading} // ✅ UPRAVENÉ - Povoliť úpravu aj pri blokovaní
+            disabled={isLoading}
           />
           {errors.participant && <ErrorText>{errors.participant}</ErrorText>}
           {isCheckingCode && <Note>🔄 Kontrolujem používateľa...</Note>}
@@ -596,7 +666,9 @@ export default function Instruction() {
 
         {hasReferral && !referralAlreadyUsed && !isBlocked && (
           <FormCard $hasError={!!errors.referral}>
-            <InputLabel htmlFor="referralCode">Referral kód</InputLabel>
+            <InputLabel htmlFor="referralCode">
+              Referral kód {referralFromUrl && '🔗 (automaticky vyplnený z linku)'}
+            </InputLabel>
             <Input
               id="referralCode"
               type="text"
@@ -604,6 +676,7 @@ export default function Instruction() {
               onChange={e => {
                 setReferralCode(e.target.value.toUpperCase());
                 setErrors(prev => ({ ...prev, referral: null }));
+                setReferralFromUrl(false); // Reset pri manuálnej zmene
               }}
               placeholder="napr. ABC123"
               $hasError={!!errors.referral}

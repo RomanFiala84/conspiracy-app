@@ -1,14 +1,14 @@
 // src/styles/ThemeToggle.js
-// OPRAVENÁ VERZIA - Vyšší z-index než LevelDisplay
+// VERZIA - Pravý dolný roh
 
 import React from 'react';
 import styled from 'styled-components';
 
 const Toggle = styled.button`
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1300; // ✅ VYŠŠÍ ako LevelDisplay (1200)
+  bottom: 20px; // ✅ Dolný roh
+  right: 20px;  // ✅ Pravá strana
+  z-index: 1100;
   padding: 10px 16px;
   border-radius: 12px;
   border: 2px solid ${props => props.theme.ACCENT_COLOR};
@@ -35,7 +35,14 @@ const Toggle = styled.button`
   }
   
   @media (max-width: 768px) {
-    top: 10px;
+    bottom: 15px;
+    right: 15px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 480px) {
+    bottom: 10px;
     right: 10px;
     padding: 8px 12px;
     font-size: 14px;
