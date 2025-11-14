@@ -1,8 +1,10 @@
 // src/components/shared/DetectiveTipLarge.js
-// FINÁLNA VERZIA - Opravené prebliknutie + object-fit: cover
+// OPRAVENÁ VERZIA - Bez prebliknutia pri zatváraní
+
 
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
+
 
 const TipButton = styled.button`
   position: fixed;
@@ -44,6 +46,7 @@ const TipButton = styled.button`
   }
 `;
 
+
 const DetectiveIcon = styled.img`
   width: 110%;
   height: 110%;
@@ -53,6 +56,7 @@ const DetectiveIcon = styled.img`
   left: 50%;
   transform: translate(-50%, -50%);
 `;
+
 
 const DetectiveIconFallback = styled.div`
   width: 100%;
@@ -66,6 +70,7 @@ const DetectiveIconFallback = styled.div`
     font-size: 28px;
   }
 `;
+
 
 const Badge = styled.div`
   position: absolute;
@@ -96,6 +101,7 @@ const Badge = styled.div`
   }
 `;
 
+
 const Overlay = styled.div`
   position: fixed;
   top: 0;
@@ -109,7 +115,10 @@ const Overlay = styled.div`
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  
+  /* ✅ OPRAVA: animation-fill-mode: forwards */
   animation: ${p => p.$isClosing ? 'fadeOut' : 'fadeIn'} 0.3s ease;
+  animation-fill-mode: forwards;
   
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -122,6 +131,7 @@ const Overlay = styled.div`
   }
 `;
 
+
 const ModalContainer = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
   border: 3px solid ${p => p.theme.ACCENT_COLOR};
@@ -133,7 +143,10 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: row;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  
+  /* ✅ OPRAVA: animation-fill-mode: forwards */
   animation: ${p => p.$isClosing ? 'slideOut' : 'slideIn'} 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation-fill-mode: forwards;
   
   @keyframes slideIn {
     from {
@@ -168,6 +181,7 @@ const ModalContainer = styled.div`
   }
 `;
 
+
 const ContentContainer = styled.div`
   width: 50%;
   padding: 30px;
@@ -186,6 +200,7 @@ const ContentContainer = styled.div`
     padding: 20px;
   }
 `;
+
 
 const DetectiveImageContainer = styled.div`
   position: relative;
@@ -209,12 +224,14 @@ const DetectiveImageContainer = styled.div`
   }
 `;
 
+
 const DetectiveImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
 `;
+
 
 const DetectiveImageFallback = styled.div`
   width: 100%;
@@ -229,6 +246,7 @@ const DetectiveImageFallback = styled.div`
   }
 `;
 
+
 const Header = styled.div`
   display: flex;
   align-items: center;
@@ -237,6 +255,7 @@ const Header = styled.div`
   padding-bottom: 16px;
   border-bottom: 2px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 const DetectiveName = styled.div`
   font-size: 24px;
@@ -247,6 +266,7 @@ const DetectiveName = styled.div`
     font-size: 20px;
   }
 `;
+
 
 const CloseButton = styled.button`
   background: transparent;
@@ -269,6 +289,7 @@ const CloseButton = styled.button`
     transform: rotate(90deg);
   }
 `;
+
 
 const TipText = styled.div`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -297,6 +318,7 @@ const TipText = styled.div`
   }
 `;
 
+
 const ActionButton = styled.button`
   width: 100%;
   padding: 14px 24px;
@@ -323,6 +345,7 @@ const ActionButton = styled.button`
   }
 `;
 
+
 const DetectiveTipLarge = ({
   tip,
   detectiveName = "Detektív Conan",
@@ -343,14 +366,17 @@ const DetectiveTipLarge = ({
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
 
+
   const handleClose = useCallback(() => {
     setIsClosing(true);
+    // ✅ OPRAVA: Unmount až po dokončení animácie (400ms)
     setTimeout(() => {
       setIsClosing(false);
       setIsOpen(false);
       if (onClose) onClose();
     }, 400);
   }, [onClose]);
+
 
   useEffect(() => {
     if (autoOpen) {
@@ -362,6 +388,7 @@ const DetectiveTipLarge = ({
     }
   }, [autoOpen, autoOpenDelay, onOpen]);
 
+
   useEffect(() => {
     if (isOpen && autoClose) {
       const timer = setTimeout(() => {
@@ -370,6 +397,7 @@ const DetectiveTipLarge = ({
       return () => clearTimeout(timer);
     }
   }, [isOpen, autoClose, autoCloseDelay, handleClose]);
+
 
   const handleToggle = useCallback(() => {
     if (isOpen) {
@@ -380,13 +408,16 @@ const DetectiveTipLarge = ({
     }
   }, [isOpen, handleClose, onOpen]);
 
+
   const handleImageError = () => {
     setImageError(true);
   };
 
+
   const handleIconError = () => {
     setIconError(true);
   };
+
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -394,9 +425,12 @@ const DetectiveTipLarge = ({
     }
   };
 
+
   if (!tip) return null;
 
+
   const buttonStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
+
 
   return (
     <>
@@ -453,5 +487,6 @@ const DetectiveTipLarge = ({
     </>
   );
 };
+
 
 export default DetectiveTipLarge;

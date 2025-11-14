@@ -1,8 +1,10 @@
 // src/components/shared/DetectiveTip.js
-// FINÁLNA VERZIA - Opravené prebliknutie
+// OPRAVENÁ VERZIA - Bez prebliknutia pri zatváraní
+
 
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
+
 
 const TipButton = styled.button`
   position: fixed;
@@ -44,6 +46,7 @@ const TipButton = styled.button`
   }
 `;
 
+
 const DetectiveIcon = styled.img`
   width: 110%;
   height: 110%;
@@ -53,6 +56,7 @@ const DetectiveIcon = styled.img`
   left: 50%;
   transform: translate(-50%, -50%);
 `;
+
 
 const DetectiveIconFallback = styled.div`
   width: 100%;
@@ -66,6 +70,7 @@ const DetectiveIconFallback = styled.div`
     font-size: 28px;
   }
 `;
+
 
 const Badge = styled.div`
   position: absolute;
@@ -96,6 +101,7 @@ const Badge = styled.div`
   }
 `;
 
+
 const TipBubble = styled.div`
   position: fixed;
   bottom: 100px;
@@ -107,7 +113,10 @@ const TipBubble = styled.div`
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   z-index: 998;
+  
+  /* ✅ OPRAVA: animation-fill-mode: forwards */
   animation: ${p => p.$isClosing ? 'slideOut' : 'slideIn'} 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation-fill-mode: forwards;
   
   @keyframes slideIn {
     from {
@@ -163,6 +172,7 @@ const TipBubble = styled.div`
   }
 `;
 
+
 const TipHeader = styled.div`
   display: flex;
   align-items: center;
@@ -171,6 +181,7 @@ const TipHeader = styled.div`
   padding-bottom: 12px;
   border-bottom: 2px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 const DetectiveAvatar = styled.img`
   width: 40px;
@@ -184,6 +195,7 @@ const DetectiveAvatar = styled.img`
     height: 35px;
   }
 `;
+
 
 const DetectiveAvatarFallback = styled.div`
   width: 40px;
@@ -203,6 +215,7 @@ const DetectiveAvatarFallback = styled.div`
   }
 `;
 
+
 const DetectiveName = styled.div`
   font-weight: 700;
   color: ${p => p.theme.ACCENT_COLOR};
@@ -213,6 +226,7 @@ const DetectiveName = styled.div`
     font-size: 14px;
   }
 `;
+
 
 const TipText = styled.div`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -235,6 +249,7 @@ const TipText = styled.div`
   }
 `;
 
+
 const CloseButton = styled.button`
   background: transparent;
   border: none;
@@ -250,6 +265,7 @@ const CloseButton = styled.button`
   }
 `;
 
+
 const ProgressBar = styled.div`
   position: absolute;
   bottom: 0;
@@ -261,6 +277,7 @@ const ProgressBar = styled.div`
   overflow: hidden;
 `;
 
+
 const ProgressFill = styled.div`
   height: 100%;
   background: ${p => p.theme.ACCENT_COLOR};
@@ -271,6 +288,7 @@ const ProgressFill = styled.div`
     to { width: 0%; }
   }
 `;
+
 
 const DetectiveTip = ({ 
   tip, 
@@ -288,14 +306,17 @@ const DetectiveTip = ({
   const [isClosing, setIsClosing] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+
   const handleClose = useCallback(() => {
     setIsClosing(true);
+    // ✅ OPRAVA: Unmount až po dokončení animácie (400ms)
     setTimeout(() => {
       setIsClosing(false);
       setIsOpen(false);
       if (onClose) onClose();
     }, 400);
   }, [onClose]);
+
 
   useEffect(() => {
     if (autoOpen) {
@@ -308,6 +329,7 @@ const DetectiveTip = ({
     }
   }, [autoOpen, autoOpenDelay, onOpen]);
 
+
   useEffect(() => {
     if (isOpen && autoClose) {
       const timer = setTimeout(() => {
@@ -318,6 +340,7 @@ const DetectiveTip = ({
     }
   }, [isOpen, autoClose, autoCloseDelay, handleClose]);
 
+
   const handleToggle = useCallback(() => {
     if (isOpen) {
       handleClose();
@@ -327,15 +350,19 @@ const DetectiveTip = ({
     }
   }, [isOpen, handleClose, onOpen]);
 
+
   const handleImageError = () => {
     console.warn('Detective image failed to load, using fallback');
     setImageError(true);
   };
 
+
   if (!tip) return null;
+
 
   const buttonStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
   const bubbleStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
+
 
   return (
     <>
@@ -389,5 +416,6 @@ const DetectiveTip = ({
     </>
   );
 };
+
 
 export default DetectiveTip;

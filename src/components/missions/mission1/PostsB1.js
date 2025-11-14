@@ -1,20 +1,25 @@
 // src/components/missions/mission1/PostsB1.js
-// UPRAVENÁ VERZIA s ResponseManager a time tracking
+// UPRAVENÁ VERZIA s ResponseManager, time tracking a HOVER TRACKING
 
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
 import { useUserStats } from '../../../contexts/UserStatsContext';
 import { getResponseManager } from '../../../utils/ResponseManager';
+import { useHoverTracking } from '../../../hooks/useHoverTracking';
+import { generateVisualization } from '../../../utils/visualizationGenerator';
+import { sendTrackingData } from '../../../utils/trackingApi';
 
-// Všetky styled-components rovnaké ako v PostsA1.js
+
 const Container = styled.div`
   padding: 20px;
   max-width: 935px;
   margin: 0 auto;
 `;
+
 
 const Title = styled.h2`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -23,6 +28,7 @@ const Title = styled.h2`
   font-size: 20px;
   font-weight: 600;
 `;
+
 
 const PostsGrid = styled.div`
   display: grid;
@@ -34,6 +40,7 @@ const PostsGrid = styled.div`
     grid-template-columns: 1fr;
   }
 `;
+
 
 const PostCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -48,12 +55,14 @@ const PostCard = styled.div`
   }
 `;
 
+
 const PostHeader = styled.div`
   display: flex;
   align-items: center;
   padding: 14px 16px;
   border-bottom: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 const Avatar = styled.div`
   width: 32px;
@@ -74,11 +83,13 @@ const Avatar = styled.div`
   }
 `;
 
+
 const Username = styled.span`
   font-weight: 600;
   font-size: 14px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
 `;
+
 
 const PostImage = styled.img`
   width: 100%;
@@ -87,9 +98,11 @@ const PostImage = styled.img`
   display: block;
 `;
 
+
 const PostContent = styled.div`
   padding: 16px;
 `;
+
 
 const ContentText = styled.p`
   line-height: 1.5;
@@ -98,11 +111,13 @@ const ContentText = styled.p`
   margin-bottom: 16px;
 `;
 
+
 const RatingSection = styled.div`
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 const RatingLabel = styled.div`
   font-size: 12px;
@@ -113,11 +128,13 @@ const RatingLabel = styled.div`
   letter-spacing: 0.5px;
 `;
 
+
 const RatingScale = styled.div`
   display: flex;
   gap: 8px;
   justify-content: space-between;
 `;
+
 
 const RatingButton = styled.label`
   flex: 1;
@@ -143,6 +160,7 @@ const RatingButton = styled.label`
   }
 `;
 
+
 const ErrorText = styled.div`
   color: ${p => p.theme.ACCENT_COLOR_2};
   font-size: 12px;
@@ -150,11 +168,13 @@ const ErrorText = styled.div`
   text-align: center;
 `;
 
+
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 24px;
 `;
+
 
 const ProgressIndicator = styled.div`
   text-align: center;
@@ -163,26 +183,37 @@ const ProgressIndicator = styled.div`
   margin-top: 16px;
 `;
 
-// Definícia príspevkov B (iné ako v A)
+
 const POSTS = [
   { id: 'post_b1_1', username: 'user4', content: 'Obsah príspevku B1-1.', image: null },
   { id: 'post_b1_2', username: 'user5', content: 'Obsah príspevku B1-2.', image: '/img/b1-2.jpg' },
   { id: 'post_b1_3', username: 'user6', content: 'Obsah príspevku B1-3.', image: '/img/b1-3.jpg' }
 ];
 
+
 const COMPONENT_ID = 'mission1_postsb';
+
 
 const PostsB1 = () => {
   const navigate = useNavigate();
   const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
+  // ✅ TRACKING HOOK
+  const { containerRef, trackingData } = useHoverTracking(
+    'postsB1_mission1',
+    'post',
+    userId
+  );
+  
   const [ratings, setRatings] = useState({});
   const [errors, setErrors] = useState({});
   const [startTime] = useState(Date.now());
   const [postStartTimes] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const trackingSentRef = useRef(false);
   const refs = useRef({});
+
 
   useEffect(() => {
     const loadSaved = async () => {
@@ -195,6 +226,7 @@ const PostsB1 = () => {
     loadSaved();
   }, [userId, responseManager]);
 
+
   useEffect(() => {
     POSTS.forEach(post => {
       if (!postStartTimes[post.id]) {
@@ -202,6 +234,7 @@ const PostsB1 = () => {
       }
     });
   }, [postStartTimes]);
+
 
   const handleRating = async (postId, value) => {
     setRatings(prev => ({ ...prev, [postId]: value }));
@@ -211,7 +244,90 @@ const PostsB1 = () => {
     await responseManager.saveAnswer(userId, COMPONENT_ID, postId, value, { [`time_on_${postId}`]: timeOnPost });
   };
 
+
   const isComplete = () => POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
+
+
+  // ✅ TRACKING SENDER
+  const sendTracking = useCallback(async () => {
+    if (trackingSentRef.current) {
+      console.log('⏭️ Tracking already sent, skipping');
+      return;
+    }
+
+    if (trackingData.isMobile) {
+      console.log('📱 Skipping tracking - mobile device');
+      return;
+    }
+
+    console.log('📊 Tracking check:', {
+      userId: userId,
+      mousePositionsCount: trackingData.mousePositions?.length || 0,
+      totalHoverTime: trackingData.totalHoverTime,
+      isMobile: trackingData.isMobile
+    });
+
+    if (
+      !userId ||
+      !trackingData.mousePositions ||
+      trackingData.mousePositions.length < 3 ||
+      trackingData.totalHoverTime < 500
+    ) {
+      console.log('⏭️ Skipping tracking - insufficient data', {
+        hasUserId: !!userId,
+        positionsCount: trackingData.mousePositions?.length || 0,
+        hoverTime: trackingData.totalHoverTime
+      });
+      return;
+    }
+
+    try {
+      const container = containerRef.current;
+      if (!container) return;
+
+      console.log('📊 Generating visualization...');
+      
+      const visualization = await generateVisualization(
+        trackingData,
+        container.offsetWidth,
+        container.offsetHeight,
+        containerRef.current
+      );
+
+      if (!visualization) {
+        console.log('⚠️ No visualization generated');
+        return;
+      }
+
+      console.log('📤 Sending tracking data...');
+
+      const dataToSend = {
+        userId: userId,
+        contentId: 'postsB1_mission1',
+        contentType: 'post',
+        hoverMetrics: {
+          totalHoverTime: trackingData.totalHoverTime,
+          hoverStartTime: trackingData.hoverStartTime ? new Date(trackingData.hoverStartTime).toISOString() : null,
+          hoverEndTime: new Date().toISOString(),
+        },
+        mousePositions: trackingData.mousePositions,
+        containerDimensions: {
+          width: container.offsetWidth,
+          height: container.offsetHeight,
+        },
+        visualization: visualization,
+      };
+
+      const result = await sendTrackingData(dataToSend);
+      console.log('✅ Tracking data sent successfully:', result);
+      
+      trackingSentRef.current = true;
+
+    } catch (error) {
+      console.error('❌ Failed to send tracking data:', error);
+    }
+  }, [userId, trackingData, containerRef]);
+
 
   const handleContinue = async () => {
     const missing = POSTS.filter(post => !ratings[post.id]);
@@ -246,6 +362,10 @@ const PostsB1 = () => {
         }
       );
 
+      // ✅ TRACKING - pošli pred navigáciou
+      console.log('📊 Sending final tracking data...');
+      await sendTracking();
+
       navigate('/mission1/questionnaire1b');
       
     } catch (error) {
@@ -256,9 +376,10 @@ const PostsB1 = () => {
     }
   };
 
+
   return (
     <Layout>
-      <Container>
+      <Container ref={containerRef}>
         <Title>Hodnotenie príspevkov B</Title>
         <PostsGrid>
           {POSTS.map(post => (
@@ -311,9 +432,28 @@ const PostsB1 = () => {
         <ProgressIndicator>
           Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
         </ProgressIndicator>
+
+        {process.env.NODE_ENV === 'development' && trackingData.isTracking && (
+          <div style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            background: 'rgba(74, 144, 226, 0.95)',
+            color: 'white',
+            padding: '10px 16px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            zIndex: 9999,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}>
+            🎯 Tracking: {trackingData.mousePositions.length} points | {(trackingData.totalHoverTime / 1000).toFixed(1)}s
+          </div>
+        )}
       </Container>
     </Layout>
   );
 };
+
 
 export default PostsB1;

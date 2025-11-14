@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 
 /**
  * Generuje canvas vizualizáciu pohybu myši S POZADÍM A HEATMAPOU
+ * OPRAVENÁ VERZIA - správne zarovnanie screenshot + tracking
  * @param {object} trackingData - Tracking dáta s mousePositions
  * @param {number} width - Šírka canvas
  * @param {number} height - Výška canvas
@@ -18,50 +19,63 @@ export const generateVisualization = async (trackingData, width, height, contain
   try {
     // 1️⃣ Vytvor screenshot komponentu pomocou html2canvas
     console.log('📸 Creating screenshot of component...');
+    
+    // ✅ OPRAVA: Získaj presné rozmery containera
+    const rect = containerElement.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    
     const screenshotCanvas = await html2canvas(containerElement, {
       backgroundColor: '#ffffff',
       scale: 1,
       logging: false,
       useCORS: true,
       allowTaint: true,
-      width: width,
-      height: height,
-      windowWidth: width,
-      windowHeight: height,
+      // ✅ KRITICKÉ - presné rozmery
+      width: rect.width,
+      height: rect.height,
+      windowWidth: rect.width,
+      windowHeight: rect.height,
+      // ✅ KRITICKÉ - scroll offset
+      scrollX: -scrollLeft,
+      scrollY: -scrollTop,
+      x: 0,
+      y: 0,
     });
 
     // 2️⃣ Vytvor nový canvas pre finálnu vizualizáciu
+    // ✅ OPRAVA: Použiť presné rozmery containera
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = width;
-    finalCanvas.height = height;
+    finalCanvas.width = rect.width;
+    finalCanvas.height = rect.height;
     const ctx = finalCanvas.getContext('2d');
 
     // 3️⃣ Nakresli screenshot ako pozadie
-    ctx.drawImage(screenshotCanvas, 0, 0, width, height);
+    ctx.drawImage(screenshotCanvas, 0, 0, rect.width, rect.height);
 
     // 4️⃣ Pridaj semi-transparent overlay pre lepšiu viditeľnosť
     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, rect.width, rect.height);
 
     const positions = trackingData.mousePositions;
 
     // 🔥 5️⃣ HEATMAP - Vytvor heatmap z pozícií myši
     console.log('🔥 Generating heatmap...');
-    const heatmapData = generateHeatmapData(positions, width, height);
+    const heatmapData = generateHeatmapData(positions, rect.width, rect.height);
     
     // Nakresli heatmap ako pozadie
-    drawHeatmap(ctx, heatmapData, width, height);
+    drawHeatmap(ctx, heatmapData, rect.width, rect.height);
 
     // 6️⃣ Nakresliť trajektóriu pohybu myši (voliteľné - môžeš zakomentovať)
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(74, 144, 226, 0.5)';
+    ctx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
     ctx.shadowBlur = 3;
 
-    const firstPos = positions;
+    const firstPos = positions[0];
     ctx.moveTo(firstPos.x, firstPos.y);
 
     // Nakresliť cestu
@@ -113,8 +127,8 @@ export const generateVisualization = async (trackingData, width, height, contain
     const padding = 15;
     const panelWidth = 220;
     const panelHeight = 90;
-    const panelX = width - panelWidth - padding;
-    const panelY = height - panelHeight - padding;
+    const panelX = rect.width - panelWidth - padding;
+    const panelY = rect.height - panelHeight - padding;
 
     // Pozadie info panelu
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
@@ -133,7 +147,7 @@ export const generateVisualization = async (trackingData, width, height, contain
     ctx.fillText(`⏱️ Hover time: ${hoverTime}s`, panelX + 10, panelY + 10);
     ctx.fillText(`📍 Points: ${pointsCount}`, panelX + 10, panelY + 30);
     ctx.fillText(`🔥 Heatmap enabled`, panelX + 10, panelY + 50);
-    ctx.fillText(`🖱️ Tracking data`, panelX + 10, panelY + 70);
+    ctx.fillText(`📐 ${rect.width}x${rect.height}px`, panelX + 10, panelY + 70);
 
     // 🔟 Vrátiť ako WebP base64
     console.log('✅ Visualization with heatmap generated');

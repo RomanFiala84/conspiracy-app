@@ -95,6 +95,7 @@ export default async function handler(req, res) {
     // Upload vizualizácie do Cloudinary
     if (visualization) {
       try {
+        // ✅ Unikátny filename: userId_contentId_timestamp
         const filename = `${trackingData.userId}_${trackingData.contentId}_${Date.now()}`;
         
         const result = await cloudinary.uploader.upload(visualization, {
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
           resource_type: 'image',
           format: 'webp',
           transformation: [
-            { width: 800, height: 600, crop: 'limit' },
+            { width: 1200, height: 900, crop: 'limit' }, // ✅ Vyššie rozlíšenie
             { quality: 'auto:good' },
           ],
         });
@@ -117,7 +118,7 @@ export default async function handler(req, res) {
           bytes: result.bytes,
         };
 
-        console.log('✅ Cloudinary upload successful');
+        console.log('✅ Cloudinary upload successful:', cloudinaryData.url);
       } catch (uploadError) {
         console.error('❌ Cloudinary upload failed:', uploadError);
       }
@@ -126,27 +127,34 @@ export default async function handler(req, res) {
     // Analýza pohybu myši
     const movementAnalysis = analyzeMouseMovement(trackingData.mousePositions || []);
 
-    // Uloženie do MongoDB S UPSERT (1 záznam na userId + contentId)
+    // Uloženie do MongoDB
     const client = await connectToDatabase();
     const db = client.db('conspiracy');
     
-    // ✅ OPRAVA: updateOne s upsert namiesto insertOne
+    // ✅ STRATÉGIA A: 1 dokument na userId + $push tracking records
+    // Výhoda: Všetky tracking záznamy jedného používateľa v jednom dokumente
+    const trackingRecord = {
+      contentId: trackingData.contentId,
+      contentType: trackingData.contentType,
+      timestamp: new Date(),
+      hoverMetrics: trackingData.hoverMetrics,
+      mousePositions: trackingData.mousePositions,
+      movementAnalysis,
+      cloudinaryData,
+      containerDimensions: trackingData.containerDimensions,
+    };
+
     const result = await db.collection('hover_tracking').updateOne(
-      { 
-        userId: trackingData.userId,
-        contentId: trackingData.contentId 
-      },
+      { userId: trackingData.userId },
       {
+        $push: {
+          trackingRecords: trackingRecord
+        },
         $set: {
-          contentType: trackingData.contentType,
-          hoverMetrics: trackingData.hoverMetrics,
-          mousePositions: trackingData.mousePositions,
-          movementAnalysis,
-          cloudinaryData,
-          containerDimensions: trackingData.containerDimensions,
-          updatedAt: new Date(),
+          lastUpdated: new Date(),
         },
         $setOnInsert: {
+          userId: trackingData.userId,
           createdAt: new Date(),
         }
       },
@@ -159,7 +167,8 @@ export default async function handler(req, res) {
       success: true,
       trackingId: result.upsertedId || 'updated',
       imageUrl: cloudinaryData?.url || null,
-      isUpdate: result.modifiedCount > 0,
+      isNewUser: !!result.upsertedId,
+      recordsCount: result.modifiedCount,
     });
 
   } catch (error) {
