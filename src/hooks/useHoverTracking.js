@@ -10,6 +10,7 @@ const isMobileDevice = () => {
 /**
  * Custom hook pre sledovanie hover a mouse movements
  * VYPNUTÉ NA MOBILE ZARIADENIACH
+ * VYSOKÁ FREKVENCIA ZAZNAMENÁVANIA (50ms interval)
  * @param {string} contentId - ID príspevku/intervencie/prevencie
  * @param {string} contentType - 'post', 'intervention', 'prevention'
  * @param {string} userId - ID používateľa (z UserStatsContext)
@@ -24,7 +25,7 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     hoverStartTime: null,
     totalHoverTime: 0,
     isTracking: false,
-    isMobile: isMobileDevice(), // ✅ NOVÉ - detekcia mobile
+    isMobile: isMobileDevice(),
   });
 
   useEffect(() => {
@@ -42,7 +43,8 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     if (!container || !userId) return;
 
     let lastRecordedTime = 0;
-    const RECORD_INTERVAL = 200; // Zaznamenať každých 200ms
+    // ✅ OPRAVA: 200ms → 50ms (4x viac bodov!)
+    const RECORD_INTERVAL = 50; // Zaznamenať každých 50ms (20 bodov/sekundu)
 
     // Handler pre vstup myši do oblasti
     const handleMouseEnter = () => {
@@ -73,7 +75,7 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     const handleMouseMove = (e) => {
       const currentTime = Date.now();
       
-      // Throttling - zaznamenať iba každých 200ms
+      // Throttling - zaznamenať iba každých 50ms
       if (currentTime - lastRecordedTime < RECORD_INTERVAL) {
         return;
       }
@@ -105,7 +107,7 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('mousemove', handleMouseMove);
 
-    console.log('🖱️ Desktop tracking enabled');
+    console.log('🖱️ Desktop tracking enabled (50ms interval)');
 
     // Cleanup
     return () => {
