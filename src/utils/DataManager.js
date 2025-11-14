@@ -1,7 +1,10 @@
 // src/utils/DataManager.js
 // FINÁLNA VERZIA - Vždy načíta blocked state zo servera + preserveFields
+// ✅ OPRAVENÉ PRE VERCEL
+
 
 import * as XLSX from 'xlsx';
+
 
 class DataManager {
   constructor() {
@@ -10,7 +13,9 @@ class DataManager {
     this.cache = new Map();
     this.allParticipantsCache = null;
     
-    this.apiBase = '/.netlify/functions/progress';
+    // ✅ OPRAVA: Zmenená cesta z Netlify na Vercel
+    this.apiBase = '/api/progress';
+
 
     this.clearAllData = () => {
       this.cache.clear();
@@ -27,6 +32,7 @@ class DataManager {
       console.log('❌ Všetky dáta boli vymazané.');
     };
   }
+
 
   getVariableList() {
     return [
@@ -62,6 +68,7 @@ class DataManager {
     ];
   }
 
+
   // ✅ OPRAVENÉ - Načíta PRIAMO zo servera, preskočí cache
   async isUserBlocked(participantCode) {
     try {
@@ -82,6 +89,7 @@ class DataManager {
       return false;
     }
   }
+
 
   // ✅ OPRAVENÉ - Clear cache po blokovaní
   async setBlockedState(participantCode, blocked) {
@@ -114,6 +122,7 @@ class DataManager {
     }
   }
 
+
   async validateReferralCode(code) {
     if (!code) return false;
     
@@ -131,9 +140,11 @@ class DataManager {
     }
   }
 
+
   async validateSharingCode(code) {
     return await this.validateReferralCode(code);
   }
+
 
   async getUserSharingCode(userId) {
     try {
@@ -144,6 +155,7 @@ class DataManager {
       return null;
     }
   }
+
 
   async processReferral(participantCode, referralCode) {
     try {
@@ -219,6 +231,7 @@ class DataManager {
     }
   }
 
+
   async unlockMissionForAll(missionId) {
     console.log(`🔓 Odomykám misiu ${missionId} pre všetkých...`);
     
@@ -229,13 +242,16 @@ class DataManager {
         body: JSON.stringify({ missionId, adminCode: this.adminUserId })
       });
 
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
+
       const result = await response.json();
       console.log(`✅ Batch unlock ${missionId} na serveri (${result.modifiedCount} používateľov)`);
+
 
       await this.fetchAllParticipantsData();
       this.cache.clear();
@@ -246,6 +262,7 @@ class DataManager {
         url: window.location.href
       }));
 
+
       console.log(`✅ Misia ${missionId} odomknutá pre všetkých`);
       return result;
       
@@ -254,6 +271,7 @@ class DataManager {
       throw error;
     }
   }
+
 
   async lockMissionForAll(missionId) {
     console.log(`🔒 Zamykám misiu ${missionId} pre všetkých...`);
@@ -265,13 +283,16 @@ class DataManager {
         body: JSON.stringify({ missionId, adminCode: this.adminUserId })
       });
 
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
+
       const result = await response.json();
       console.log(`✅ Batch lock ${missionId} na serveri (${result.modifiedCount} používateľov)`);
+
 
       await this.fetchAllParticipantsData();
       this.cache.clear();
@@ -282,6 +303,7 @@ class DataManager {
         url: window.location.href
       }));
 
+
       console.log(`✅ Misia ${missionId} zamknutá pre všetkých`);
       return result;
       
@@ -290,6 +312,7 @@ class DataManager {
       throw error;
     }
   }
+
 
   async fetchAllParticipantsData() {
     try {
@@ -319,9 +342,11 @@ class DataManager {
     }
   }
 
+
   async syncAllFromServer() {
     return await this.fetchAllParticipantsData();
   }
+
 
   // ✅ OPRAVENÉ - Vždy načíta fresh data zo servera, preskočí localStorage cache
   async loadUserProgress(participantCode, forceServerFetch = false) {
@@ -333,9 +358,11 @@ class DataManager {
       return this.cache.get(participantCode);
     }
 
+
     try {
       console.log(`📡 Načítavam ${participantCode} zo servera...`);
       const resp = await fetch(`${this.apiBase}?code=${participantCode}`);
+
 
       if (!resp.ok) {
         if (resp.status === 404) {
@@ -368,6 +395,7 @@ class DataManager {
         throw new Error(`HTTP ${resp.status}`);
       }
 
+
       const data = await resp.json();
       
       console.log(`📥 Dáta zo servera pre ${participantCode}:`, {
@@ -385,6 +413,7 @@ class DataManager {
         await this.syncToServer(participantCode, rec);
         return rec;
       }
+
 
       const prog = this.validateAndFixData(data.progress || data, participantCode);
       this._cacheAndStore(participantCode, prog);
@@ -411,6 +440,7 @@ class DataManager {
         }
       }
 
+
       const central = this.getAllParticipantsData();
       if (central[participantCode]) {
         const prog = this.validateAndFixData(central[participantCode], participantCode);
@@ -418,12 +448,14 @@ class DataManager {
         return prog;
       }
 
+
       console.log(`🆕 Lokálne vytváram nového používateľa ${participantCode}`);
       const rec = await this.createNewUserRecord(participantCode);
       await this.syncToServer(participantCode, rec);
       return rec;
     }
   }
+
 
   async syncToServer(participantCode, data) {
     try {
@@ -433,10 +465,12 @@ class DataManager {
         body: JSON.stringify(data)
       });
 
+
       if (!resp.ok) {
         console.warn(`Sync failed for ${participantCode}: HTTP ${resp.status}`);
         return false;
       }
+
 
       console.log(`✅ Synced ${participantCode} - blocked: ${data.blocked}`);
       return true;
@@ -445,6 +479,7 @@ class DataManager {
       return false;
     }
   }
+
 
   // ✅ OPRAVENÉ - Pridané 'blocked' a 'blocked_at' do preserveFields
   validateAndFixData(data, participantCode) {
@@ -504,6 +539,7 @@ class DataManager {
     return data;
   }
 
+
   getDefaultFields() {
     return {
       timestamp_start: new Date().toISOString(),
@@ -537,6 +573,7 @@ class DataManager {
     };
   }
 
+
   async createNewUserRecord(participantCode) {
     console.log(`🆕 Vytváram nového používateľa ${participantCode} (lokálne)...`);
     
@@ -554,6 +591,7 @@ class DataManager {
     console.log(`✅ Lokálne vytvorený používateľ ${participantCode}`);
     return rec;
   }
+
 
   generatePersistentSharingCode(participantCode) {
     const existing = this.getSharingCode(participantCode);
@@ -579,6 +617,7 @@ class DataManager {
     return code;
   }
 
+
   hashCode(str) {
     let h = 0;
     for (const c of str) {
@@ -588,12 +627,14 @@ class DataManager {
     return Math.abs(h);
   }
 
+
   getSharingCode(participantCode) {
     const prog =
       this.cache.get(participantCode) ||
       JSON.parse(localStorage.getItem(`fullProgress_${participantCode}`) || '{}');
     return prog.sharing_code || null;
   }
+
 
   async saveProgress(participantCode, data) {
     console.log(`💾 Ukladám progress pre ${participantCode}:`, {
@@ -611,11 +652,13 @@ class DataManager {
     await this.syncToServer(participantCode, data);
   }
 
+
   async loadComponentData(participantCode, componentKey) {
     if (!participantCode) return {};
     const prog = await this.loadUserProgress(participantCode);
     return prog ? prog[`${componentKey}_data`] || {} : {};
   }
+
 
   async saveComponentData(participantCode, componentKey, data) {
     if (!participantCode) return;
@@ -623,6 +666,7 @@ class DataManager {
     prog[`${componentKey}_data`] = data;
     await this.saveProgress(participantCode, prog);
   }
+
 
   saveToCentralStorage(participantCode, data) {
     const all = this.getAllParticipantsData();
@@ -633,12 +677,14 @@ class DataManager {
     }
   }
 
+
   getAllParticipantsData() {
     if (this.allParticipantsCache) {
       return this.allParticipantsCache;
     }
     return JSON.parse(localStorage.getItem(this.centralStorageKey) || '{}');
   }
+
 
   exportAllParticipantsCSV() {
     const all = this.getAllParticipantsData();
@@ -654,6 +700,7 @@ class DataManager {
     this.downloadCSV(csvContent);
   }
 
+
   exportAllParticipantsXLSX() {
     const all = this.getAllParticipantsData();
     const variables = this.getVariableList();
@@ -665,6 +712,7 @@ class DataManager {
     XLSX.writeFile(wb, `export_${Date.now()}.xlsx`);
   }
 
+
   downloadCSV(content) {
     const blob = new Blob([content], { type: 'text/csv' });
     const link = document.createElement('a');
@@ -673,9 +721,11 @@ class DataManager {
     link.click();
   }
 
+
   isAdmin(code) {
     return code === this.adminUserId;
   }
+
 
   _cacheAndStore(participantCode, data) {
     this.cache.set(participantCode, data);
@@ -683,6 +733,7 @@ class DataManager {
     this.saveToCentralStorage(participantCode, data);
   }
 }
+
 
 const dataManager = new DataManager();
 export default dataManager;
