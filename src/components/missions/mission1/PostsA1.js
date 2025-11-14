@@ -1,5 +1,6 @@
 // src/components/missions/mission1/PostsA1.js
-// UPRAVENÁ VERZIA s ResponseManager, time tracking a HOVER TRACKING
+// UPRAVENÁ VERZIA - tracking sa posiela IBA RAZ pri unmount
+
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,11 +13,13 @@ import { useHoverTracking } from '../../../hooks/useHoverTracking';
 import { generateVisualization } from '../../../utils/visualizationGenerator';
 import { sendTrackingData } from '../../../utils/trackingApi';
 
+
 const Container = styled.div`
   padding: 20px;
   max-width: 935px;
   margin: 0 auto;
 `;
+
 
 const Title = styled.h2`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -25,6 +28,7 @@ const Title = styled.h2`
   font-size: 20px;
   font-weight: 600;
 `;
+
 
 const PostsGrid = styled.div`
   display: grid;
@@ -36,6 +40,7 @@ const PostsGrid = styled.div`
     grid-template-columns: 1fr;
   }
 `;
+
 
 const PostCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -50,12 +55,14 @@ const PostCard = styled.div`
   }
 `;
 
+
 const PostHeader = styled.div`
   display: flex;
   align-items: center;
   padding: 14px 16px;
   border-bottom: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 const Avatar = styled.div`
   width: 32px;
@@ -76,11 +83,13 @@ const Avatar = styled.div`
   }
 `;
 
+
 const Username = styled.span`
   font-weight: 600;
   font-size: 14px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
 `;
+
 
 const PostImage = styled.img`
   width: 100%;
@@ -89,9 +98,11 @@ const PostImage = styled.img`
   display: block;
 `;
 
+
 const PostContent = styled.div`
   padding: 16px;
 `;
+
 
 const ContentText = styled.p`
   line-height: 1.5;
@@ -100,11 +111,13 @@ const ContentText = styled.p`
   margin-bottom: 16px;
 `;
 
+
 const RatingSection = styled.div`
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 const RatingLabel = styled.div`
   font-size: 12px;
@@ -115,11 +128,13 @@ const RatingLabel = styled.div`
   letter-spacing: 0.5px;
 `;
 
+
 const RatingScale = styled.div`
   display: flex;
   gap: 8px;
   justify-content: space-between;
 `;
+
 
 const RatingButton = styled.label`
   flex: 1;
@@ -145,6 +160,7 @@ const RatingButton = styled.label`
   }
 `;
 
+
 const ErrorText = styled.div`
   color: ${p => p.theme.ACCENT_COLOR_2};
   font-size: 12px;
@@ -152,11 +168,13 @@ const ErrorText = styled.div`
   text-align: center;
 `;
 
+
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 24px;
 `;
+
 
 const ProgressIndicator = styled.div`
   text-align: center;
@@ -165,13 +183,16 @@ const ProgressIndicator = styled.div`
   margin-top: 16px;
 `;
 
+
 const POSTS = [
   { id: 'post_a1_1', username: 'user1', content: 'Obsah príspevku A1-1.', image: null },
   { id: 'post_a1_2', username: 'user2', content: 'Obsah príspevku A1-2.', image: '/img/a1-2.jpg' },
   { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' }
 ];
 
+
 const COMPONENT_ID = 'mission1_postsa';
+
 
 const PostsA1 = () => {
   const navigate = useNavigate();
@@ -189,7 +210,11 @@ const PostsA1 = () => {
   const [startTime] = useState(Date.now());
   const [postStartTimes] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // ✅ KRITICKÉ - ref pre zabránenie viacnásobnému posielaniu
+  const trackingSentRef = useRef(false);
   const refs = useRef({});
+
 
   useEffect(() => {
     const loadSaved = async () => {
@@ -204,6 +229,7 @@ const PostsA1 = () => {
     loadSaved();
   }, [userId, responseManager]);
 
+
   useEffect(() => {
     POSTS.forEach(post => {
       if (!postStartTimes[post.id]) {
@@ -211,6 +237,7 @@ const PostsA1 = () => {
       }
     });
   }, [postStartTimes]);
+
 
   const handleRating = async (postId, value) => {
     setRatings(prev => ({ ...prev, [postId]: value }));
@@ -227,11 +254,20 @@ const PostsA1 = () => {
     );
   };
 
+
   const isComplete = () => {
     return POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
   };
 
-  const handleSendTracking = useCallback(async () => {
+
+  // ✅ OPRAVA - pošli tracking iba raz
+  const sendTracking = useCallback(async () => {
+    // Zabráň viacnásobnému posielaniu
+    if (trackingSentRef.current) {
+      console.log('⏭️ Tracking already sent, skipping');
+      return;
+    }
+
     if (
       !userId ||
       !trackingData.mousePositions ||
@@ -248,10 +284,11 @@ const PostsA1 = () => {
 
       console.log('📊 Generating visualization...');
       
-      const visualization = generateVisualization(
+      const visualization = await generateVisualization(
         trackingData,
         container.offsetWidth,
-        container.offsetHeight
+        container.offsetHeight,
+        containerRef.current
       );
 
       if (!visualization) {
@@ -280,19 +317,24 @@ const PostsA1 = () => {
 
       const result = await sendTrackingData(dataToSend);
       console.log('✅ Tracking data sent successfully:', result);
+      
+      // ✅ Označ ako odoslané
+      trackingSentRef.current = true;
 
     } catch (error) {
       console.error('❌ Failed to send tracking data:', error);
     }
   }, [userId, trackingData, containerRef]);
 
+
+  // ✅ OPRAVA - pošli tracking iba pri unmount (opustení stránky)
   useEffect(() => {
     return () => {
-      setTimeout(() => {
-        handleSendTracking();
-      }, 100);
+      // Pošli tracking pri unmount
+      sendTracking();
     };
-  }, [handleSendTracking]);
+  }, [sendTracking]);
+
 
   const handleContinue = async () => {
     const missing = POSTS.filter(post => !ratings[post.id]);
@@ -303,7 +345,7 @@ const PostsA1 = () => {
         newErrors[post.id] = true;
       });
       setErrors(newErrors);
-      refs.current[missing[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      refs.current[missing.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     
@@ -330,6 +372,9 @@ const PostsA1 = () => {
         }
       );
       
+      // ✅ Pošli tracking pred navigáciou
+      await sendTracking();
+      
       const progress = await dataManager.loadUserProgress(userId);
       const group = progress.group_assignment;
       
@@ -346,6 +391,7 @@ const PostsA1 = () => {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <Layout>
@@ -403,6 +449,7 @@ const PostsA1 = () => {
           Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
         </ProgressIndicator>
 
+
         {process.env.NODE_ENV === 'development' && trackingData.isTracking && (
           <div style={{
             position: 'fixed',
@@ -424,5 +471,6 @@ const PostsA1 = () => {
     </Layout>
   );
 };
+
 
 export default PostsA1;

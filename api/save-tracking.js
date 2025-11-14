@@ -126,28 +126,40 @@ export default async function handler(req, res) {
     // Analýza pohybu myši
     const movementAnalysis = analyzeMouseMovement(trackingData.mousePositions || []);
 
-    // Uloženie do MongoDB
+    // Uloženie do MongoDB S UPSERT (1 záznam na userId + contentId)
     const client = await connectToDatabase();
     const db = client.db('conspiracy');
     
-    const result = await db.collection('hover_tracking').insertOne({
-      userId: trackingData.userId,
-      contentId: trackingData.contentId,
-      contentType: trackingData.contentType,
-      hoverMetrics: trackingData.hoverMetrics,
-      mousePositions: trackingData.mousePositions,
-      movementAnalysis,
-      cloudinaryData,
-      containerDimensions: trackingData.containerDimensions,
-      createdAt: new Date(),
-    });
+    // ✅ OPRAVA: updateOne s upsert namiesto insertOne
+    const result = await db.collection('hover_tracking').updateOne(
+      { 
+        userId: trackingData.userId,
+        contentId: trackingData.contentId 
+      },
+      {
+        $set: {
+          contentType: trackingData.contentType,
+          hoverMetrics: trackingData.hoverMetrics,
+          mousePositions: trackingData.mousePositions,
+          movementAnalysis,
+          cloudinaryData,
+          containerDimensions: trackingData.containerDimensions,
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          createdAt: new Date(),
+        }
+      },
+      { upsert: true }
+    );
 
-    console.log('✅ MongoDB save successful:', result.insertedId);
+    console.log('✅ MongoDB save successful:', result.upsertedId || result.modifiedCount);
 
     return res.status(200).json({
       success: true,
-      trackingId: result.insertedId,
+      trackingId: result.upsertedId || 'updated',
       imageUrl: cloudinaryData?.url || null,
+      isUpdate: result.modifiedCount > 0,
     });
 
   } catch (error) {

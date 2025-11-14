@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
+ * Detekuje či je mobile zariadenie
+ */
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+/**
  * Custom hook pre sledovanie hover a mouse movements
+ * VYPNUTÉ NA MOBILE ZARIADENIACH
  * @param {string} contentId - ID príspevku/intervencie/prevencie
  * @param {string} contentType - 'post', 'intervention', 'prevention'
  * @param {string} userId - ID používateľa (z UserStatsContext)
@@ -16,10 +24,17 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     hoverStartTime: null,
     totalHoverTime: 0,
     isTracking: false,
+    isMobile: isMobileDevice(), // ✅ NOVÉ - detekcia mobile
   });
 
   useEffect(() => {
     const container = containerRef.current;
+    
+    // ✅ NOVÉ - Netrackujeme na mobile!
+    if (isMobileDevice()) {
+      console.log('📱 Mobile device detected - tracking disabled');
+      return;
+    }
     
     // Netrackujeme ak:
     // - container neexistuje
@@ -89,6 +104,8 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     container.addEventListener('mouseenter', handleMouseEnter);
     container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('mousemove', handleMouseMove);
+
+    console.log('🖱️ Desktop tracking enabled');
 
     // Cleanup
     return () => {
