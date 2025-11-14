@@ -5,7 +5,7 @@
  */
 export const sendTrackingData = async (trackingData) => {
   try {
-    const response = await fetch('/api/tracking/save-tracking', {
+    const response = await fetch('/api/save-tracking', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export const sendTrackingData = async (trackingData) => {
 export const fetchTrackingData = async (filters = {}) => {
   try {
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`/api/tracking/get-tracking?${queryParams}`);
+    const response = await fetch(`/api/get-tracking?${queryParams}`);
 
     if (!response.ok) {
       throw new Error(`Server error: ${response.status}`);
