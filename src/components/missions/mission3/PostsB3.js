@@ -1,6 +1,5 @@
 // src/components/missions/mission3/PostsB3.js
-// UPRAVENÁ VERZIA s ResponseManager, time tracking a HOVER TRACKING
-
+// OPRAVENÁ VERZIA - používa getFinalData() z useHoverTracking
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -13,13 +12,11 @@ import { useHoverTracking } from '../../../hooks/useHoverTracking';
 import { generateVisualization } from '../../../utils/visualizationGenerator';
 import { sendTrackingData } from '../../../utils/trackingApi';
 
-
 const Container = styled.div`
   padding: 20px;
   max-width: 935px;
   margin: 0 auto;
 `;
-
 
 const Title = styled.h2`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -28,7 +25,6 @@ const Title = styled.h2`
   font-size: 20px;
   font-weight: 600;
 `;
-
 
 const PostsGrid = styled.div`
   display: grid;
@@ -40,7 +36,6 @@ const PostsGrid = styled.div`
     grid-template-columns: 1fr;
   }
 `;
-
 
 const PostCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -55,14 +50,12 @@ const PostCard = styled.div`
   }
 `;
 
-
 const PostHeader = styled.div`
   display: flex;
   align-items: center;
   padding: 14px 16px;
   border-bottom: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
-
 
 const Avatar = styled.div`
   width: 32px;
@@ -83,13 +76,11 @@ const Avatar = styled.div`
   }
 `;
 
-
 const Username = styled.span`
   font-weight: 600;
   font-size: 14px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
 `;
-
 
 const PostImage = styled.img`
   width: 100%;
@@ -98,11 +89,9 @@ const PostImage = styled.img`
   display: block;
 `;
 
-
 const PostContent = styled.div`
   padding: 16px;
 `;
-
 
 const ContentText = styled.p`
   line-height: 1.5;
@@ -111,13 +100,11 @@ const ContentText = styled.p`
   margin-bottom: 16px;
 `;
 
-
 const RatingSection = styled.div`
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
-
 
 const RatingLabel = styled.div`
   font-size: 12px;
@@ -128,13 +115,11 @@ const RatingLabel = styled.div`
   letter-spacing: 0.5px;
 `;
 
-
 const RatingScale = styled.div`
   display: flex;
   gap: 8px;
   justify-content: space-between;
 `;
-
 
 const RatingButton = styled.label`
   flex: 1;
@@ -160,7 +145,6 @@ const RatingButton = styled.label`
   }
 `;
 
-
 const ErrorText = styled.div`
   color: ${p => p.theme.ACCENT_COLOR_2};
   font-size: 12px;
@@ -168,13 +152,11 @@ const ErrorText = styled.div`
   text-align: center;
 `;
 
-
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 24px;
 `;
-
 
 const ProgressIndicator = styled.div`
   text-align: center;
@@ -183,24 +165,21 @@ const ProgressIndicator = styled.div`
   margin-top: 16px;
 `;
 
-
 const POSTS = [
   { id: 'post_b3_1', username: 'user4', content: 'Obsah príspevku B3-1.', image: null },
   { id: 'post_b3_2', username: 'user5', content: 'Obsah príspevku B3-2.', image: '/img/b3-2.jpg' },
   { id: 'post_b3_3', username: 'user6', content: 'Obsah príspevku B3-3.', image: '/img/b3-3.jpg' }
 ];
 
-
 const COMPONENT_ID = 'mission3_postsb';
-
 
 const PostsB3 = () => {
   const navigate = useNavigate();
   const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
-  // ✅ TRACKING HOOK
-  const { containerRef, trackingData } = useHoverTracking(
+  // ✅ OPRAVA: Destrukturuj getFinalData
+  const { containerRef, trackingData, getFinalData } = useHoverTracking(
     'postsB3_mission3',
     'post',
     userId
@@ -214,7 +193,6 @@ const PostsB3 = () => {
   const trackingSentRef = useRef(false);
   const refs = useRef({});
 
-
   useEffect(() => {
     const loadSaved = async () => {
       if (!userId) return;
@@ -226,7 +204,6 @@ const PostsB3 = () => {
     loadSaved();
   }, [userId, responseManager]);
 
-
   useEffect(() => {
     POSTS.forEach(post => {
       if (!postStartTimes[post.id]) {
@@ -234,7 +211,6 @@ const PostsB3 = () => {
       }
     });
   }, [postStartTimes]);
-
 
   const handleRating = async (postId, value) => {
     setRatings(prev => ({ ...prev, [postId]: value }));
@@ -244,33 +220,34 @@ const PostsB3 = () => {
     await responseManager.saveAnswer(userId, COMPONENT_ID, postId, value, { [`time_on_${postId}`]: timeOnPost });
   };
 
-
   const isComplete = () => POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
 
-
-  // ✅ TRACKING SENDER
+  // ✅ OPRAVA: Použiť getFinalData()
   const sendTracking = useCallback(async () => {
     if (trackingSentRef.current) {
       console.log('⏭️ Tracking already sent, skipping');
       return;
     }
 
-    if (trackingData.isMobile) {
+    // ✅ Získaj finálne sync dáta
+    const finalData = getFinalData();
+
+    if (finalData.isMobile) {
       console.log('📱 Skipping tracking - mobile device');
       return;
     }
 
     console.log('📊 Tracking check:', {
       userId: userId,
-      mousePositionsCount: trackingData.mousePositions?.length || 0,
-      totalHoverTime: trackingData.totalHoverTime,
+      mousePositionsCount: finalData.mousePositions?.length || 0,
+      totalHoverTime: finalData.totalHoverTime,
     });
 
     if (
       !userId ||
-      !trackingData.mousePositions ||
-      trackingData.mousePositions.length < 3 ||
-      trackingData.totalHoverTime < 500
+      !finalData.mousePositions ||
+      finalData.mousePositions.length < 3 ||
+      finalData.totalHoverTime < 500
     ) {
       console.log('⏭️ Skipping tracking - insufficient data');
       return;
@@ -283,10 +260,10 @@ const PostsB3 = () => {
       console.log('📊 Generating visualization...');
       
       const visualization = await generateVisualization(
-        trackingData,
+        finalData,  // ← Použiť finalData!
         container.offsetWidth,
         container.offsetHeight,
-        containerRef.current
+        container
       );
 
       if (!visualization) {
@@ -301,11 +278,11 @@ const PostsB3 = () => {
         contentId: 'postsB3_mission3',
         contentType: 'post',
         hoverMetrics: {
-          totalHoverTime: trackingData.totalHoverTime,
-          hoverStartTime: trackingData.hoverStartTime ? new Date(trackingData.hoverStartTime).toISOString() : null,
+          totalHoverTime: finalData.totalHoverTime,
+          hoverStartTime: finalData.hoverStartTime ? new Date(finalData.hoverStartTime).toISOString() : null,
           hoverEndTime: new Date().toISOString(),
         },
-        mousePositions: trackingData.mousePositions,
+        mousePositions: finalData.mousePositions,
         containerDimensions: {
           width: container.offsetWidth,
           height: container.offsetHeight,
@@ -321,8 +298,7 @@ const PostsB3 = () => {
     } catch (error) {
       console.error('❌ Failed to send tracking data:', error);
     }
-  }, [userId, trackingData, containerRef]);
-
+  }, [userId, getFinalData, containerRef]);
 
   const handleContinue = async () => {
     const missing = POSTS.filter(post => !ratings[post.id]);
@@ -357,7 +333,6 @@ const PostsB3 = () => {
         }
       );
 
-      // ✅ TRACKING - pošli pred navigáciou
       console.log('📊 Sending final tracking data...');
       await sendTracking();
       
@@ -370,7 +345,6 @@ const PostsB3 = () => {
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <Layout>
@@ -449,6 +423,5 @@ const PostsB3 = () => {
     </Layout>
   );
 };
-
 
 export default PostsB3;

@@ -1,11 +1,9 @@
 // src/components/shared/DetectiveTip.js
-// OPRAVENÁ VERZIA - Minimálna doba čítania 10s
+// OPRAVENÁ VERZIA - Delay len pri prvom otvorení
 
 
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
-
 
 
 const TipButton = styled.button`
@@ -49,7 +47,6 @@ const TipButton = styled.button`
 `;
 
 
-
 const DetectiveIcon = styled.img`
   width: 110%;
   height: 110%;
@@ -59,7 +56,6 @@ const DetectiveIcon = styled.img`
   left: 50%;
   transform: translate(-50%, -50%);
 `;
-
 
 
 const DetectiveIconFallback = styled.div`
@@ -74,7 +70,6 @@ const DetectiveIconFallback = styled.div`
     font-size: 28px;
   }
 `;
-
 
 
 const Badge = styled.div`
@@ -105,7 +100,6 @@ const Badge = styled.div`
     font-size: 10px;
   }
 `;
-
 
 
 const TipBubble = styled.div`
@@ -177,7 +171,6 @@ const TipBubble = styled.div`
 `;
 
 
-
 const TipHeader = styled.div`
   display: flex;
   align-items: center;
@@ -186,7 +179,6 @@ const TipHeader = styled.div`
   padding-bottom: 12px;
   border-bottom: 2px solid ${p => p.theme.BORDER_COLOR};
 `;
-
 
 
 const DetectiveAvatar = styled.img`
@@ -201,7 +193,6 @@ const DetectiveAvatar = styled.img`
     height: 35px;
   }
 `;
-
 
 
 const DetectiveAvatarFallback = styled.div`
@@ -223,7 +214,6 @@ const DetectiveAvatarFallback = styled.div`
 `;
 
 
-
 const DetectiveName = styled.div`
   font-weight: 700;
   color: ${p => p.theme.ACCENT_COLOR};
@@ -234,7 +224,6 @@ const DetectiveName = styled.div`
     font-size: 14px;
   }
 `;
-
 
 
 const TipText = styled.div`
@@ -259,7 +248,6 @@ const TipText = styled.div`
 `;
 
 
-
 const CloseButton = styled.button`
   background: transparent;
   border: none;
@@ -277,7 +265,6 @@ const CloseButton = styled.button`
 `;
 
 
-
 const ProgressBar = styled.div`
   position: absolute;
   bottom: 0;
@@ -288,7 +275,6 @@ const ProgressBar = styled.div`
   border-radius: 0 0 18px 18px;
   overflow: hidden;
 `;
-
 
 
 const ProgressFill = styled.div`
@@ -303,7 +289,6 @@ const ProgressFill = styled.div`
 `;
 
 
-// ✅ NOVÉ: Countdown timer
 const CountdownTimer = styled.div`
   position: absolute;
   top: 12px;
@@ -326,7 +311,6 @@ const CountdownTimer = styled.div`
 `;
 
 
-
 const DetectiveTip = ({ 
   tip, 
   detectiveName = "Detektív Conan", 
@@ -336,23 +320,22 @@ const DetectiveTip = ({
   autoCloseDelay = 8000,
   showBadge = false,
   position = 'right',
-  minReadTime = 10000, // ✅ NOVÉ: Minimálna doba čítania (10s default)
+  minReadTime = 10000,
   onOpen,
   onClose
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [canClose, setCanClose] = useState(false); // ✅ NOVÉ
-  const [countdown, setCountdown] = useState(minReadTime / 1000); // ✅ NOVÉ
-
+  const [canClose, setCanClose] = useState(false);
+  const [countdown, setCountdown] = useState(minReadTime / 1000);
+  
+  // ✅ NOVÉ: Track či bol tip už otvorený
+  const hasBeenOpenedRef = useRef(false);
 
 
   const handleClose = useCallback(() => {
-    if (!canClose) {
-      // ✅ Shake animation ak sa pokúsi zatvoriť skoro
-      return;
-    }
+    if (!canClose) return;
     
     setIsClosing(true);
     setTimeout(() => {
@@ -363,11 +346,19 @@ const DetectiveTip = ({
   }, [canClose, onClose]);
 
 
-
-  // ✅ NOVÉ: Countdown timer
+  // ✅ UPRAVENÉ: Countdown len ak je prvé otvorenie
   useEffect(() => {
     if (!isOpen) return;
     
+    // ✅ Ak už bol otvorený, povoliť zatvoriť hneď
+    if (hasBeenOpenedRef.current) {
+      setCanClose(true);
+      setCountdown(0);
+      return;
+    }
+    
+    // ✅ Prvé otvorenie - countdown
+    hasBeenOpenedRef.current = true;
     setCanClose(false);
     setCountdown(minReadTime / 1000);
     
@@ -386,7 +377,6 @@ const DetectiveTip = ({
   }, [isOpen, minReadTime]);
 
 
-
   useEffect(() => {
     if (autoOpen) {
       const timer = setTimeout(() => {
@@ -397,7 +387,6 @@ const DetectiveTip = ({
       return () => clearTimeout(timer);
     }
   }, [autoOpen, autoOpenDelay, onOpen]);
-
 
 
   useEffect(() => {
@@ -411,7 +400,6 @@ const DetectiveTip = ({
   }, [isOpen, autoClose, autoCloseDelay, canClose, handleClose]);
 
 
-
   const handleToggle = useCallback(() => {
     if (isOpen) {
       handleClose();
@@ -422,21 +410,17 @@ const DetectiveTip = ({
   }, [isOpen, handleClose, onOpen]);
 
 
-
   const handleImageError = () => {
     console.warn('Detective image failed to load, using fallback');
     setImageError(true);
   };
 
 
-
   if (!tip) return null;
-
 
 
   const buttonStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
   const bubbleStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
-
 
 
   return (
@@ -461,7 +445,7 @@ const DetectiveTip = ({
       
       {(isOpen || isClosing) && (
         <TipBubble style={bubbleStyle} $isClosing={isClosing}>
-          {/* ✅ NOVÉ: Countdown display */}
+          {/* ✅ Countdown len ak nie je prvé otvorenie */}
           {!canClose && (
             <CountdownTimer>
               ⏱️ {countdown}s
@@ -500,7 +484,6 @@ const DetectiveTip = ({
     </>
   );
 };
-
 
 
 export default DetectiveTip;

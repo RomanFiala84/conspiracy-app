@@ -1,5 +1,5 @@
 // src/components/missions/mission1/PostsB1.js
-// UPRAVENÁ VERZIA s ResponseManager, time tracking a HOVER TRACKING
+// OPRAVENÁ VERZIA - používa getFinalData() z useHoverTracking
 
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -199,8 +199,8 @@ const PostsB1 = () => {
   const { dataManager, userId } = useUserStats();
   const responseManager = getResponseManager(dataManager);
   
-  // ✅ TRACKING HOOK
-  const { containerRef, trackingData } = useHoverTracking(
+  // ✅ OPRAVA: Destrukturuj getFinalData
+  const { containerRef, trackingData, getFinalData } = useHoverTracking(
     'postsB1_mission1',
     'post',
     userId
@@ -248,35 +248,38 @@ const PostsB1 = () => {
   const isComplete = () => POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
 
 
-  // ✅ TRACKING SENDER
+  // ✅ OPRAVA: Použiť getFinalData()
   const sendTracking = useCallback(async () => {
     if (trackingSentRef.current) {
       console.log('⏭️ Tracking already sent, skipping');
       return;
     }
 
-    if (trackingData.isMobile) {
+    // ✅ Získaj finálne sync dáta
+    const finalData = getFinalData();
+
+    if (finalData.isMobile) {
       console.log('📱 Skipping tracking - mobile device');
       return;
     }
 
     console.log('📊 Tracking check:', {
       userId: userId,
-      mousePositionsCount: trackingData.mousePositions?.length || 0,
-      totalHoverTime: trackingData.totalHoverTime,
-      isMobile: trackingData.isMobile
+      mousePositionsCount: finalData.mousePositions?.length || 0,
+      totalHoverTime: finalData.totalHoverTime,
+      isMobile: finalData.isMobile
     });
 
     if (
       !userId ||
-      !trackingData.mousePositions ||
-      trackingData.mousePositions.length < 3 ||
-      trackingData.totalHoverTime < 500
+      !finalData.mousePositions ||
+      finalData.mousePositions.length < 3 ||
+      finalData.totalHoverTime < 500
     ) {
       console.log('⏭️ Skipping tracking - insufficient data', {
         hasUserId: !!userId,
-        positionsCount: trackingData.mousePositions?.length || 0,
-        hoverTime: trackingData.totalHoverTime
+        positionsCount: finalData.mousePositions?.length || 0,
+        hoverTime: finalData.totalHoverTime
       });
       return;
     }
@@ -288,10 +291,10 @@ const PostsB1 = () => {
       console.log('📊 Generating visualization...');
       
       const visualization = await generateVisualization(
-        trackingData,
+        finalData,  // ← Použiť finalData!
         container.offsetWidth,
         container.offsetHeight,
-        containerRef.current
+        container
       );
 
       if (!visualization) {
@@ -306,11 +309,11 @@ const PostsB1 = () => {
         contentId: 'postsB1_mission1',
         contentType: 'post',
         hoverMetrics: {
-          totalHoverTime: trackingData.totalHoverTime,
-          hoverStartTime: trackingData.hoverStartTime ? new Date(trackingData.hoverStartTime).toISOString() : null,
+          totalHoverTime: finalData.totalHoverTime,
+          hoverStartTime: finalData.hoverStartTime ? new Date(finalData.hoverStartTime).toISOString() : null,
           hoverEndTime: new Date().toISOString(),
         },
-        mousePositions: trackingData.mousePositions,
+        mousePositions: finalData.mousePositions,
         containerDimensions: {
           width: container.offsetWidth,
           height: container.offsetHeight,
@@ -326,7 +329,7 @@ const PostsB1 = () => {
     } catch (error) {
       console.error('❌ Failed to send tracking data:', error);
     }
-  }, [userId, trackingData, containerRef]);
+  }, [userId, getFinalData, containerRef]);
 
 
   const handleContinue = async () => {
@@ -362,7 +365,6 @@ const PostsB1 = () => {
         }
       );
 
-      // ✅ TRACKING - pošli pred navigáciou
       console.log('📊 Sending final tracking data...');
       await sendTracking();
 

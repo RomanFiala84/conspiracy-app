@@ -160,7 +160,7 @@ const Prevention2 = () => {
       if (group === '1') {
         navigate('/mission2/intervention');
       } else {
-        navigate('/mission2/postsb');
+        navigate('/mission2/postsa');
       }
       
     } catch (error) {

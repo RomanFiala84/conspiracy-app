@@ -161,7 +161,7 @@ const Prevention3 = () => {
       if (group === '1') {
         navigate('/mission3/intervention');
       } else {
-        navigate('/mission3/postsb');
+        navigate('/mission3/postsa');
       }
       
     } catch (error) {
