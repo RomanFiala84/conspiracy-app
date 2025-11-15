@@ -1,13 +1,13 @@
 // src/utils/visualizationGenerator.js
-// HYBRID VERZIA - Screenshot + Heatmap overlay s opravou pre grid layout
+// FULL-PAGE TRACKING VERZIA - Zachytí celú stránku vrátane scrollovaného obsahu
 
 import html2canvas from 'html2canvas';
 
 const STANDARD_WIDTH = 1200;
 
 /**
- * Generuje vizualizáciu S POZADÍM komponentu + heatmap overlay
- * ✅ Opravený screenshot pre grid layout
+ * Generuje vizualizáciu CELEJ STRÁNKY + heatmap overlay
+ * ✅ Zachytí celý scrollovateľný obsah
  */
 export const generateVisualization = async (trackingData, width, height, containerElement) => {
   if (!trackingData.mousePositions || trackingData.mousePositions.length < 5) {
@@ -16,20 +16,21 @@ export const generateVisualization = async (trackingData, width, height, contain
   }
 
   try {
-    const originalWidth = trackingData.containerDimensions?.width || width;
-    const originalHeight = trackingData.containerDimensions?.height || height;
+    // ✅ Získaj CELÚ výšku a šírku (vrátane scrollu)
+    const fullWidth = containerElement.scrollWidth;
+    const fullHeight = containerElement.scrollHeight;
     
-    const aspectRatio = originalHeight / originalWidth;
+    const aspectRatio = fullHeight / fullWidth;
     const targetWidth = STANDARD_WIDTH;
     const targetHeight = Math.round(targetWidth * aspectRatio);
     
-    console.log('📸 Creating screenshot + heatmap overlay:', {
-      original: `${originalWidth}x${originalHeight}px`,
+    console.log('📸 Creating FULL-PAGE screenshot + heatmap:', {
+      fullSize: `${fullWidth}x${fullHeight}px`,
       target: `${targetWidth}x${targetHeight}px`,
     });
     
-    // ✅ 1️⃣ OPRAVENÝ SCREENSHOT - capture celého containera
-    console.log('📸 Capturing full component screenshot...');
+    // ✅ 1️⃣ FULL-PAGE SCREENSHOT
+    console.log('📸 Capturing FULL PAGE screenshot...');
     
     const screenshotCanvas = await html2canvas(containerElement, {
       backgroundColor: '#ffffff',
@@ -37,11 +38,11 @@ export const generateVisualization = async (trackingData, width, height, contain
       logging: false,
       useCORS: true,
       allowTaint: true,
-      // ✅ KRITICKÉ - použiť scrollHeight pre celý obsah
-      width: containerElement.scrollWidth,
-      height: containerElement.scrollHeight,
-      windowWidth: containerElement.scrollWidth,
-      windowHeight: containerElement.scrollHeight,
+      // ✅ FULL PAGE - scrollHeight/scrollWidth
+      width: fullWidth,
+      height: fullHeight,
+      windowWidth: fullWidth,
+      windowHeight: fullHeight,
       scrollX: 0,
       scrollY: 0,
       x: 0,
@@ -65,19 +66,19 @@ export const generateVisualization = async (trackingData, width, height, contain
 
     // 5️⃣ HEATMAP
     console.log('🔥 Generating heatmap...');
-    const heatmapData = generateHeatmapData(positions, targetWidth, targetHeight);
+    const heatmapData = generateHeatmapData(positions, targetWidth, targetHeight, fullWidth, fullHeight);
     drawHeatmap(ctx, heatmapData, targetWidth, targetHeight);
 
     // 6️⃣ Trajektória
-    drawTrajectory(ctx, positions, targetWidth, targetHeight);
+    drawTrajectory(ctx, positions, targetWidth, targetHeight, fullWidth, fullHeight);
 
     // 7️⃣ Markers
-    drawMarkers(ctx, positions, targetWidth, targetHeight);
+    drawMarkers(ctx, positions, targetWidth, targetHeight, fullWidth, fullHeight);
 
     // 8️⃣ Info panel
     drawInfoPanel(ctx, trackingData, targetWidth, targetHeight);
 
-    console.log('✅ Screenshot + heatmap generated');
+    console.log('✅ FULL-PAGE screenshot + heatmap generated');
     return finalCanvas.toDataURL('image/png', 0.95);
 
   } catch (error) {
@@ -87,9 +88,9 @@ export const generateVisualization = async (trackingData, width, height, contain
 };
 
 /**
- * Trajektória
+ * Trajektória - ✅ S absolute pozíciami (vrátane scrollu)
  */
-function drawTrajectory(ctx, positions, width, height) {
+function drawTrajectory(ctx, positions, targetWidth, targetHeight, originalWidth, originalHeight) {
   ctx.beginPath();
   ctx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
   ctx.lineWidth = 2.5;
@@ -98,22 +99,20 @@ function drawTrajectory(ctx, positions, width, height) {
   ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
   ctx.shadowBlur = 4;
 
-  const firstPos = {
-    x: (positions[0].xPercent / 100) * width,
-    y: (positions[0].yPercent / 100) * height,
-  };
+  // ✅ Absolute pozície s scrollom
+  const firstPos = positions[0];
+  const scaledX = (firstPos.x / originalWidth) * targetWidth;
+  const scaledY = (firstPos.y / originalHeight) * targetHeight;
   
-  ctx.moveTo(firstPos.x, firstPos.y);
+  ctx.moveTo(scaledX, scaledY);
 
   positions.forEach((pos, index) => {
     if (index === 0) return;
     
-    const point = {
-      x: (pos.xPercent / 100) * width,
-      y: (pos.yPercent / 100) * height,
-    };
+    const x = (pos.x / originalWidth) * targetWidth;
+    const y = (pos.y / originalHeight) * targetHeight;
     
-    ctx.lineTo(point.x, point.y);
+    ctx.lineTo(x, y);
   });
 
   ctx.stroke();
@@ -122,16 +121,15 @@ function drawTrajectory(ctx, positions, width, height) {
 }
 
 /**
- * Markers
+ * Markers - ✅ OPRAVENÉ
  */
-function drawMarkers(ctx, positions, width, height) {
-  const firstPos = {
-    x: (positions[0].xPercent / 100) * width,
-    y: (positions[0].yPercent / 100) * height,
-  };
+function drawMarkers(ctx, positions, targetWidth, targetHeight, originalWidth, originalHeight) {
+  const firstPos = positions[0];
+  const startX = (firstPos.x / originalWidth) * targetWidth;
+  const startY = (firstPos.y / originalHeight) * targetHeight;
   
   ctx.beginPath();
-  ctx.arc(firstPos.x, firstPos.y, 12, 0, 2 * Math.PI);
+  ctx.arc(startX, startY, 12, 0, 2 * Math.PI);
   ctx.fillStyle = '#00C853';
   ctx.fill();
   ctx.strokeStyle = '#fff';
@@ -142,15 +140,14 @@ function drawMarkers(ctx, positions, width, height) {
   ctx.font = 'bold 11px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('START', firstPos.x, firstPos.y);
+  ctx.fillText('START', startX, startY);
 
-  const lastPos = {
-    x: (positions[positions.length - 1].xPercent / 100) * width,
-    y: (positions[positions.length - 1].yPercent / 100) * height,
-  };
+  const lastPos = positions[positions.length - 1];
+  const endX = (lastPos.x / originalWidth) * targetWidth;
+  const endY = (lastPos.y / originalHeight) * targetHeight;
   
   ctx.beginPath();
-  ctx.arc(lastPos.x, lastPos.y, 12, 0, 2 * Math.PI);
+  ctx.arc(endX, endY, 12, 0, 2 * Math.PI);
   ctx.fillStyle = '#E53935';
   ctx.fill();
   ctx.strokeStyle = '#fff';
@@ -161,7 +158,7 @@ function drawMarkers(ctx, positions, width, height) {
   ctx.font = 'bold 11px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('END', lastPos.x, lastPos.y);
+  ctx.fillText('END', endX, endY);
 }
 
 /**
@@ -202,18 +199,19 @@ function drawInfoPanel(ctx, trackingData, width, height) {
 }
 
 /**
- * Heatmap generation
+ * Heatmap generation - ✅ OPRAVENÁ
  */
-function generateHeatmapData(positions, width, height) {
+function generateHeatmapData(positions, targetWidth, targetHeight, originalWidth, originalHeight) {
   const gridSize = 25;
-  const cols = Math.ceil(width / gridSize);
-  const rows = Math.ceil(height / gridSize);
+  const cols = Math.ceil(targetWidth / gridSize);
+  const rows = Math.ceil(targetHeight / gridSize);
   
   const heatmap = Array(rows).fill(0).map(() => Array(cols).fill(0));
   
+  // ✅ Absolute pozície scaled
   positions.forEach(pos => {
-    const x = (pos.xPercent / 100) * width;
-    const y = (pos.yPercent / 100) * height;
+    const x = (pos.x / originalWidth) * targetWidth;
+    const y = (pos.y / originalHeight) * targetHeight;
     
     const col = Math.floor(x / gridSize);
     const row = Math.floor(y / gridSize);
@@ -281,7 +279,7 @@ function getHeatmapColor(intensity) {
   }
 }
 
-// Helper
+// ✅ OPRAVENÝ Helper - 'this' namiesto 'ctx'
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
   this.beginPath();
   this.moveTo(x + radius, y);

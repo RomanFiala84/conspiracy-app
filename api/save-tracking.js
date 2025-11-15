@@ -1,3 +1,6 @@
+// api/save-tracking.js
+// OPRAVENÁ VERZIA - Lepšia štruktúra pre agregáciu a Cloudinary
+
 import { MongoClient } from 'mongodb';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -92,20 +95,18 @@ export default async function handler(req, res) {
 
     let cloudinaryData = null;
 
-    // Upload vizualizácie do Cloudinary
+    // ✅ Upload vizualizácie do Cloudinary
     if (visualization) {
       try {
-        // ✅ Unikátny filename: userId_contentId_timestamp
         const filename = `${trackingData.userId}_${trackingData.contentId}_${Date.now()}`;
         
         const result = await cloudinary.uploader.upload(visualization, {
           folder: 'hover-tracking-visualizations',
           public_id: filename,
           resource_type: 'image',
-          format: 'webp',
+          format: 'png', // ✅ PNG namiesto webp pre lepšiu kompatibilitu
           transformation: [
-            { width: 1200, height: 900, crop: 'limit' }, // ✅ Vyššie rozlíšenie
-            { quality: 'auto:good' },
+            { width: 1200, crop: 'limit', quality: 'auto:good' },
           ],
         });
 
@@ -116,59 +117,49 @@ export default async function handler(req, res) {
           height: result.height,
           format: result.format,
           bytes: result.bytes,
+          createdAt: new Date().toISOString(),
         };
 
         console.log('✅ Cloudinary upload successful:', cloudinaryData.url);
       } catch (uploadError) {
         console.error('❌ Cloudinary upload failed:', uploadError);
+        // Pokračuj bez vizualizácie
       }
     }
 
     // Analýza pohybu myši
     const movementAnalysis = analyzeMouseMovement(trackingData.mousePositions || []);
 
-    // Uloženie do MongoDB
+    // ✅ Uloženie do MongoDB
     const client = await connectToDatabase();
     const db = client.db('conspiracy');
     
-    // ✅ STRATÉGIA A: 1 dokument na userId + $push tracking records
-    // Výhoda: Všetky tracking záznamy jedného používateľa v jednom dokumente
     const trackingRecord = {
+      userId: trackingData.userId,
       contentId: trackingData.contentId,
       contentType: trackingData.contentType,
       timestamp: new Date(),
-      hoverMetrics: trackingData.hoverMetrics,
-      mousePositions: trackingData.mousePositions,
+      hoverMetrics: {
+        totalHoverTime: trackingData.hoverMetrics?.totalHoverTime || 0,
+        hoverStartTime: trackingData.hoverMetrics?.hoverStartTime,
+        hoverEndTime: trackingData.hoverMetrics?.hoverEndTime,
+      },
+      mousePositions: trackingData.mousePositions || [],
       movementAnalysis,
-      cloudinaryData,
+      cloudinaryData, // ✅ Ukladá URL, publicId, atď.
       containerDimensions: trackingData.containerDimensions,
     };
 
-    const result = await db.collection('hover_tracking').updateOne(
-      { userId: trackingData.userId },
-      {
-        $push: {
-          trackingRecords: trackingRecord
-        },
-        $set: {
-          lastUpdated: new Date(),
-        },
-        $setOnInsert: {
-          userId: trackingData.userId,
-          createdAt: new Date(),
-        }
-      },
-      { upsert: true }
-    );
+    // ✅ Uložiť ako samostatný dokument (lepšie pre agregáciu)
+    const result = await db.collection('hover_tracking').insertOne(trackingRecord);
 
-    console.log('✅ MongoDB save successful:', result.upsertedId || result.modifiedCount);
+    console.log('✅ MongoDB save successful:', result.insertedId);
 
     return res.status(200).json({
       success: true,
-      trackingId: result.upsertedId || 'updated',
+      trackingId: result.insertedId,
       imageUrl: cloudinaryData?.url || null,
-      isNewUser: !!result.upsertedId,
-      recordsCount: result.modifiedCount,
+      cloudinaryPublicId: cloudinaryData?.publicId || null,
     });
 
   } catch (error) {

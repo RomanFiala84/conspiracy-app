@@ -1,5 +1,5 @@
 // src/components/admin/AdminPanel.js
-// FINÁLNA VERZIA - Rozdelené mazanie na databázy + Tracking Heatmaps
+// FINÁLNA OPRAVENÁ VERZIA - Fix API endpoint pre tracking komponenty
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -306,8 +306,6 @@ const LoadingSpinner = styled.div`
   }
 `;
 
-// ✅ NOVÉ STYLED KOMPONENTY PRE TRACKING SEKCIU
-
 const TrackingSection = styled(Section)`
   background: linear-gradient(135deg, 
     ${p => p.theme.ACCENT_COLOR}11, 
@@ -402,7 +400,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
-  // ✅ NOVÝ STATE PRE TRACKING
+  // ✅ STATE PRE TRACKING
   const [trackingComponents, setTrackingComponents] = useState([]);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
@@ -427,15 +425,12 @@ const AdminPanel = () => {
     setLoading(false);
   }, [dataManager]);
 
-  // ✅ NOVÁ FUNKCIA: Načítať tracking komponenty
+  // ✅ OPRAVENÁ FUNKCIA: Načítať tracking komponenty
   const loadTrackingComponents = useCallback(async () => {
     setTrackingLoading(true);
     try {
-      const response = await fetch('/api/admin/tracking/components', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
+      // ✅ OPRAVENÝ ENDPOINT (odstránené /tracking/)
+      const response = await fetch('/api/admin-tracking-components');
 
       const data = await response.json();
 
@@ -457,15 +452,15 @@ const AdminPanel = () => {
       return;
     }
     loadStats();
-    loadTrackingComponents(); // ← PRIDANÉ
+    loadTrackingComponents();
   }, [userId, dataManager, navigate, loadStats, loadTrackingComponents]);
 
-  // ✅ NOVÁ FUNKCIA: Otvoriť tracking viewer
+  // Otvoriť tracking viewer
   const handleOpenTracking = () => {
     navigate('/admin/tracking');
   };
 
-  // ✅ HELPER FUNKCIA
+  // Helper funkcia
   const formatTime = (ms) => {
     if (!ms) return '0s';
     return `${(ms / 1000).toFixed(1)}s`;
@@ -857,7 +852,7 @@ const AdminPanel = () => {
           </StatsGrid>
         </Section>
 
-        {/* ✅ NOVÁ SEKCIA: TRACKING HEATMAPS */}
+        {/* ✅ TRACKING HEATMAPS SEKCIA */}
         <TrackingSection>
           <SectionTitle>🔥 Tracking Heatmaps</SectionTitle>
           <InfoText>

@@ -1,5 +1,5 @@
 // src/App.js
-// FINÁLNA VERZIA - S Page Transitions
+// FINÁLNA OPRAVENÁ VERZIA - S TrackingViewer route
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
@@ -23,6 +23,7 @@ import MainMenu from './components/main/MainMenu';
 // ADMIN COMPONENTS
 // ═══════════════════════════════════════════════════════════
 import AdminPanel from './components/admin/AdminPanel';
+import TrackingViewer from './components/admin/TrackingViewer'; // ✅ PRIDANÉ
 
 // ═══════════════════════════════════════════════════════════
 // SPECIAL AGENT MISSION (Mission 0)
@@ -156,6 +157,8 @@ function AppContent() {
             ADMIN
             ═══════════════════════════════════════════════════════════ */}
         <Route path="/admin" element={<PageTransition><AdminPanel /></PageTransition>} />
+        {/* ✅ NOVÁ ROUTE PRE TRACKING VIEWER */}
+        <Route path="/admin/tracking" element={<PageTransition><TrackingViewer /></PageTransition>} />
 
         {/* ═══════════════════════════════════════════════════════════
             SPECIAL AGENT MISSION (Mission 0)

@@ -1,5 +1,5 @@
 // src/hooks/useHoverTracking.js
-// FINÁLNA VERZIA - s containerDimensions a percentuálnymi pozíciami
+// FULL-PAGE TRACKING - Zachytáva absolute pozície vrátane scrollu
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -12,18 +12,14 @@ const isMobileDevice = () => {
 
 /**
  * Custom hook pre sledovanie hover a mouse movements
- * VYPNUTÉ NA MOBILE ZARIADENIACH
- * ✅ Ukladá containerDimensions a percentuálne pozície pre štandardizáciu
- * @param {string} contentId - ID príspevku/intervencie/prevencie
- * @param {string} contentType - 'post', 'intervention', 'prevention'
- * @param {string} userId - ID používateľa (z UserStatsContext)
+ * ✅ Zachytáva ABSOLUTE pozície vrátane scroll offsetu
  */
 export const useHoverTracking = (contentId, contentType, userId) => {
   const containerRef = useRef(null);
   const positionsRef = useRef([]);
   const hoverStartTimeRef = useRef(null);
   const totalHoverTimeRef = useRef(0);
-  const containerDimensionsRef = useRef(null); // ✅ Ukladá rozmery containera
+  const containerDimensionsRef = useRef(null);
   
   const [trackingData, setTrackingData] = useState({
     contentId,
@@ -34,7 +30,7 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     totalHoverTime: 0,
     isTracking: false,
     isMobile: isMobileDevice(),
-    containerDimensions: null, // ✅ NOVÉ
+    containerDimensions: null,
   });
 
   useEffect(() => {
@@ -54,11 +50,10 @@ export const useHoverTracking = (contentId, contentType, userId) => {
       hoverStartTimeRef.current = Date.now();
       positionsRef.current = [];
       
-      // ✅ Ulož rozmery containera pri vstupe myši
-      const rect = container.getBoundingClientRect();
+      // ✅ Ulož CELÉ rozmery (vrátane scrollu)
       containerDimensionsRef.current = {
-        width: rect.width,
-        height: rect.height,
+        width: container.scrollWidth,
+        height: container.scrollHeight,
         timestamp: Date.now(),
       };
       
@@ -70,9 +65,9 @@ export const useHoverTracking = (contentId, contentType, userId) => {
         containerDimensions: containerDimensionsRef.current,
       }));
       
-      console.log('🖱️ Mouse entered - tracking started', {
-        containerWidth: rect.width,
-        containerHeight: rect.height,
+      console.log('🖱️ Mouse entered - FULL-PAGE tracking started', {
+        fullWidth: container.scrollWidth,
+        fullHeight: container.scrollHeight,
       });
     };
 
@@ -105,20 +100,22 @@ export const useHoverTracking = (contentId, contentType, userId) => {
       }
       
       const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
       
-      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+      // ✅ ABSOLUTE pozícia vrátane scrollu
+      const x = e.clientX - rect.left + container.scrollLeft;
+      const y = e.clientY - rect.top + container.scrollTop;
+      
+      // Validácia
+      if (x < 0 || y < 0 || x > container.scrollWidth || y > container.scrollHeight) {
         return;
       }
       
-      // ✅ Ukladaj aj percentuálnu pozíciu pre presnejší scaling
+      // ✅ Ukladaj absolute + percentuálnu pozíciu
       positionsRef.current.push({
-        x: Math.round(x),
-        y: Math.round(y),
-        // ✅ Percentuálne pozície (0-100) - presné bez ohľadu na rozmery
-        xPercent: (x / rect.width) * 100,
-        yPercent: (y / rect.height) * 100,
+        x: Math.round(x), // ← Absolute pozícia
+        y: Math.round(y), // ← Absolute pozícia
+        xPercent: (x / container.scrollWidth) * 100,
+        yPercent: (y / container.scrollHeight) * 100,
         timestamp: currentTime,
         relativeTime: currentTime - hoverStartTimeRef.current,
       });
@@ -130,7 +127,7 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('mousemove', handleMouseMove);
 
-    console.log('🖱️ Desktop tracking enabled (16ms interval = 60 FPS)');
+    console.log('🖱️ FULL-PAGE tracking enabled (16ms interval = 60 FPS)');
 
     return () => {
       container.removeEventListener('mouseenter', handleMouseEnter);
@@ -139,7 +136,7 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     };
   }, [contentId, contentType, userId]);
 
-  // ✅ Getter pre finálne sync dáta
+  // Getter pre finálne sync dáta
   const getFinalData = () => {
     return {
       ...trackingData,
