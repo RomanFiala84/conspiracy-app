@@ -1,26 +1,45 @@
+// src/utils/visualizationGenerator.js
+// FINÁLNA VERZIA - štandardizované rozmery + percentuálne pozície
+
 import html2canvas from 'html2canvas';
+
+// ✅ ŠTANDARDNÉ ROZMERY - všetky vizualizácie v rovnakom rozlíšení
+const STANDARD_WIDTH = 1200;
+const STANDARD_HEIGHT = 900;
 
 /**
  * Generuje canvas vizualizáciu pohybu myši S POZADÍM A HEATMAPOU
- * OPRAVENÁ VERZIA - správne zarovnanie screenshot + tracking
- * @param {object} trackingData - Tracking dáta s mousePositions
- * @param {number} width - Šírka canvas
- * @param {number} height - Výška canvas
+ * ✅ ŠTANDARDIZOVANÉ ROZMERY - všetky vizualizácie sú v rovnakom rozlíšení
+ * @param {object} trackingData - Tracking dáta s mousePositions a containerDimensions
+ * @param {number} width - DEPRECATED - používa sa trackingData.containerDimensions
+ * @param {number} height - DEPRECATED - používa sa trackingData.containerDimensions
  * @param {HTMLElement} containerElement - DOM element komponentu na screenshot
  * @returns {Promise<string|null>} - Base64 data URL alebo null
  */
 export const generateVisualization = async (trackingData, width, height, containerElement) => {
-  // Minimálne 5 bodov pre zmysluplnú vizualizáciu
   if (!trackingData.mousePositions || trackingData.mousePositions.length < 5) {
     console.log('Insufficient tracking data for visualization');
     return null;
   }
 
   try {
-    // 1️⃣ Vytvor screenshot komponentu pomocou html2canvas
-    console.log('📸 Creating screenshot of component...');
+    // ✅ POUŽIŤ ŠTANDARDNÉ ROZMERY
+    const targetWidth = STANDARD_WIDTH;
+    const targetHeight = STANDARD_HEIGHT;
     
-    // ✅ OPRAVA: Získaj presné rozmery containera
+    const originalWidth = trackingData.containerDimensions?.width || width;
+    const originalHeight = trackingData.containerDimensions?.height || height;
+    
+    console.log('📸 Creating standardized visualization:', {
+      standard: `${targetWidth}x${targetHeight}px`,
+      original: `${originalWidth}x${originalHeight}px`,
+      scalingRatio: {
+        x: (targetWidth / originalWidth).toFixed(2),
+        y: (targetHeight / originalHeight).toFixed(2),
+      },
+    });
+    
+    // 1️⃣ Vytvor screenshot komponentu
     const rect = containerElement.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
@@ -31,42 +50,37 @@ export const generateVisualization = async (trackingData, width, height, contain
       logging: false,
       useCORS: true,
       allowTaint: true,
-      // ✅ KRITICKÉ - presné rozmery
       width: rect.width,
       height: rect.height,
       windowWidth: rect.width,
       windowHeight: rect.height,
-      // ✅ KRITICKÉ - scroll offset
       scrollX: -scrollLeft,
       scrollY: -scrollTop,
       x: 0,
       y: 0,
     });
 
-    // 2️⃣ Vytvor nový canvas pre finálnu vizualizáciu
-    // ✅ OPRAVA: Použiť presné rozmery containera
+    // 2️⃣ Vytvor štandardný canvas
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = rect.width;
-    finalCanvas.height = rect.height;
+    finalCanvas.width = targetWidth;
+    finalCanvas.height = targetHeight;
     const ctx = finalCanvas.getContext('2d');
 
-    // 3️⃣ Nakresli screenshot ako pozadie
-    ctx.drawImage(screenshotCanvas, 0, 0, rect.width, rect.height);
+    // 3️⃣ Nakresli screenshot (scaled na štandardné rozmery)
+    ctx.drawImage(screenshotCanvas, 0, 0, targetWidth, targetHeight);
 
-    // 4️⃣ Pridaj semi-transparent overlay pre lepšiu viditeľnosť
+    // 4️⃣ Pridaj semi-transparent overlay
     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
 
     const positions = trackingData.mousePositions;
 
-    // 🔥 5️⃣ HEATMAP - Vytvor heatmap z pozícií myši
+    // 🔥 5️⃣ HEATMAP
     console.log('🔥 Generating heatmap...');
-    const heatmapData = generateHeatmapData(positions, rect.width, rect.height);
-    
-    // Nakresli heatmap ako pozadie
-    drawHeatmap(ctx, heatmapData, rect.width, rect.height);
+    const heatmapData = generateHeatmapData(positions, targetWidth, targetHeight);
+    drawHeatmap(ctx, heatmapData, targetWidth, targetHeight);
 
-    // 6️⃣ Nakresliť trajektóriu pohybu myši (voliteľné - môžeš zakomentovať)
+    // 6️⃣ Nakresliť trajektóriu pohybu myši
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
     ctx.lineWidth = 2;
@@ -75,83 +89,92 @@ export const generateVisualization = async (trackingData, width, height, contain
     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
     ctx.shadowBlur = 3;
 
-    const firstPos = positions[0];
+    // ✅ VŽDY POUŽIŤ PERCENTUÁLNE POZÍCIE
+    const firstPos = {
+      x: (positions[0].xPercent / 100) * targetWidth,
+      y: (positions[0].yPercent / 100) * targetHeight,
+    };
+    
     ctx.moveTo(firstPos.x, firstPos.y);
 
-    // Nakresliť cestu
     positions.forEach((pos, index) => {
       if (index === 0) return;
-      ctx.lineTo(pos.x, pos.y);
+      
+      const point = {
+        x: (pos.xPercent / 100) * targetWidth,
+        y: (pos.yPercent / 100) * targetHeight,
+      };
+      
+      ctx.lineTo(point.x, point.y);
     });
 
     ctx.stroke();
-
-    // Reset shadow
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
 
     // 7️⃣ Označiť začiatok (zelený kruh)
     ctx.beginPath();
-    ctx.arc(firstPos.x, firstPos.y, 8, 0, 2 * Math.PI);
+    ctx.arc(firstPos.x, firstPos.y, 10, 0, 2 * Math.PI);
     ctx.fillStyle = '#00C853';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Pridať text "START"
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 10px Arial';
+    ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('START', firstPos.x, firstPos.y);
 
     // 8️⃣ Označiť koniec (červený kruh)
-    const lastPos = positions[positions.length - 1];
+    const lastPos = {
+      x: (positions[positions.length - 1].xPercent / 100) * targetWidth,
+      y: (positions[positions.length - 1].yPercent / 100) * targetHeight,
+    };
+    
     ctx.beginPath();
-    ctx.arc(lastPos.x, lastPos.y, 8, 0, 2 * Math.PI);
+    ctx.arc(lastPos.x, lastPos.y, 10, 0, 2 * Math.PI);
     ctx.fillStyle = '#E53935';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Pridať text "END"
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 10px Arial';
+    ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('END', lastPos.x, lastPos.y);
 
-    // 9️⃣ Pridať info panel v rohu
-    const padding = 15;
-    const panelWidth = 220;
-    const panelHeight = 90;
-    const panelX = rect.width - panelWidth - padding;
-    const panelY = rect.height - panelHeight - padding;
+    // 9️⃣ Pridať info panel
+    const padding = 20;
+    const panelWidth = 280;
+    const panelHeight = 120;
+    const panelX = targetWidth - panelWidth - padding;
+    const panelY = targetHeight - panelHeight - padding;
 
-    // Pozadie info panelu
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-    ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 8);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 10);
     ctx.fill();
 
-    // Text v info paneli
     ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
+    ctx.font = 'bold 16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
     const hoverTime = (trackingData.totalHoverTime / 1000).toFixed(1);
     const pointsCount = positions.length;
 
-    ctx.fillText(`⏱️ Hover time: ${hoverTime}s`, panelX + 10, panelY + 10);
-    ctx.fillText(`📍 Points: ${pointsCount}`, panelX + 10, panelY + 30);
-    ctx.fillText(`🔥 Heatmap enabled`, panelX + 10, panelY + 50);
-    ctx.fillText(`📐 ${rect.width}x${rect.height}px`, panelX + 10, panelY + 70);
+    ctx.fillText(`⏱️ Hover time: ${hoverTime}s`, panelX + 15, panelY + 15);
+    ctx.fillText(`📍 Points: ${pointsCount}`, panelX + 15, panelY + 40);
+    ctx.fillText(`🔥 Heatmap enabled`, panelX + 15, panelY + 65);
+    
+    ctx.font = '12px Arial';
+    ctx.fillText(`📐 Standard: ${targetWidth}x${targetHeight}px`, panelX + 15, panelY + 90);
 
-    // 🔟 Vrátiť ako WebP base64
-    console.log('✅ Visualization with heatmap generated');
-    return finalCanvas.toDataURL('image/webp', 0.85);
+    console.log('✅ Standardized visualization generated');
+    return finalCanvas.toDataURL('image/webp', 0.9);
 
   } catch (error) {
     console.error('❌ Error generating visualization:', error);
@@ -161,30 +184,28 @@ export const generateVisualization = async (trackingData, width, height, contain
 
 /**
  * Vytvorí heatmap dáta z pozícií myši
- * @param {Array} positions - Array mouse positions
- * @param {number} width - Canvas width
- * @param {number} height - Canvas height
- * @returns {Array} - 2D array s intenzitou pre každý pixel
+ * ✅ VŽDY POUŽÍVA PERCENTUÁLNE POZÍCIE
  */
 function generateHeatmapData(positions, width, height) {
-  // Vytvor 2D grid s počítadlami
-  const gridSize = 20; // Veľkosť grid bunky v pixeloch
+  const gridSize = 25;
   const cols = Math.ceil(width / gridSize);
   const rows = Math.ceil(height / gridSize);
   
   const heatmap = Array(rows).fill(0).map(() => Array(cols).fill(0));
   
-  // Spočítaj výskyty v každej bunke
   positions.forEach(pos => {
-    const col = Math.floor(pos.x / gridSize);
-    const row = Math.floor(pos.y / gridSize);
+    // ✅ Použiť percentuálne pozície
+    const x = (pos.xPercent / 100) * width;
+    const y = (pos.yPercent / 100) * height;
+    
+    const col = Math.floor(x / gridSize);
+    const row = Math.floor(y / gridSize);
     
     if (row >= 0 && row < rows && col >= 0 && col < cols) {
       heatmap[row][col]++;
     }
   });
   
-  // Nájdi maximum pre normalizáciu
   let maxValue = 0;
   heatmap.forEach(row => {
     row.forEach(val => {
@@ -192,7 +213,6 @@ function generateHeatmapData(positions, width, height) {
     });
   });
   
-  // Normalizuj hodnoty na 0-1
   if (maxValue > 0) {
     heatmap.forEach((row, r) => {
       row.forEach((val, c) => {
@@ -206,24 +226,18 @@ function generateHeatmapData(positions, width, height) {
 
 /**
  * Nakreslí heatmap na canvas
- * @param {CanvasRenderingContext2D} ctx - Canvas context
- * @param {Object} heatmapData - Heatmap data
- * @param {number} width - Canvas width
- * @param {number} height - Canvas height
  */
 function drawHeatmap(ctx, heatmapData, width, height) {
   const { heatmap, gridSize } = heatmapData;
   
   heatmap.forEach((row, r) => {
     row.forEach((intensity, c) => {
-      if (intensity > 0.05) { // Iba ak je aspoň 5% intenzita
+      if (intensity > 0.05) {
         const x = c * gridSize;
         const y = r * gridSize;
         
-        // Farba podľa intenzity (modrá -> zelená -> žltá -> červená)
         const color = getHeatmapColor(intensity);
         
-        // Nakresli obdĺžnik s alpha kanálom
         ctx.fillStyle = color;
         ctx.fillRect(x, y, gridSize, gridSize);
       }
@@ -233,26 +247,18 @@ function drawHeatmap(ctx, heatmapData, width, height) {
 
 /**
  * Vráti farbu pre heatmap podľa intenzity
- * @param {number} intensity - Hodnota 0-1
- * @returns {string} - RGBA farba
  */
 function getHeatmapColor(intensity) {
-  // Modrá (nízka intenzita) -> Červená (vysoká intenzita)
-  
   if (intensity < 0.25) {
-    // Modrá -> Azúrová
     const alpha = 0.2 + (intensity * 0.8);
     return `rgba(0, 120, 255, ${alpha})`;
   } else if (intensity < 0.5) {
-    // Azúrová -> Zelená
     const alpha = 0.3 + (intensity * 0.8);
     return `rgba(0, 200, 150, ${alpha})`;
   } else if (intensity < 0.75) {
-    // Zelená -> Žltá
     const alpha = 0.4 + (intensity * 0.8);
     return `rgba(255, 200, 0, ${alpha})`;
   } else {
-    // Žltá -> Červená
     const alpha = 0.5 + (intensity * 0.8);
     return `rgba(255, 50, 0, ${alpha})`;
   }

@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+// src/hooks/useHoverTracking.js
+// FINÁLNA VERZIA - s containerDimensions a percentuálnymi pozíciami
 
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Detekuje či je mobile zariadenie
@@ -8,11 +10,10 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
-
 /**
  * Custom hook pre sledovanie hover a mouse movements
  * VYPNUTÉ NA MOBILE ZARIADENIACH
- * ✅ OPRAVA: Vysokofrekvenčný tracking s getFinalData()
+ * ✅ Ukladá containerDimensions a percentuálne pozície pre štandardizáciu
  * @param {string} contentId - ID príspevku/intervencie/prevencie
  * @param {string} contentType - 'post', 'intervention', 'prevention'
  * @param {string} userId - ID používateľa (z UserStatsContext)
@@ -20,8 +21,9 @@ const isMobileDevice = () => {
 export const useHoverTracking = (contentId, contentType, userId) => {
   const containerRef = useRef(null);
   const positionsRef = useRef([]);
-  const hoverStartTimeRef = useRef(null); // ✅ NOVÉ: Ref pre hover start time
-  const totalHoverTimeRef = useRef(0); // ✅ NOVÉ: Ref pre total hover time
+  const hoverStartTimeRef = useRef(null);
+  const totalHoverTimeRef = useRef(0);
+  const containerDimensionsRef = useRef(null); // ✅ Ukladá rozmery containera
   
   const [trackingData, setTrackingData] = useState({
     contentId,
@@ -32,8 +34,8 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     totalHoverTime: 0,
     isTracking: false,
     isMobile: isMobileDevice(),
+    containerDimensions: null, // ✅ NOVÉ
   });
-
 
   useEffect(() => {
     const container = containerRef.current;
@@ -45,31 +47,40 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     
     if (!container || !userId) return;
 
-
     let lastRecordedTime = 0;
     const RECORD_INTERVAL = 16; // 60 FPS
-
 
     const handleMouseEnter = () => {
       hoverStartTimeRef.current = Date.now();
       positionsRef.current = [];
+      
+      // ✅ Ulož rozmery containera pri vstupe myši
+      const rect = container.getBoundingClientRect();
+      containerDimensionsRef.current = {
+        width: rect.width,
+        height: rect.height,
+        timestamp: Date.now(),
+      };
       
       setTrackingData(prev => ({
         ...prev,
         hoverStartTime: hoverStartTimeRef.current,
         isTracking: true,
         mousePositions: [],
+        containerDimensions: containerDimensionsRef.current,
       }));
       
-      console.log('🖱️ Mouse entered - tracking started');
+      console.log('🖱️ Mouse entered - tracking started', {
+        containerWidth: rect.width,
+        containerHeight: rect.height,
+      });
     };
-
 
     const handleMouseLeave = () => {
       if (!hoverStartTimeRef.current) return;
       
       const duration = Date.now() - hoverStartTimeRef.current;
-      totalHoverTimeRef.current += duration; // ✅ Update ref
+      totalHoverTimeRef.current += duration;
       
       setTrackingData(prev => ({
         ...prev,
@@ -77,12 +88,12 @@ export const useHoverTracking = (contentId, contentType, userId) => {
         hoverStartTime: null,
         isTracking: false,
         mousePositions: positionsRef.current,
+        containerDimensions: containerDimensionsRef.current,
       }));
       
       console.log(`🖱️ Mouse left - tracked ${positionsRef.current.length} positions in ${duration}ms`);
       hoverStartTimeRef.current = null;
     };
-
 
     const handleMouseMove = (e) => {
       if (!hoverStartTimeRef.current) return;
@@ -101,9 +112,13 @@ export const useHoverTracking = (contentId, contentType, userId) => {
         return;
       }
       
+      // ✅ Ukladaj aj percentuálnu pozíciu pre presnejší scaling
       positionsRef.current.push({
         x: Math.round(x),
         y: Math.round(y),
+        // ✅ Percentuálne pozície (0-100) - presné bez ohľadu na rozmery
+        xPercent: (x / rect.width) * 100,
+        yPercent: (y / rect.height) * 100,
         timestamp: currentTime,
         relativeTime: currentTime - hoverStartTimeRef.current,
       });
@@ -111,14 +126,11 @@ export const useHoverTracking = (contentId, contentType, userId) => {
       lastRecordedTime = currentTime;
     };
 
-
     container.addEventListener('mouseenter', handleMouseEnter);
     container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('mousemove', handleMouseMove);
 
-
     console.log('🖱️ Desktop tracking enabled (16ms interval = 60 FPS)');
-
 
     return () => {
       container.removeEventListener('mouseenter', handleMouseEnter);
@@ -127,20 +139,19 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     };
   }, [contentId, contentType, userId]);
 
-
-  // ✅ NOVÉ: Getter pre finálne sync dáta
+  // ✅ Getter pre finálne sync dáta
   const getFinalData = () => {
     return {
       ...trackingData,
-      mousePositions: positionsRef.current, // ← Sync prístup!
+      mousePositions: positionsRef.current,
       totalHoverTime: totalHoverTimeRef.current,
+      containerDimensions: containerDimensionsRef.current,
     };
   };
-
 
   return { 
     containerRef, 
     trackingData,
-    getFinalData  // ← Vráť getter funkciu
+    getFinalData
   };
 };
