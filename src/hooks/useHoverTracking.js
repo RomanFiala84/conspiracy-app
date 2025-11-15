@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+
 /**
  * Detekuje či je mobile zariadenie
  */
@@ -7,16 +8,18 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
+
 /**
  * Custom hook pre sledovanie hover a mouse movements
  * VYPNUTÉ NA MOBILE ZARIADENIACH
- * VYSOKÁ FREKVENCIA ZAZNAMENÁVANIA (50ms interval)
+ * ✅ OPRAVA: Vysokofrekvenčný tracking bez throttling
  * @param {string} contentId - ID príspevku/intervencie/prevencie
  * @param {string} contentType - 'post', 'intervention', 'prevention'
  * @param {string} userId - ID používateľa (z UserStatsContext)
  */
 export const useHoverTracking = (contentId, contentType, userId) => {
   const containerRef = useRef(null);
+  const positionsRef = useRef([]); // ✅ OPRAVA: Použiť ref namiesto state
   const [trackingData, setTrackingData] = useState({
     contentId,
     contentType,
@@ -28,54 +31,69 @@ export const useHoverTracking = (contentId, contentType, userId) => {
     isMobile: isMobileDevice(),
   });
 
+
   useEffect(() => {
     const container = containerRef.current;
     
-    // ✅ NOVÉ - Netrackujeme na mobile!
+    // ✅ Netrackujeme na mobile!
     if (isMobileDevice()) {
       console.log('📱 Mobile device detected - tracking disabled');
       return;
     }
     
-    // Netrackujeme ak:
-    // - container neexistuje
-    // - používateľ nie je prihlásený
     if (!container || !userId) return;
 
+
+    let hoverStartTime = null;
+    let rafId = null;
     let lastRecordedTime = 0;
-    // ✅ OPRAVA: 200ms → 50ms (4x viac bodov!)
-    const RECORD_INTERVAL = 50; // Zaznamenať každých 50ms (20 bodov/sekundu)
+    
+    // ✅ OPRAVA: 50ms → 16ms (60 FPS = smooth tracking)
+    const RECORD_INTERVAL = 16; // ~60 bodov/sekundu
+
 
     // Handler pre vstup myši do oblasti
     const handleMouseEnter = () => {
+      hoverStartTime = Date.now();
+      positionsRef.current = []; // Reset pozícií
+      
       setTrackingData(prev => ({
         ...prev,
-        hoverStartTime: Date.now(),
+        hoverStartTime: hoverStartTime,
         isTracking: true,
-        mousePositions: [], // Reset pozícií
+        mousePositions: [],
       }));
+      
+      console.log('🖱️ Mouse entered - tracking started');
     };
+
 
     // Handler pre opustenie myši
     const handleMouseLeave = () => {
-      setTrackingData(prev => {
-        if (!prev.hoverStartTime) return prev;
-        
-        const duration = Date.now() - prev.hoverStartTime;
-        return {
-          ...prev,
-          totalHoverTime: prev.totalHoverTime + duration,
-          hoverStartTime: null,
-          isTracking: false,
-        };
-      });
+      if (!hoverStartTime) return;
+      
+      const duration = Date.now() - hoverStartTime;
+      
+      setTrackingData(prev => ({
+        ...prev,
+        totalHoverTime: prev.totalHoverTime + duration,
+        hoverStartTime: null,
+        isTracking: false,
+        mousePositions: positionsRef.current, // ✅ Commit pozícií
+      }));
+      
+      console.log(`🖱️ Mouse left - tracked ${positionsRef.current.length} positions in ${duration}ms`);
+      hoverStartTime = null;
     };
 
-    // Handler pre pohyb myši
+
+    // ✅ OPRAVA: Handler pre pohyb myši BEZ throttling v handleru
     const handleMouseMove = (e) => {
+      if (!hoverStartTime) return;
+      
       const currentTime = Date.now();
       
-      // Throttling - zaznamenať iba každých 50ms
+      // ✅ Throttling ale menej agressívny
       if (currentTime - lastRecordedTime < RECORD_INTERVAL) {
         return;
       }
@@ -84,38 +102,44 @@ export const useHoverTracking = (contentId, contentType, userId) => {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       
-      setTrackingData(prev => {
-        // Ignorovať ak nie je hover active
-        if (!prev.hoverStartTime) return prev;
-        
-        return {
-          ...prev,
-          mousePositions: [...prev.mousePositions, {
-            x: Math.round(x),
-            y: Math.round(y),
-            timestamp: currentTime,
-            relativeTime: currentTime - prev.hoverStartTime,
-          }],
-        };
+      // ✅ KRITICKÉ: Kontrola či je pozícia v rámci containera
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        return; // Ignoruj pozície mimo containera
+      }
+      
+      // ✅ Uložiť do ref (rýchlejšie ako state update)
+      positionsRef.current.push({
+        x: Math.round(x),
+        y: Math.round(y),
+        timestamp: currentTime,
+        relativeTime: currentTime - hoverStartTime,
       });
       
       lastRecordedTime = currentTime;
     };
+
 
     // Pridať event listeners
     container.addEventListener('mouseenter', handleMouseEnter);
     container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('mousemove', handleMouseMove);
 
-    console.log('🖱️ Desktop tracking enabled (50ms interval)');
+
+    console.log('🖱️ Desktop tracking enabled (16ms interval = 60 FPS)');
+
 
     // Cleanup
     return () => {
       container.removeEventListener('mouseenter', handleMouseEnter);
       container.removeEventListener('mouseleave', handleMouseLeave);
       container.removeEventListener('mousemove', handleMouseMove);
+      
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [contentId, contentType, userId]);
+
 
   return { containerRef, trackingData };
 };

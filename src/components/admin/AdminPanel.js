@@ -1,5 +1,6 @@
 // src/components/admin/AdminPanel.js
-// FINÁLNA VERZIA s blokovaním a zoznamom používateľov v súhrne
+// FINÁLNA VERZIA - Rozdelené mazanie na databázy + Tracking
+
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +9,7 @@ import Layout from '../../styles/Layout';
 import StyledButton from '../../styles/StyledButton';
 import { useUserStats } from '../../contexts/UserStatsContext';
 import * as XLSX from 'xlsx';
+
 
 const Container = styled.div`
   padding: 20px;
@@ -19,6 +21,7 @@ const Container = styled.div`
   }
 `;
 
+
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
@@ -27,6 +30,7 @@ const Header = styled.div`
   flex-wrap: wrap;
   gap: 16px;
 `;
+
 
 const Title = styled.h1`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -38,11 +42,13 @@ const Title = styled.h1`
   }
 `;
 
+
 const RefreshButton = styled(StyledButton)`
   @media (max-width: 480px) {
     width: 100%;
   }
 `;
+
 
 const GridLayout = styled.div`
   display: grid;
@@ -54,6 +60,7 @@ const GridLayout = styled.div`
     grid-template-columns: 1fr;
   }
 `;
+
 
 const Section = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -72,6 +79,7 @@ const Section = styled.div`
   }
 `;
 
+
 const SectionTitle = styled.h2`
   color: ${p => p.theme.ACCENT_COLOR};
   margin-bottom: 20px;
@@ -84,6 +92,7 @@ const SectionTitle = styled.h2`
     font-size: 18px;
   }
 `;
+
 
 const ButtonGroup = styled.div`
   display: flex;
@@ -100,12 +109,14 @@ const ButtonGroup = styled.div`
   }
 `;
 
+
 const InfoText = styled.p`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   margin-bottom: 16px;
   font-size: 14px;
   line-height: 1.6;
 `;
+
 
 const StatsGrid = styled.div`
   display: grid;
@@ -120,6 +131,7 @@ const StatsGrid = styled.div`
     grid-template-columns: 1fr;
   }
 `;
+
 
 const StatCard = styled.div`
   background: linear-gradient(135deg, 
@@ -137,6 +149,7 @@ const StatCard = styled.div`
   }
 `;
 
+
 const StatLabel = styled.div`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   font-size: 12px;
@@ -144,6 +157,7 @@ const StatLabel = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
+
 
 const StatValue = styled.div`
   color: ${p => p.theme.ACCENT_COLOR};
@@ -155,6 +169,7 @@ const StatValue = styled.div`
   }
 `;
 
+
 const TableWrapper = styled.div`
   overflow-x: auto;
   margin-top: 16px;
@@ -162,12 +177,14 @@ const TableWrapper = styled.div`
   border: 1px solid ${p => p.theme.BORDER_COLOR};
 `;
 
+
 const UserTable = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
   min-width: 1000px;
 `;
+
 
 const Th = styled.th`
   padding: 12px 8px;
@@ -183,6 +200,7 @@ const Th = styled.th`
   z-index: 10;
 `;
 
+
 const Td = styled.td`
   padding: 10px 8px;
   border-bottom: 1px solid ${p => p.theme.BORDER_COLOR};
@@ -195,11 +213,13 @@ const Td = styled.td`
   }
 `;
 
+
 const BlockButton = styled(StyledButton)`
   font-size: 11px;
   padding: 4px 8px;
   min-width: 80px;
 `;
+
 
 const MissionRow = styled.div`
   display: flex;
@@ -217,6 +237,7 @@ const MissionRow = styled.div`
   }
 `;
 
+
 const MissionLabel = styled.div`
   font-weight: 600;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -224,6 +245,7 @@ const MissionLabel = styled.div`
   align-items: center;
   gap: 8px;
 `;
+
 
 const MissionButtons = styled.div`
   display: flex;
@@ -238,10 +260,45 @@ const MissionButtons = styled.div`
   }
 `;
 
+
 const DangerSection = styled(Section)`
   border-color: ${p => p.theme.ERROR_COLOR || '#ef4444'};
   background: ${p => `${p.theme.ERROR_COLOR || '#ef4444'}11`};
 `;
+
+
+const DeleteRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: ${p => p.theme.INPUT_BACKGROUND}44;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #ef444433;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+`;
+
+
+const DeleteLabel = styled.div`
+  font-weight: 600;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  span {
+    font-size: 12px;
+    color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+    font-weight: normal;
+  }
+`;
+
 
 const LoadingOverlay = styled.div`
   position: fixed;
@@ -256,6 +313,7 @@ const LoadingOverlay = styled.div`
   z-index: 9999;
   backdrop-filter: blur(4px);
 `;
+
 
 const LoadingSpinner = styled.div`
   text-align: center;
@@ -275,9 +333,11 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { dataManager, userId } = useUserStats();
+
 
   const [stats, setStats] = useState({
     total: 0,
@@ -291,9 +351,11 @@ const AdminPanel = () => {
     mission3Complete: 0
   });
 
+
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+
 
   const loadStats = useCallback(async () => {
     setLoading(true);
@@ -316,6 +378,7 @@ const AdminPanel = () => {
     setLoading(false);
   }, [dataManager]);
 
+
   useEffect(() => {
     if (!dataManager.isAdmin(userId)) {
       navigate('/');
@@ -324,9 +387,11 @@ const AdminPanel = () => {
     loadStats();
   }, [userId, dataManager, navigate, loadStats]);
 
+
   const handleToggleBlock = async (participantCode, currentBlockedState) => {
     const action = currentBlockedState ? 'odblokovať' : 'blokovať';
     if (!window.confirm(`Naozaj chcete ${action} používateľa ${participantCode}?`)) return;
+
 
     try {
       await dataManager.setBlockedState(participantCode, !currentBlockedState);
@@ -337,7 +402,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ FINÁLNY EXPORT s ID používateľov v súhrne
+
   const handleExportExcel = async () => {
     setIsExporting(true);
     
@@ -346,15 +411,17 @@ const AdminPanel = () => {
       const allData = dataManager.getAllParticipantsData();
       const participants = Object.values(allData);
 
+
       if (participants.length === 0) {
         alert('Žiadne dáta na export');
         setIsExporting(false);
         return;
       }
 
-      // Zber komponentov a otázok
+
       const allComponentIds = new Set();
       const questionIdsByComponent = {};
+
 
       participants.forEach(p => {
         if (p.responses) {
@@ -372,7 +439,7 @@ const AdminPanel = () => {
         }
       });
 
-      // ✅ SHEET 1: Detailné dáta účastníkov
+
       const rows = participants.map(p => {
         const missionPoints = p.user_stats_mission_points || 0;
         const bonusPoints = (p.referrals_count || 0) * 10;
@@ -408,7 +475,7 @@ const AdminPanel = () => {
           'Všetky misie dokončené': p.all_missions_completed ? 'ÁNO' : 'NIE',
         };
 
-        // Odpovede na otázky
+
         allComponentIds.forEach(componentId => {
           const componentData = p.responses?.[componentId];
           if (componentData) {
@@ -426,6 +493,7 @@ const AdminPanel = () => {
               }
             });
 
+
             if (componentData.metadata) {
               row[`[${componentId}] Začiatok`] = componentData.metadata.started_at 
                 ? new Date(componentData.metadata.started_at).toLocaleString('sk-SK') 
@@ -440,6 +508,7 @@ const AdminPanel = () => {
         });
         return row;
       });
+
 
       const ws = XLSX.utils.json_to_sheet(rows);
       
@@ -456,7 +525,7 @@ const AdminPanel = () => {
       }
       ws['!freeze'] = { xSplit: 1, ySplit: 1 };
 
-      // ✅ SHEET 2: Súhrn s agregovanými štatistikami + zoznam používateľov
+
       const summaryData = [
         ['=== CELKOVÁ ŠTATISTIKA ==='],
         [''],
@@ -489,7 +558,7 @@ const AdminPanel = () => {
         ['Kód účastníka', 'Skupina', 'Celkové body', 'Status', 'Všetky misie', 'Registrovaný'],
       ];
 
-      // ✅ Pridanie všetkých používateľov (jeden riadok = jeden používateľ)
+
       participants.forEach(p => {
         const missionPoints = p.user_stats_mission_points || 0;
         const bonusPoints = (p.referrals_count || 0) * 10;
@@ -508,7 +577,7 @@ const AdminPanel = () => {
       const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
       wsSummary['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
 
-      // Vytvorenie workbooku
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Účastníci');
       XLSX.utils.book_append_sheet(wb, wsSummary, 'Súhrn');
@@ -527,6 +596,7 @@ const AdminPanel = () => {
     }
   };
 
+
   const handleUnlockMission = async (missionId) => {
     if (!window.confirm(`Odomknúť misiu ${missionId} pre všetkých?`)) return;
     try {
@@ -537,6 +607,7 @@ const AdminPanel = () => {
       alert(`❌ Chyba: ${error.message}`);
     }
   };
+
 
   const handleLockMission = async (missionId) => {
     if (!window.confirm(`Zamknúť misiu ${missionId} pre všetkých?`)) return;
@@ -549,9 +620,12 @@ const AdminPanel = () => {
     }
   };
 
-  const handleDeleteAll = async () => {
-    if (!window.confirm('⚠️ VYMAZAŤ VŠETKÝCH ÚČASTNÍKOV? Táto akcia je nevratná!')) return;
-    if (!window.confirm('Ste si istý? Všetky dáta budú natrvalo vymazané!')) return;
+
+  // ✅ NOVÉ: Mazanie Progress DB (používatelia)
+  const handleDeleteProgress = async () => {
+    if (!window.confirm('⚠️ VYMAZAŤ PROGRESS DB (všetci používatelia)?\n\nTáto akcia je nevratná!')) return;
+    if (!window.confirm('Ste si istý? Všetky progress dáta budú natrvalo vymazané!')) return;
+
 
     try {
       const response = await fetch('/api/progress?code=all', {
@@ -560,9 +634,10 @@ const AdminPanel = () => {
         body: JSON.stringify({ adminCode: 'RF9846' })
       });
 
+
       if (response.ok) {
         dataManager.clearAllData();
-        alert('✅ Všetky dáta vymazané!');
+        alert('✅ Progress DB vymazaná!');
         await loadStats();
       } else {
         const errorData = await response.json();
@@ -572,6 +647,104 @@ const AdminPanel = () => {
       alert(`❌ Chyba: ${error.message}`);
     }
   };
+
+
+  // ✅ NOVÉ: Mazanie Responses DB
+  const handleDeleteResponses = async () => {
+    if (!window.confirm('⚠️ VYMAZAŤ RESPONSES DB (všetky odpovede)?\n\nTáto akcia je nevratná!')) return;
+    if (!window.confirm('Ste si istý? Všetky response dáta budú natrvalo vymazané!')) return;
+
+
+    try {
+      const response = await fetch('/api/responses', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: 'RF9846', deleteAll: true })
+      });
+
+
+      if (response.ok) {
+        alert('✅ Responses DB vymazaná!');
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Chyba: ${errorData.error || response.statusText}`);
+      }
+    } catch (error) {
+      alert(`❌ Chyba: ${error.message}`);
+    }
+  };
+
+
+  // ✅ NOVÉ: Mazanie Tracking DB
+  const handleDeleteTracking = async () => {
+    if (!window.confirm('⚠️ VYMAZAŤ TRACKING DB (všetky tracking dáta)?\n\nTáto akcia je nevratná!')) return;
+    if (!window.confirm('Ste si istý? Všetky tracking dáta budú natrvalo vymazané!')) return;
+
+
+    try {
+      const response = await fetch('/api/tracking/delete-all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: 'RF9846' })
+      });
+
+
+      if (response.ok) {
+        alert('✅ Tracking DB vymazaná!');
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Chyba: ${errorData.error || response.statusText}`);
+      }
+    } catch (error) {
+      alert(`❌ Chyba: ${error.message}`);
+    }
+  };
+
+
+  // ✅ NOVÉ: Mazanie VŠETKÉHO
+  const handleDeleteAll = async () => {
+    if (!window.confirm('⚠️ VYMAZAŤ VŠETKY DATABÁZY?\n\n- Progress DB\n- Responses DB\n- Tracking DB\n\nTáto akcia je NEVRATNÁ!')) return;
+    if (!window.confirm('Ste si ABSOLÚTNE istý? Všetky dáta vo VŠETKÝCH databázach budú natrvalo vymazané!')) return;
+    if (!window.confirm('POSLEDNÉ VAROVANIE! Táto akcia je nevratná. Pokračovať?')) return;
+
+
+    setLoading(true);
+    
+    try {
+      // Vymazať Progress
+      await fetch('/api/progress?code=all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: 'RF9846' })
+      });
+
+
+      // Vymazať Responses
+      await fetch('/api/responses', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: 'RF9846', deleteAll: true })
+      });
+
+
+      // Vymazať Tracking
+      await fetch('/api/tracking/delete-all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: 'RF9846' })
+      });
+
+
+      dataManager.clearAllData();
+      alert('✅ Všetky databázy vymazané!\n\n- Progress DB\n- Responses DB\n- Tracking DB');
+      await loadStats();
+    } catch (error) {
+      alert(`❌ Chyba: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (loading && allUsers.length === 0) {
     return (
@@ -585,6 +758,7 @@ const AdminPanel = () => {
     );
   }
 
+
   return (
     <Layout showLevelDisplay={false}>
       <Container>
@@ -594,6 +768,7 @@ const AdminPanel = () => {
             🔄 Obnoviť dáta
           </RefreshButton>
         </Header>
+
 
         <Section>
           <SectionTitle>📊 Prehľad štatistík</SectionTitle>
@@ -637,6 +812,7 @@ const AdminPanel = () => {
           </StatsGrid>
         </Section>
 
+
         <GridLayout>
           <Section>
             <SectionTitle>💾 Export dát</SectionTitle>
@@ -652,6 +828,7 @@ const AdminPanel = () => {
               {isExporting ? 'Exportujem...' : '📥 Export do Excel'}
             </StyledButton>
           </Section>
+
 
           <Section>
             <SectionTitle>🔓 Správa misií</SectionTitle>
@@ -679,6 +856,7 @@ const AdminPanel = () => {
             ))}
           </Section>
         </GridLayout>
+
 
         <Section>
           <SectionTitle>👥 Zoznam účastníkov ({allUsers.length})</SectionTitle>
@@ -743,17 +921,67 @@ const AdminPanel = () => {
           )}
         </Section>
 
+
         <DangerSection>
-          <SectionTitle style={{ color: '#ef4444' }}>⚠️ Danger Zone</SectionTitle>
-          <InfoText>Tieto akcie sú nevratné a vymažú všetky dáta!</InfoText>
-          <StyledButton 
-            variant="danger"
-            fullWidth
-            onClick={handleDeleteAll}
-          >
-            🗑️ Vymazať všetkých účastníkov
-          </StyledButton>
+          <SectionTitle style={{ color: '#ef4444' }}>⚠️ Danger Zone - Mazanie databáz</SectionTitle>
+          <InfoText>
+            Tieto akcie sú <strong>NEVRATNÉ</strong> a vymažú dáta z jednotlivých databáz alebo zo všetkých naraz!
+          </InfoText>
+          
+          <DeleteRow>
+            <DeleteLabel>
+              🗂️ Progress DB <span>(používatelia, progress, blokovanie)</span>
+            </DeleteLabel>
+            <StyledButton 
+              variant="danger"
+              size="small"
+              onClick={handleDeleteProgress}
+            >
+              🗑️ Vymazať Progress
+            </StyledButton>
+          </DeleteRow>
+          
+          <DeleteRow>
+            <DeleteLabel>
+              📝 Responses DB <span>(odpovede na otázky)</span>
+            </DeleteLabel>
+            <StyledButton 
+              variant="danger"
+              size="small"
+              onClick={handleDeleteResponses}
+            >
+              🗑️ Vymazať Responses
+            </StyledButton>
+          </DeleteRow>
+          
+          <DeleteRow>
+            <DeleteLabel>
+              🖱️ Tracking DB <span>(mouse tracking, heatmapy)</span>
+            </DeleteLabel>
+            <StyledButton 
+              variant="danger"
+              size="small"
+              onClick={handleDeleteTracking}
+            >
+              🗑️ Vymazať Tracking
+            </StyledButton>
+          </DeleteRow>
+          
+          <hr style={{ margin: '24px 0', border: 'none', borderTop: '2px solid #ef444444' }} />
+          
+          <DeleteRow style={{ borderColor: '#ef4444', borderWidth: '2px' }}>
+            <DeleteLabel style={{ fontSize: '18px' }}>
+              💥 VYMAZAŤ VŠETKO <span>(všetky 3 databázy)</span>
+            </DeleteLabel>
+            <StyledButton 
+              variant="danger"
+              onClick={handleDeleteAll}
+            >
+              🔥 Vymazať VŠETKY databázy
+            </StyledButton>
+          </DeleteRow>
         </DangerSection>
+
 
         <ButtonGroup>
           <StyledButton variant="ghost" onClick={() => navigate('/mainmenu')}>
@@ -764,5 +992,6 @@ const AdminPanel = () => {
     </Layout>
   );
 };
+
 
 export default AdminPanel;

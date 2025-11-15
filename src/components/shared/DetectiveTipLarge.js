@@ -1,9 +1,11 @@
 // src/components/shared/DetectiveTipLarge.js
-// OPRAVENÁ VERZIA - Bez prebliknutia pri zatváraní
+// OPRAVENÁ VERZIA - Minimálna doba čítania 10s
+
 
 
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
+
 
 
 const TipButton = styled.button`
@@ -47,6 +49,7 @@ const TipButton = styled.button`
 `;
 
 
+
 const DetectiveIcon = styled.img`
   width: 110%;
   height: 110%;
@@ -56,6 +59,7 @@ const DetectiveIcon = styled.img`
   left: 50%;
   transform: translate(-50%, -50%);
 `;
+
 
 
 const DetectiveIconFallback = styled.div`
@@ -70,6 +74,7 @@ const DetectiveIconFallback = styled.div`
     font-size: 28px;
   }
 `;
+
 
 
 const Badge = styled.div`
@@ -102,6 +107,7 @@ const Badge = styled.div`
 `;
 
 
+
 const Overlay = styled.div`
   position: fixed;
   top: 0;
@@ -115,8 +121,6 @@ const Overlay = styled.div`
   justify-content: center;
   z-index: 1000;
   padding: 20px;
-  
-  /* ✅ OPRAVA: animation-fill-mode: forwards */
   animation: ${p => p.$isClosing ? 'fadeOut' : 'fadeIn'} 0.3s ease;
   animation-fill-mode: forwards;
   
@@ -132,6 +136,7 @@ const Overlay = styled.div`
 `;
 
 
+
 const ModalContainer = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
   border: 3px solid ${p => p.theme.ACCENT_COLOR};
@@ -143,8 +148,7 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: row;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  
-  /* ✅ OPRAVA: animation-fill-mode: forwards */
+  position: relative;
   animation: ${p => p.$isClosing ? 'slideOut' : 'slideIn'} 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   animation-fill-mode: forwards;
   
@@ -182,6 +186,33 @@ const ModalContainer = styled.div`
 `;
 
 
+// ✅ NOVÉ: Countdown badge
+const CountdownBadge = styled.div`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: ${p => p.theme.ACCENT_COLOR};
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 6px 12px;
+    top: 12px;
+    right: 12px;
+  }
+`;
+
+
+
 const ContentContainer = styled.div`
   width: 50%;
   padding: 30px;
@@ -200,6 +231,7 @@ const ContentContainer = styled.div`
     padding: 20px;
   }
 `;
+
 
 
 const DetectiveImageContainer = styled.div`
@@ -225,12 +257,14 @@ const DetectiveImageContainer = styled.div`
 `;
 
 
+
 const DetectiveImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
 `;
+
 
 
 const DetectiveImageFallback = styled.div`
@@ -247,6 +281,7 @@ const DetectiveImageFallback = styled.div`
 `;
 
 
+
 const Header = styled.div`
   display: flex;
   align-items: center;
@@ -255,6 +290,7 @@ const Header = styled.div`
   padding-bottom: 16px;
   border-bottom: 2px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 
 const DetectiveName = styled.div`
@@ -268,12 +304,13 @@ const DetectiveName = styled.div`
 `;
 
 
+
 const CloseButton = styled.button`
   background: transparent;
   border: none;
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   font-size: 28px;
-  cursor: pointer;
+  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
   padding: 0;
   width: 32px;
   height: 32px;
@@ -282,13 +319,15 @@ const CloseButton = styled.button`
   justify-content: center;
   border-radius: 50%;
   transition: all 0.2s ease;
+  opacity: ${p => p.disabled ? 0.3 : 1};
   
   &:hover {
-    background: ${p => p.theme.BORDER_COLOR};
-    color: ${p => p.theme.PRIMARY_TEXT_COLOR};
-    transform: rotate(90deg);
+    background: ${p => p.disabled ? 'transparent' : p.theme.BORDER_COLOR};
+    color: ${p => p.disabled ? p.theme.SECONDARY_TEXT_COLOR : p.theme.PRIMARY_TEXT_COLOR};
+    transform: ${p => p.disabled ? 'none' : 'rotate(90deg)'};
   }
 `;
+
 
 
 const TipText = styled.div`
@@ -319,31 +358,34 @@ const TipText = styled.div`
 `;
 
 
+
 const ActionButton = styled.button`
   width: 100%;
   padding: 14px 24px;
-  background: linear-gradient(135deg, 
-    ${p => p.theme.ACCENT_COLOR}, 
-    ${p => p.theme.ACCENT_COLOR_2}
-  );
+  background: ${p => p.disabled 
+    ? p.theme.BORDER_COLOR 
+    : `linear-gradient(135deg, ${p.theme.ACCENT_COLOR}, ${p.theme.ACCENT_COLOR_2})`
+  };
   color: white;
   border: none;
   border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
-  cursor: pointer;
+  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  opacity: ${p => p.disabled ? 0.5 : 1};
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    transform: ${p => p.disabled ? 'none' : 'translateY(-2px)'};
+    box-shadow: ${p => p.disabled ? '0 4px 12px rgba(0,0,0,0.2)' : '0 6px 16px rgba(0,0,0,0.3)'};
   }
   
   &:active {
-    transform: translateY(0);
+    transform: ${p => p.disabled ? 'none' : 'translateY(0)'};
   }
 `;
+
 
 
 const DetectiveTipLarge = ({
@@ -358,6 +400,7 @@ const DetectiveTipLarge = ({
   autoCloseDelay = 8000,
   showBadge = false,
   position = 'right',
+  minReadTime = 10000, // ✅ NOVÉ: Minimálna doba čítania (10s default)
   onOpen,
   onClose
 }) => {
@@ -365,17 +408,45 @@ const DetectiveTipLarge = ({
   const [isClosing, setIsClosing] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
+  const [canClose, setCanClose] = useState(false); // ✅ NOVÉ
+  const [countdown, setCountdown] = useState(minReadTime / 1000); // ✅ NOVÉ
+
 
 
   const handleClose = useCallback(() => {
+    if (!canClose) return; // ✅ Zabrániť zatvoriť skoro
+    
     setIsClosing(true);
-    // ✅ OPRAVA: Unmount až po dokončení animácie (400ms)
     setTimeout(() => {
       setIsClosing(false);
       setIsOpen(false);
       if (onClose) onClose();
     }, 400);
-  }, [onClose]);
+  }, [canClose, onClose]);
+
+
+
+  // ✅ NOVÉ: Countdown timer
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    setCanClose(false);
+    setCountdown(minReadTime / 1000);
+    
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          setCanClose(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isOpen, minReadTime]);
+
 
 
   useEffect(() => {
@@ -389,14 +460,16 @@ const DetectiveTipLarge = ({
   }, [autoOpen, autoOpenDelay, onOpen]);
 
 
+
   useEffect(() => {
-    if (isOpen && autoClose) {
+    if (isOpen && autoClose && canClose) {
       const timer = setTimeout(() => {
         handleClose();
       }, autoCloseDelay);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoClose, autoCloseDelay, handleClose]);
+  }, [isOpen, autoClose, autoCloseDelay, canClose, handleClose]);
+
 
 
   const handleToggle = useCallback(() => {
@@ -409,9 +482,11 @@ const DetectiveTipLarge = ({
   }, [isOpen, handleClose, onOpen]);
 
 
+
   const handleImageError = () => {
     setImageError(true);
   };
+
 
 
   const handleIconError = () => {
@@ -419,17 +494,21 @@ const DetectiveTipLarge = ({
   };
 
 
+
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && canClose) {
       handleClose();
     }
   };
 
 
+
   if (!tip) return null;
 
 
+
   const buttonStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
+
 
 
   return (
@@ -455,18 +534,34 @@ const DetectiveTipLarge = ({
       {(isOpen || isClosing) && (
         <Overlay $isClosing={isClosing} onClick={handleOverlayClick}>
           <ModalContainer $isClosing={isClosing}>
+            {/* ✅ NOVÉ: Countdown badge */}
+            {!canClose && (
+              <CountdownBadge>
+                ⏱️ {countdown}s
+              </CountdownBadge>
+            )}
+            
             <ContentContainer>
               <Header>
                 <DetectiveName>{detectiveName}</DetectiveName>
-                <CloseButton onClick={handleClose} aria-label="Zavrieť">
+                <CloseButton 
+                  onClick={handleClose} 
+                  disabled={!canClose}
+                  aria-label="Zavrieť"
+                  title={!canClose ? `Čakaj ešte ${countdown}s` : 'Zavrieť'}
+                >
                   ×
                 </CloseButton>
               </Header>
               
               <TipText dangerouslySetInnerHTML={{ __html: tip }} />
               
-              <ActionButton onClick={handleClose}>
-                {buttonText}
+              <ActionButton 
+                onClick={handleClose}
+                disabled={!canClose}
+                title={!canClose ? `Čakaj ešte ${countdown}s` : buttonText}
+              >
+                {!canClose ? `Čakaj ${countdown}s...` : buttonText}
               </ActionButton>
             </ContentContainer>
             
@@ -487,6 +582,7 @@ const DetectiveTipLarge = ({
     </>
   );
 };
+
 
 
 export default DetectiveTipLarge;

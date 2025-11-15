@@ -1,9 +1,11 @@
 // src/components/shared/DetectiveTip.js
-// OPRAVENÁ VERZIA - Bez prebliknutia pri zatváraní
+// OPRAVENÁ VERZIA - Minimálna doba čítania 10s
+
 
 
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
+
 
 
 const TipButton = styled.button`
@@ -47,6 +49,7 @@ const TipButton = styled.button`
 `;
 
 
+
 const DetectiveIcon = styled.img`
   width: 110%;
   height: 110%;
@@ -56,6 +59,7 @@ const DetectiveIcon = styled.img`
   left: 50%;
   transform: translate(-50%, -50%);
 `;
+
 
 
 const DetectiveIconFallback = styled.div`
@@ -70,6 +74,7 @@ const DetectiveIconFallback = styled.div`
     font-size: 28px;
   }
 `;
+
 
 
 const Badge = styled.div`
@@ -102,6 +107,7 @@ const Badge = styled.div`
 `;
 
 
+
 const TipBubble = styled.div`
   position: fixed;
   bottom: 100px;
@@ -113,8 +119,6 @@ const TipBubble = styled.div`
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   z-index: 998;
-  
-  /* ✅ OPRAVA: animation-fill-mode: forwards */
   animation: ${p => p.$isClosing ? 'slideOut' : 'slideIn'} 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   animation-fill-mode: forwards;
   
@@ -173,6 +177,7 @@ const TipBubble = styled.div`
 `;
 
 
+
 const TipHeader = styled.div`
   display: flex;
   align-items: center;
@@ -181,6 +186,7 @@ const TipHeader = styled.div`
   padding-bottom: 12px;
   border-bottom: 2px solid ${p => p.theme.BORDER_COLOR};
 `;
+
 
 
 const DetectiveAvatar = styled.img`
@@ -195,6 +201,7 @@ const DetectiveAvatar = styled.img`
     height: 35px;
   }
 `;
+
 
 
 const DetectiveAvatarFallback = styled.div`
@@ -216,6 +223,7 @@ const DetectiveAvatarFallback = styled.div`
 `;
 
 
+
 const DetectiveName = styled.div`
   font-weight: 700;
   color: ${p => p.theme.ACCENT_COLOR};
@@ -226,6 +234,7 @@ const DetectiveName = styled.div`
     font-size: 14px;
   }
 `;
+
 
 
 const TipText = styled.div`
@@ -250,20 +259,23 @@ const TipText = styled.div`
 `;
 
 
+
 const CloseButton = styled.button`
   background: transparent;
   border: none;
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   font-size: 24px;
-  cursor: pointer;
+  cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
   padding: 0;
   line-height: 1;
   transition: color 0.2s ease;
+  opacity: ${p => p.disabled ? 0.3 : 1};
   
   &:hover {
-    color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+    color: ${p => p.disabled ? p.theme.SECONDARY_TEXT_COLOR : p.theme.PRIMARY_TEXT_COLOR};
   }
 `;
+
 
 
 const ProgressBar = styled.div`
@@ -278,6 +290,7 @@ const ProgressBar = styled.div`
 `;
 
 
+
 const ProgressFill = styled.div`
   height: 100%;
   background: ${p => p.theme.ACCENT_COLOR};
@@ -290,6 +303,30 @@ const ProgressFill = styled.div`
 `;
 
 
+// ✅ NOVÉ: Countdown timer
+const CountdownTimer = styled.div`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: ${p => p.theme.ACCENT_COLOR}22;
+  border: 1px solid ${p => p.theme.ACCENT_COLOR};
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: ${p => p.theme.ACCENT_COLOR};
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  @media (max-width: 480px) {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+`;
+
+
+
 const DetectiveTip = ({ 
   tip, 
   detectiveName = "Detektív Conan", 
@@ -299,23 +336,55 @@ const DetectiveTip = ({
   autoCloseDelay = 8000,
   showBadge = false,
   position = 'right',
+  minReadTime = 10000, // ✅ NOVÉ: Minimálna doba čítania (10s default)
   onOpen,
   onClose
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [canClose, setCanClose] = useState(false); // ✅ NOVÉ
+  const [countdown, setCountdown] = useState(minReadTime / 1000); // ✅ NOVÉ
+
 
 
   const handleClose = useCallback(() => {
+    if (!canClose) {
+      // ✅ Shake animation ak sa pokúsi zatvoriť skoro
+      return;
+    }
+    
     setIsClosing(true);
-    // ✅ OPRAVA: Unmount až po dokončení animácie (400ms)
     setTimeout(() => {
       setIsClosing(false);
       setIsOpen(false);
       if (onClose) onClose();
     }, 400);
-  }, [onClose]);
+  }, [canClose, onClose]);
+
+
+
+  // ✅ NOVÉ: Countdown timer
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    setCanClose(false);
+    setCountdown(minReadTime / 1000);
+    
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          setCanClose(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isOpen, minReadTime]);
+
 
 
   useEffect(() => {
@@ -330,15 +399,17 @@ const DetectiveTip = ({
   }, [autoOpen, autoOpenDelay, onOpen]);
 
 
+
   useEffect(() => {
-    if (isOpen && autoClose) {
+    if (isOpen && autoClose && canClose) {
       const timer = setTimeout(() => {
         handleClose();
       }, autoCloseDelay);
 
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoClose, autoCloseDelay, handleClose]);
+  }, [isOpen, autoClose, autoCloseDelay, canClose, handleClose]);
+
 
 
   const handleToggle = useCallback(() => {
@@ -351,17 +422,21 @@ const DetectiveTip = ({
   }, [isOpen, handleClose, onOpen]);
 
 
+
   const handleImageError = () => {
     console.warn('Detective image failed to load, using fallback');
     setImageError(true);
   };
 
 
+
   if (!tip) return null;
+
 
 
   const buttonStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
   const bubbleStyle = position === 'left' ? { left: '20px', right: 'auto' } : {};
+
 
 
   return (
@@ -386,6 +461,13 @@ const DetectiveTip = ({
       
       {(isOpen || isClosing) && (
         <TipBubble style={bubbleStyle} $isClosing={isClosing}>
+          {/* ✅ NOVÉ: Countdown display */}
+          {!canClose && (
+            <CountdownTimer>
+              ⏱️ {countdown}s
+            </CountdownTimer>
+          )}
+          
           <TipHeader>
             {!imageError ? (
               <DetectiveAvatar 
@@ -399,14 +481,16 @@ const DetectiveTip = ({
             <DetectiveName>{detectiveName}</DetectiveName>
             <CloseButton 
               onClick={handleClose}
+              disabled={!canClose}
               aria-label="Zavrieť tip"
+              title={!canClose ? `Čakaj ešte ${countdown}s` : 'Zavrieť'}
             >
               ×
             </CloseButton>
           </TipHeader>
           <TipText dangerouslySetInnerHTML={{ __html: tip }} />
           
-          {autoClose && (
+          {autoClose && canClose && (
             <ProgressBar>
               <ProgressFill $duration={autoCloseDelay / 1000} />
             </ProgressBar>
@@ -416,6 +500,7 @@ const DetectiveTip = ({
     </>
   );
 };
+
 
 
 export default DetectiveTip;

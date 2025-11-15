@@ -1,19 +1,23 @@
 // src/components/missions/mission1/Questionnaire1A.js
-// UPRAVENÁ VERZIA s ResponseManager a time tracking
+// UPRAVENÁ VERZIA s ResponseManager, time tracking a DetectiveTipSmall
+
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../styles/Layout';
 import StyledButton from '../../../styles/StyledButton';
+import DetectiveTipSmall from '../../shared/DetectiveTipSmall';
 import { useUserStats } from '../../../contexts/UserStatsContext';
 import { getResponseManager } from '../../../utils/ResponseManager';
+
 
 const Container = styled.div`
   padding: 20px;
   max-width: 600px;
   margin: 0 auto;
 `;
+
 
 const Card = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -23,6 +27,7 @@ const Card = styled.div`
   margin-bottom: 20px;
 `;
 
+
 const Title = styled.h2`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   text-align: center;
@@ -30,6 +35,7 @@ const Title = styled.h2`
   font-size: 20px;
   font-weight: 600;
 `;
+
 
 const QuestionCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
@@ -39,6 +45,7 @@ const QuestionCard = styled.div`
   margin-bottom: 16px;
 `;
 
+
 const Question = styled.p`
   margin-bottom: 12px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
@@ -46,12 +53,14 @@ const Question = styled.p`
   font-weight: 500;
 `;
 
+
 const ScaleContainer = styled.div`
   display: flex;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
 `;
+
 
 const RadioLabel = styled.label`
   flex: 1;
@@ -77,6 +86,7 @@ const RadioLabel = styled.label`
   }
 `;
 
+
 const ScaleLabels = styled.div`
   display: flex;
   justify-content: space-between;
@@ -85,6 +95,7 @@ const ScaleLabels = styled.div`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
 `;
 
+
 const ErrorText = styled.div`
   color: ${p => p.theme.ACCENT_COLOR_2};
   margin-bottom: 16px;
@@ -92,11 +103,13 @@ const ErrorText = styled.div`
   font-size: 14px;
 `;
 
+
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 24px;
 `;
+
 
 const ProgressIndicator = styled.div`
   text-align: center;
@@ -104,6 +117,7 @@ const ProgressIndicator = styled.div`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   margin-top: 16px;
 `;
+
 
 // Definícia otázok - ľahko sa pridávajú/odoberajú
 const QUESTIONS = [
@@ -124,7 +138,9 @@ const QUESTIONS = [
   }
 ];
 
+
 const COMPONENT_ID = 'mission1_questionnaire1a';
+
 
 const Questionnaire1A = () => {
   const navigate = useNavigate();
@@ -135,6 +151,7 @@ const Questionnaire1A = () => {
   const [error, setError] = useState('');
   const [startTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Načítaj uložené odpovede
   useEffect(() => {
@@ -149,6 +166,7 @@ const Questionnaire1A = () => {
     
     loadSaved();
   }, [userId, responseManager]);
+
 
   // Handler pre zmenu odpovede s auto-save
   const handleChange = async (questionId, value) => {
@@ -167,10 +185,12 @@ const Questionnaire1A = () => {
     );
   };
 
+
   // Validácia - všetky otázky vyplnené?
   const isComplete = () => {
     return QUESTIONS.every(q => answers[q.id] !== undefined && answers[q.id] !== null);
   };
+
 
   // Submit
   const handleContinue = async () => {
@@ -197,8 +217,6 @@ const Questionnaire1A = () => {
         }
       );
       
-
-      
       // Navigácia podľa skupiny
       const progress = await dataManager.loadUserProgress(userId);
       const group = progress.group_assignment;
@@ -217,11 +235,19 @@ const Questionnaire1A = () => {
     }
   };
 
+
   return (
     <Layout>
       <Container>
         <Card>
           <Title>Dotazník 1A – Miera dôvery</Title>
+          
+          {/* ✅ NOVÉ: Detective Tip */}
+          <DetectiveTipSmall
+            title="💡 Tip"
+            icon="🕵️"
+            tip="<strong>Označte</strong> číslo na škále pre každý výrok podľa toho, do akej miery s ním <strong>súhlasíte</strong> alebo <strong>nesúhlasíte</strong>."
+          />
           
           {QUESTIONS.map((question, i) => (
             <QuestionCard key={question.id}>
@@ -266,5 +292,6 @@ const Questionnaire1A = () => {
     </Layout>
   );
 };
+
 
 export default Questionnaire1A;
