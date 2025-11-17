@@ -83,16 +83,17 @@ export default async function handler(req, res) {
         aggregatedLandmarks = record.landmarks;
       }
 
-      // Zachytaj rozmery containera (mali by byť štandardné)
-      if (record.containerDimensions && !containerDimensions) {
-        containerDimensions = record.containerDimensions;
+      // ✅ OPRAVA - Zachytaj rozmery containera (preferuj tie s original)
+      if (record.containerDimensions) {
+        // Ak už máme containerDimensions, prepíš len ak nový má original field
+        if (!containerDimensions || record.containerDimensions.original) {
+          containerDimensions = record.containerDimensions;
+        }
       }
     });
 
     // ✅ Hľadaj component template v Cloudinary
-    // Skúsime nájsť cez Cloudinary API alebo MongoDB
     try {
-      // Príklad: template môže byť uložený v samostatnej kolekcii alebo v Cloudinary
       const templatePublicId = `conspiracy-app/component-templates/template_${contentId}`;
       componentTemplateUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${templatePublicId}.png`;
       
@@ -102,6 +103,15 @@ export default async function handler(req, res) {
     }
 
     const avgHoverTime = records.length > 0 ? totalHoverTime / records.length : 0;
+
+    // ✅ Log pre debugging
+    console.log('📊 Aggregated data:', {
+      contentId,
+      positions: aggregatedPositions.length,
+      users: users.size,
+      landmarks: aggregatedLandmarks.length,
+      containerDimensions: containerDimensions
+    });
 
     return res.status(200).json({
       success: true,
@@ -115,7 +125,10 @@ export default async function handler(req, res) {
         totalHoverTime,
         avgHoverTime,
         componentTemplateUrl,
-        containerDimensions: containerDimensions || { width: 1200, height: 2000 },
+        containerDimensions: containerDimensions || { 
+          width: 1200, 
+          height: 2000 
+        }, // ✅ Fallback ak chýbajú rozmery
         landmarks: aggregatedLandmarks,
       }
     });

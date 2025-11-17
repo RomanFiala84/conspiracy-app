@@ -1,13 +1,14 @@
 // src/utils/trackingHelpers.js
-// FINÁLNA VERZIA - S fixnými rozmermi a landmarks
+// OPRAVENÁ VERZIA - Dynamická výška namiesto fixnej
 
 import { generateVisualization } from './visualizationGenerator';
 
 /**
- * ✅ KONŠTANTY - Štandardné rozmery pre všetky komponenty
+ * ✅ UPRAVENÉ KONŠTANTY - Fixná šírka, dynamická výška
  */
 const STANDARD_WIDTH = 1200;
-const STANDARD_HEIGHT = 2000;
+const MAX_HEIGHT = 10000; // Maximum (bezpečnostný limit)
+const MIN_HEIGHT = 600;   // Minimum
 
 /**
  * Helper: Konvertuje Blob na base64 string
@@ -22,44 +23,56 @@ function blobToBase64(blob) {
 }
 
 /**
- * ✅ NOVÁ FUNKCIA - Resize image na štandardné rozmery
+ * ✅ NOVÁ FUNKCIA - Vypočítaj proportional výšku
  */
-async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH, targetHeight = STANDARD_HEIGHT) {
+function calculateProportionalHeight(originalWidth, originalHeight, targetWidth) {
+  const scale = targetWidth / originalWidth;
+  const targetHeight = Math.round(originalHeight * scale);
+  
+  // Clamp medzi MIN a MAX
+  return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight));
+}
+
+/**
+ * ✅ UPRAVENÁ FUNKCIA - Resize s proporcionálnou výškou
+ */
+async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(blob);
     
     img.onload = () => {
-      // Vytvor canvas so štandardnými rozmermi
+      // ✅ Vypočítaj proportional height
+      const targetHeight = calculateProportionalHeight(img.width, img.height, targetWidth);
+      
+      console.log('📏 Image resize:', {
+        original: `${img.width}×${img.height}`,
+        target: `${targetWidth}×${targetHeight}`,
+        scale: (targetWidth / img.width).toFixed(2)
+      });
+      
       const canvas = document.createElement('canvas');
       canvas.width = targetWidth;
-      canvas.height = targetHeight;
+      canvas.height = targetHeight; // ✅ Dynamická výška
       const ctx = canvas.getContext('2d');
       
       // Biele pozadie
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, targetWidth, targetHeight);
       
-      // Vypočítaj scaling aby sa obrázok zmestil
-      const scale = Math.min(
-        targetWidth / img.width,
-        targetHeight / img.height
-      );
-      
-      const scaledWidth = img.width * scale;
+      // Vykresli obrázok (fit to width, maintain aspect ratio)
+      const scale = targetWidth / img.width;
       const scaledHeight = img.height * scale;
       
-      // Centrovať obrázok
-      const x = (targetWidth - scaledWidth) / 2;
-      const y = (targetHeight - scaledHeight) / 2;
+      ctx.drawImage(img, 0, 0, targetWidth, scaledHeight);
       
-      // Vykresli obrázok
-      ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-      
-      // Konvertuj na blob
       canvas.toBlob((resizedBlob) => {
         URL.revokeObjectURL(url);
-        resolve(resizedBlob);
+        resolve({ 
+          blob: resizedBlob, 
+          width: targetWidth,
+          height: targetHeight 
+        });
       }, 'image/png', 0.95);
     };
     
@@ -73,9 +86,9 @@ async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH, targetH
 }
 
 /**
- * ✅ NOVÁ FUNKCIA - Normalizuj tracking pozície na štandardné rozmery
+ * ✅ UPRAVENÁ FUNKCIA - Normalizuj tracking pozície (len X-os, Y zostáva proportional)
  */
-function normalizeTrackingPositions(positions, originalWidth, originalHeight, targetWidth = STANDARD_WIDTH, targetHeight = STANDARD_HEIGHT) {
+function normalizeTrackingPositions(positions, originalWidth, originalHeight, targetWidth, targetHeight) {
   if (!positions || positions.length === 0) return [];
   
   const scaleX = targetWidth / originalWidth;
@@ -109,9 +122,9 @@ function normalizeTrackingPositions(positions, originalWidth, originalHeight, ta
 }
 
 /**
- * ✅ NOVÁ FUNKCIA - Normalizuj landmarks na štandardné rozmery
+ * ✅ UPRAVENÁ FUNKCIA - Normalizuj landmarks
  */
-function normalizeLandmarks(landmarks, originalWidth, originalHeight, targetWidth = STANDARD_WIDTH, targetHeight = STANDARD_HEIGHT) {
+function normalizeLandmarks(landmarks, originalWidth, originalHeight, targetWidth, targetHeight) {
   if (!landmarks || landmarks.length === 0) return [];
   
   const scaleX = targetWidth / originalWidth;
@@ -137,34 +150,42 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
     console.log('💾 Saving tracking data with visualization...');
 
     const originalWidth = trackingData.containerDimensions?.width || STANDARD_WIDTH;
-    const originalHeight = trackingData.containerDimensions?.height || STANDARD_HEIGHT;
+    const originalHeight = trackingData.containerDimensions?.height || MIN_HEIGHT;
 
-    // ✅ 1. Normalizuj tracking pozície na štandardné rozmery
+    console.log('📐 Original dimensions:', { originalWidth, originalHeight });
+
+    // ✅ 1. Vypočítaj target rozmery (proportional height)
+    const targetWidth = STANDARD_WIDTH;
+    const targetHeight = calculateProportionalHeight(originalWidth, originalHeight, targetWidth);
+
+    console.log('📐 Target dimensions:', { targetWidth, targetHeight });
+
+    // ✅ 2. Normalizuj tracking pozície
     const normalizedPositions = normalizeTrackingPositions(
       trackingData.mousePositions,
       originalWidth,
       originalHeight,
-      STANDARD_WIDTH,
-      STANDARD_HEIGHT
+      targetWidth,
+      targetHeight
     );
 
-    // ✅ 2. Normalizuj landmarks na štandardné rozmery
+    // ✅ 3. Normalizuj landmarks
     const normalizedLandmarks = normalizeLandmarks(
       trackingData.landmarks || [],
       originalWidth,
       originalHeight,
-      STANDARD_WIDTH,
-      STANDARD_HEIGHT
+      targetWidth,
+      targetHeight
     );
 
-    // ✅ 3. Ulož tracking dáta do MongoDB (s normalizovanými pozíciami)
+    // ✅ 4. Ulož tracking dáta do MongoDB (s normalizovanými pozíciami a landmarks)
     const normalizedTrackingData = {
       ...trackingData,
       mousePositions: normalizedPositions,
       landmarks: normalizedLandmarks,
       containerDimensions: {
-        width: STANDARD_WIDTH,
-        height: STANDARD_HEIGHT,
+        width: targetWidth,
+        height: targetHeight,
         original: {
           width: originalWidth,
           height: originalHeight
@@ -185,11 +206,11 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
     const trackingResult = await trackingResponse.json();
     console.log('✅ Tracking data saved:', trackingResult);
 
-    // ✅ 4. Vygeneruj heatmap overlay (už s normalizovanými pozíciami)
+    // ✅ 5. Vygeneruj heatmap overlay (už s normalizovanými pozíciami)
     const visualization = await generateVisualization(
       normalizedTrackingData,
-      STANDARD_WIDTH,
-      STANDARD_HEIGHT,
+      targetWidth,
+      targetHeight,
       containerElement
     );
 
@@ -198,10 +219,10 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
       return { success: true, tracking: trackingResult };
     }
 
-    // ✅ 5. Konvertuj Blob na base64
+    // ✅ 6. Konvertuj Blob na base64
     const base64Image = await blobToBase64(visualization.blob);
 
-    // ✅ 6. Upload heatmap overlay do Cloudinary
+    // ✅ 7. Upload heatmap overlay do Cloudinary
     const cloudinaryResponse = await fetch('/api/upload-heatmap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -222,7 +243,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
     const cloudinaryResult = await cloudinaryResponse.json();
     console.log('✅ Heatmap uploaded to Cloudinary:', cloudinaryResult.data?.url);
 
-    // ✅ 7. Aktualizuj tracking záznam s Cloudinary URL
+    // ✅ 8. Aktualizuj tracking záznam s Cloudinary URL
     await fetch('/api/update-tracking-cloudinary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -248,7 +269,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 };
 
 /**
- * ✅ NOVÁ FUNKCIA - Vygeneruje a uploaduje component template screenshot (fixné rozmery)
+ * ✅ UPRAVENÁ FUNKCIA - Vygeneruje a uploaduje component template (dynamická výška)
  */
 export const generateAndUploadComponentTemplate = async (containerElement, contentId, contentType) => {
   if (!containerElement) {
@@ -283,23 +304,23 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       throw new Error('Failed to create blob from screenshot');
     }
 
-    console.log('📏 Original size:', {
+    console.log('📏 Original screenshot size:', {
       width: screenshot.width,
       height: screenshot.height,
       size: `${(originalBlob.size / 1024).toFixed(2)}KB`
     });
 
-    // ✅ Resize na štandardné rozmery
-    const resizedBlob = await resizeImageToStandard(originalBlob, STANDARD_WIDTH, STANDARD_HEIGHT);
+    // ✅ Resize na štandardnú šírku s proporcionálnou výškou
+    const resizeResult = await resizeImageToStandard(originalBlob, STANDARD_WIDTH);
 
     console.log('📏 Resized to standard:', {
-      width: STANDARD_WIDTH,
-      height: STANDARD_HEIGHT,
-      size: `${(resizedBlob.size / 1024).toFixed(2)}KB`
+      width: resizeResult.width,
+      height: resizeResult.height,
+      size: `${(resizeResult.blob.size / 1024).toFixed(2)}KB`
     });
 
     // Konvertuj na base64
-    const base64Image = await blobToBase64(resizedBlob);
+    const base64Image = await blobToBase64(resizeResult.blob);
 
     // Upload do Cloudinary
     const response = await fetch('/api/upload-component-template', {
@@ -310,8 +331,8 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
         contentId: contentId,
         contentType: contentType,
         dimensions: {
-          width: STANDARD_WIDTH,
-          height: STANDARD_HEIGHT
+          width: resizeResult.width,
+          height: resizeResult.height
         }
       }),
     });

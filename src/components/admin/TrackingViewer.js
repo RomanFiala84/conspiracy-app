@@ -1,5 +1,5 @@
 // src/components/admin/TrackingViewer.js
-// FINÁLNA VERZIA - S landmark scaling a fixnými rozmermi
+// OPRAVENÁ VERZIA - Dynamický canvas namiesto fixného
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,9 +7,9 @@ import styled from 'styled-components';
 import Layout from '../../styles/Layout';
 import StyledButton from '../../styles/StyledButton';
 
-// ✅ KONŠTANTY - Štandardné rozmery
+// ✅ UPRAVENÉ KONŠTANTY - len fallback
 const STANDARD_WIDTH = 1200;
-const STANDARD_HEIGHT = 2000;
+const STANDARD_HEIGHT = 2000; // Používa sa len ako fallback
 
 const Container = styled.div`
   padding: 20px;
@@ -299,7 +299,7 @@ const TrackingViewer = () => {
     console.log(`✅ Heatmap overlay drawn (${positions.length} aggregated points)`);
   };
 
-  // ✅ NOVÁ FUNKCIA - Vykresli landmark boundaries (debug)
+  // Vykresli landmark boundaries (debug)
   const drawLandmarkBoundaries = (ctx, landmarks) => {
     if (!landmarks || landmarks.length === 0) return;
 
@@ -332,7 +332,7 @@ const TrackingViewer = () => {
     console.log(`✅ Drew ${landmarks.length} landmark boundaries`);
   };
 
-  // ✅ Načítať tracking dáta a vykresliť composite heatmap
+  // ✅ UPRAVENÁ FUNKCIA - Načítať tracking dáta a vykresliť composite heatmap
   useEffect(() => {
     if (!selectedComponent) return;
 
@@ -343,15 +343,18 @@ const TrackingViewer = () => {
       const startTime = performance.now();
       const ctx = canvas.getContext('2d', { alpha: false });
       
-      // ✅ FIXNÉ ROZMERY
-      canvas.width = STANDARD_WIDTH;
-      canvas.height = STANDARD_HEIGHT;
+      // ✅ OPRAVA - Použi rozmery z containerDimensions namiesto fixných
+      const canvasWidth = data.containerDimensions?.width || STANDARD_WIDTH;
+      const canvasHeight = data.containerDimensions?.height || STANDARD_HEIGHT;
+      
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
 
       console.log('🎨 Rendering composite heatmap:', {
         positions: data.aggregatedPositions?.length,
         landmarks: data.landmarks?.length,
         templateUrl: data.componentTemplateUrl,
-        size: `${STANDARD_WIDTH}x${STANDARD_HEIGHT}`
+        size: `${canvasWidth}×${canvasHeight}` // ✅ Dynamické rozmery
       });
 
       // ✅ 1. Načítaj component template (ak existuje)
@@ -362,7 +365,7 @@ const TrackingViewer = () => {
             templateImg.crossOrigin = 'anonymous';
             
             templateImg.onload = () => {
-              ctx.drawImage(templateImg, 0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
+              ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
               console.log('✅ Component template loaded');
               resolve();
             };
@@ -371,14 +374,14 @@ const TrackingViewer = () => {
               console.error('❌ Failed to load template:', error);
               // Fallback - sivé pozadie s info textom
               ctx.fillStyle = '#f5f5f5';
-              ctx.fillRect(0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
+              ctx.fillRect(0, 0, canvasWidth, canvasHeight);
               
               ctx.fillStyle = '#999999';
               ctx.font = '16px Arial';
               ctx.textAlign = 'center';
-              ctx.fillText('⚠️ Background template not loaded', STANDARD_WIDTH / 2, STANDARD_HEIGHT / 2 - 20);
+              ctx.fillText('⚠️ Background template not loaded', canvasWidth / 2, canvasHeight / 2 - 20);
               ctx.font = '14px Arial';
-              ctx.fillText('Showing heatmap overlay only', STANDARD_WIDTH / 2, STANDARD_HEIGHT / 2 + 10);
+              ctx.fillText('Showing heatmap overlay only', canvasWidth / 2, canvasHeight / 2 + 10);
               
               resolve();
             };
@@ -388,34 +391,34 @@ const TrackingViewer = () => {
         } catch (error) {
           console.error('❌ Template error:', error);
           ctx.fillStyle = '#f5f5f5';
-          ctx.fillRect(0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
       } else {
         // ⚠️ Žiadny template - sivé pozadie s info textom
         console.warn('⚠️ No component template URL available');
         ctx.fillStyle = '#f5f5f5';
-        ctx.fillRect(0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         
         ctx.fillStyle = '#666666';
         ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('📊 Heatmap Data', STANDARD_WIDTH / 2, 80);
+        ctx.fillText('📊 Heatmap Data', canvasWidth / 2, 80);
         
         ctx.font = '14px Arial';
         ctx.fillStyle = '#999999';
-        ctx.fillText(`${data.contentId}`, STANDARD_WIDTH / 2, 110);
-        ctx.fillText(`${data.aggregatedPositions?.length || 0} tracking points`, STANDARD_WIDTH / 2, 140);
-        ctx.fillText(`${data.usersCount} users`, STANDARD_WIDTH / 2, 170);
+        ctx.fillText(`${data.contentId}`, canvasWidth / 2, 110);
+        ctx.fillText(`${data.aggregatedPositions?.length || 0} tracking points`, canvasWidth / 2, 140);
+        ctx.fillText(`${data.usersCount} users`, canvasWidth / 2, 170);
         
         ctx.fillStyle = '#cccccc';
         ctx.font = '12px Arial';
-        ctx.fillText('⚠️ Component screenshot not available', STANDARD_WIDTH / 2, STANDARD_HEIGHT - 40);
+        ctx.fillText('⚠️ Component screenshot not available', canvasWidth / 2, canvasHeight - 40);
       }
 
       // ✅ 2. Vykresli heatmap overlay
       if (data.aggregatedPositions && data.aggregatedPositions.length > 0) {
         const aggregated = aggregatePositions(data.aggregatedPositions, 10);
-        await drawHeatmapOverlay(ctx, aggregated, STANDARD_WIDTH, STANDARD_HEIGHT);
+        await drawHeatmapOverlay(ctx, aggregated, canvasWidth, canvasHeight);
         console.log(`✅ Drew heatmap with ${aggregated.length} aggregated points`);
       } else {
         console.warn('⚠️ No tracking positions to draw');
@@ -424,7 +427,7 @@ const TrackingViewer = () => {
         ctx.fillStyle = '#ff9800';
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('⚠️ No tracking data available', STANDARD_WIDTH / 2, STANDARD_HEIGHT / 2);
+        ctx.fillText('⚠️ No tracking data available', canvasWidth / 2, canvasHeight / 2);
       }
 
       // ✅ 3. Vykresli landmarks (ak je debug mode)
@@ -440,7 +443,7 @@ const TrackingViewer = () => {
         pointsCount: data.aggregatedPositions?.length || 0,
         usersCount: data.usersCount || 0,
         landmarksCount: data.landmarks?.length || 0,
-        canvasSize: `${STANDARD_WIDTH}x${STANDARD_HEIGHT}`,
+        canvasSize: `${canvasWidth}×${canvasHeight}`, // ✅ Dynamické rozmery
       });
 
       console.log(`✅ Composite heatmap rendered in ${renderTime.toFixed(2)}ms`);
@@ -573,7 +576,7 @@ const TrackingViewer = () => {
                 🎨 Composite Heatmap
               </h2>
               <SectionSubtitle>
-                Component template ({STANDARD_WIDTH}×{STANDARD_HEIGHT}px) s agregovanou heatmap zo všetkých používateľov
+                Component template (šírka {STANDARD_WIDTH}px, dynamická výška) s agregovanou heatmap zo všetkých používateľov
               </SectionSubtitle>
               
               {loading ? (

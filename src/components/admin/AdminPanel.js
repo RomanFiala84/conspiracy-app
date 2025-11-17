@@ -472,17 +472,18 @@ const AdminPanel = () => {
     return `${(ms / 1000).toFixed(1)}s`;
   };
 
-  // ✅ UPRAVENÁ FUNKCIA - Generate Component Templates (s fixnými rozmermi)
+    // ✅ UPRAVENÁ FUNKCIA - Generate Component Templates (lepšie popup handling)
   const handleGenerateTemplates = async () => {
     const confirmed = window.confirm(
       '📸 Vygenerovať component template screenshots?\n\n' +
-      'Všetky templates budú 1200×2000px (fixné rozmery)\n\n' +
+      'Všetky templates budú mať šírku 1200px a dynamickú výšku podľa obsahu\n\n' +
       'Táto funkcia MANUÁLNE otvorí nové okno pre každý tracked komponent,\n' +
       'urobí screenshot a uploadne ho do Cloudinary.\n\n' +
       '⚠️ DÔLEŽITÉ:\n' +
       '- Nechajte toto okno otvorené\n' +
       '- Počkajte kým sa všetky komponenty spracujú\n' +
-      '- Neuzatvárajte vyskakovacie okná manuálne\n\n' +
+      '- Neuzatvárajte vyskakovacie okná manuálne\n' +
+      '- Pre komponenty s viacerými príspevkami (9+) sa počká 10 sekúnd\n\n' +
       'Komponenty na vygenerovanie:\n' +
       '• PostsA1, PostsB1 (Mission 1)\n' +
       '• PostsA2, PostsB2 (Mission 2)\n' +
@@ -498,11 +499,12 @@ const AdminPanel = () => {
     alert(
       '📸 Generovanie templates spustené!\n\n' +
       '⚠️ Postupujte takto:\n\n' +
-      '1. Teraz sa otvorí nové okno s každým komponentom\n' +
-      '2. Počkajte 5 sekúnd aby sa komponent načítal\n' +
-      '3. Stlačte "OK" v ďalšom dialógu aby sa urobil screenshot\n' +
-      '4. Okno sa automaticky zatvorí\n' +
-      '5. Proces sa opakuje pre všetky komponenty\n\n' +
+      '1. Teraz sa otvorí väčšie okno s každým komponentom\n' +
+      '2. Počkajte 8-10 sekúnd aby sa komponent úplne načítal\n' +
+      '3. Automaticky sa scrollne nadol a späť pre načítanie všetkých príspevkov\n' +
+      '4. Stlačte "OK" v ďalšom dialógu aby sa urobil screenshot\n' +
+      '5. Okno sa automaticky zatvorí\n' +
+      '6. Proces sa opakuje pre všetky komponenty\n\n' +
       'Pripravený? Kliknite OK pre začatie.'
     );
 
@@ -526,22 +528,48 @@ const AdminPanel = () => {
         setTemplateProgress(`📸 Spracúvam ${i + 1}/${components.length}: ${comp.name}...`);
 
         try {
-          // Otvor komponent v novom okne
+          // ✅ OPRAVA - Väčšie popup okno (1200×2400) so scrollbarmi
           const fullPath = `${window.location.origin}${comp.path}`;
-          const newWindow = window.open(fullPath, '_blank', 'width=1024,height=768');
+          const newWindow = window.open(
+            fullPath, 
+            '_blank', 
+            'width=1200,height=2400,scrollbars=yes,resizable=yes'
+          );
 
           if (!newWindow) {
             throw new Error('Popup bolo zablokované! Povoľte popupy pre túto stránku.');
           }
 
-          // Počkaj 5 sekúnd na načítanie
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          // ✅ OPRAVA - Počkaj 8 sekúnd na načítanie (viac pre dlhé komponenty)
+          console.log(`⏳ Čakám 8s na načítanie ${comp.name}...`);
+          await new Promise(resolve => setTimeout(resolve, 8000));
+
+          // ✅ NOVÉ - Scroll check pre načítanie všetkých príspevkov
+          try {
+            if (newWindow.document && newWindow.document.body) {
+              const bodyHeight = newWindow.document.body.scrollHeight;
+              console.log(`📏 Body height: ${bodyHeight}px`);
+              
+              // Scroll nadol
+              console.log('⬇️ Scrolling down...');
+              newWindow.scrollTo(0, bodyHeight);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // Scroll späť na vrch
+              console.log('⬆️ Scrolling back to top...');
+              newWindow.scrollTo(0, 0);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          } catch (scrollError) {
+            console.warn('⚠️ Scroll check failed:', scrollError);
+          }
 
           // Interaktívny prompt
           const ready = window.confirm(
             `📸 ${comp.name} je načítaný v novom okne.\n\n` +
-            `Skontrolujte, že komponent je správne zobrazený.\n\n` +
-            `Kliknite OK pre vytvorenie screenshot (1200×2000px) a pokračovanie.`
+            `Skontrolujte, že komponent je správne zobrazený.\n` +
+            `(Šírka: 1200px, dynamická výška podľa obsahu)\n\n` +
+            `Kliknite OK pre vytvorenie screenshot a pokračovanie.`
           );
 
           if (!ready) {
@@ -552,7 +580,12 @@ const AdminPanel = () => {
           // Nájdi container v child okne
           const container = newWindow.document.querySelector('[class*="Container"]') || newWindow.document.body;
           
-          // ✅ Použi helper funkciu s fixnými rozmermi
+          console.log('📏 Container dimensions:', {
+            scrollWidth: container.scrollWidth,
+            scrollHeight: container.scrollHeight
+          });
+
+          // ✅ Použi helper funkciu s dynamickými rozmermi
           const templateUrl = await generateAndUploadComponentTemplate(
             container,
             comp.id,
@@ -565,7 +598,12 @@ const AdminPanel = () => {
 
           console.log(`✅ Template uploaded for ${comp.name}:`, templateUrl);
 
-          results.push({ component: comp.name, status: 'success', url: templateUrl });
+          results.push({ 
+            component: comp.name, 
+            status: 'success', 
+            url: templateUrl,
+            dimensions: `${container.scrollWidth}×${container.scrollHeight}`
+          });
           successCount++;
 
           // Zatvor okno
@@ -585,12 +623,12 @@ const AdminPanel = () => {
       let reportMessage = `📸 Generovanie templates dokončené!\n\n`;
       reportMessage += `✅ Úspešné: ${successCount}\n`;
       reportMessage += `❌ Neúspešné: ${failCount}\n\n`;
-      reportMessage += `Všetky templates sú 1200×2000px (fixné rozmery)\n\n`;
+      reportMessage += `Všetky templates majú šírku 1200px a dynamickú výšku\n\n`;
       reportMessage += `Detaily:\n`;
       
       results.forEach(r => {
         if (r.status === 'success') {
-          reportMessage += `✅ ${r.component}: OK\n`;
+          reportMessage += `✅ ${r.component}: ${r.dimensions}\n`;
         } else {
           reportMessage += `❌ ${r.component}: ${r.error}\n`;
         }
@@ -609,6 +647,7 @@ const AdminPanel = () => {
       setTemplateProgress('');
     }
   };
+
 
   const handleToggleBlock = async (participantCode, currentBlockedState) => {
     const action = currentBlockedState ? 'odblokovať' : 'blokovať';

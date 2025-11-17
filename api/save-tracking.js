@@ -1,65 +1,7 @@
 // api/save-tracking.js
-// OPRAVENÁ VERZIA - Ukladá PNG obrázky namiesto HTML
+// OPRAVENÁ VERZIA - Ukladá landmarks do MongoDB
 
-import { MongoClient } from 'mongodb';
-
-let cachedClient = null;
-
-async function connectToDatabase() {
-  if (cachedClient) {
-    return cachedClient;
-  }
-  
-  const client = new MongoClient(process.env.MONGODB_URI);
-  await client.connect();
-  cachedClient = client;
-  return client;
-}
-
-function analyzeMouseMovement(positions) {
-  if (!positions || positions.length < 2) {
-    return {
-      pattern: 'insufficient_data',
-      averageSpeed: 0,
-      totalPoints: 0,
-    };
-  }
-
-  let horizontalMovements = 0;
-  let verticalMovements = 0;
-  let totalSpeed = 0;
-
-  for (let i = 1; i < positions.length; i++) {
-    const prev = positions[i - 1];
-    const curr = positions[i];
-
-    const deltaX = Math.abs(curr.x - prev.x);
-    const deltaY = Math.abs(curr.y - prev.y);
-    const deltaTime = curr.timestamp - prev.timestamp;
-
-    if (deltaX > deltaY * 1.5) horizontalMovements++;
-    if (deltaY > deltaX * 1.5) verticalMovements++;
-
-    const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-    const speed = deltaTime > 0 ? distance / deltaTime : 0;
-    totalSpeed += speed;
-  }
-
-  const avgSpeed = totalSpeed / (positions.length - 1);
-  
-  let pattern = 'mixed';
-  if (horizontalMovements > verticalMovements * 2) {
-    pattern = 'horizontal_reading';
-  } else if (verticalMovements > horizontalMovements * 2) {
-    pattern = 'vertical_scanning';
-  }
-
-  return {
-    pattern,
-    averageSpeed: Math.round(avgSpeed * 1000) / 1000,
-    totalPoints: positions.length,
-  };
-}
+import { connectToDatabase } from './utils/dbConnect';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -71,21 +13,30 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed' 
+    });
   }
 
   try {
     const trackingData = req.body;
 
-    console.log('📥 Received tracking data for:', trackingData.contentId);
+    // Validácia
+    if (!trackingData.userId || !trackingData.contentId || !trackingData.contentType) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      });
+    }
 
-    // Analýza pohybu myši
+    // Pripoj sa k MongoDB
+    const { db } = await connectToDatabase();
+
+    // Analyzuj mouse movement
     const movementAnalysis = analyzeMouseMovement(trackingData.mousePositions || []);
 
-    // ✅ Uloženie do MongoDB (BEZ cloudinaryData - to sa pridá neskôr)
-    const client = await connectToDatabase();
-    const db = client.db('conspiracy');
-    
+    // ✅ OPRAVA - Pridaj landmarks field
     const trackingRecord = {
       userId: trackingData.userId,
       contentId: trackingData.contentId,
@@ -97,26 +48,89 @@ export default async function handler(req, res) {
       },
       mousePositions: trackingData.mousePositions || [],
       movementAnalysis,
-      cloudinaryData: null, // ✅ Bude aktualizované neskôr cez update-tracking-cloudinary
-      containerDimensions: trackingData.containerDimensions,
+      cloudinaryData: null, // Bude aktualizované neskôr
+      containerDimensions: trackingData.containerDimensions || {},
+      landmarks: trackingData.landmarks || [], // ✅ PRIDANÉ
       isMobile: trackingData.isMobile || false,
     };
 
+    // Ulož do MongoDB
     const result = await db.collection('hover_tracking').insertOne(trackingRecord);
 
-    console.log('✅ MongoDB save successful:', result.insertedId);
+    console.log('✅ Tracking data saved:', {
+      trackingId: result.insertedId.toString(),
+      userId: trackingData.userId,
+      contentId: trackingData.contentId,
+      mousePositions: trackingData.mousePositions?.length || 0,
+      landmarks: trackingData.landmarks?.length || 0 // ✅ Log landmarks
+    });
 
     return res.status(200).json({
       success: true,
       trackingId: result.insertedId.toString(),
-      message: 'Tracking data saved'
+      message: 'Tracking data saved successfully'
     });
 
   } catch (error) {
-    console.error('❌ Function error:', error);
+    console.error('❌ Save tracking error:', error);
     return res.status(500).json({
       success: false,
-      error: error.message,
+      error: 'Internal server error',
+      message: error.message
     });
   }
+}
+
+// Helper funkcia - analyzuj mouse movement
+function analyzeMouseMovement(positions) {
+  if (!positions || positions.length === 0) {
+    return {
+      totalDistance: 0,
+      averageSpeed: 0,
+      maxSpeed: 0,
+      directionChanges: 0,
+    };
+  }
+
+  let totalDistance = 0;
+  let maxSpeed = 0;
+  let directionChanges = 0;
+  let prevDirection = null;
+
+  for (let i = 1; i < positions.length; i++) {
+    const prev = positions[i - 1];
+    const curr = positions[i];
+    
+    const dx = curr.x - prev.x;
+    const dy = curr.y - prev.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    totalDistance += distance;
+    
+    const timeDiff = (curr.timestamp - prev.timestamp) / 1000;
+    if (timeDiff > 0) {
+      const speed = distance / timeDiff;
+      maxSpeed = Math.max(maxSpeed, speed);
+    }
+    
+    const direction = Math.atan2(dy, dx);
+    if (prevDirection !== null) {
+      const angleDiff = Math.abs(direction - prevDirection);
+      if (angleDiff > Math.PI / 4) {
+        directionChanges++;
+      }
+    }
+    prevDirection = direction;
+  }
+
+  const totalTime = (positions[positions.length - 1].timestamp - positions[0].timestamp) / 1000;
+  const averageSpeed = totalTime > 0 ? totalDistance / totalTime : 0;
+
+  return {
+    totalDistance: Math.round(totalDistance),
+    averageSpeed: Math.round(averageSpeed),
+    maxSpeed: Math.round(maxSpeed),
+    directionChanges,
+    positionsCount: positions.length,
+  };
 }
