@@ -1,15 +1,16 @@
 // src/components/admin/TrackingViewer.js
-// OPRAVENÁ VERZIA - Dynamický canvas namiesto fixného
+// FINÁLNA VERZIA - 1920px template + prepočet percent na pixely
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../styles/Layout';
 import StyledButton from '../../styles/StyledButton';
+import { convertPercentToPixels, convertLandmarksPercentToPixels } from '../../utils/trackingHelpers';
 
-// ✅ UPRAVENÉ KONŠTANTY - len fallback
-const STANDARD_WIDTH = 1200;
-const STANDARD_HEIGHT = 2000; // Používa sa len ako fallback
+// ✅ KONŠTANTY - Aktualizované na 1920px
+const STANDARD_WIDTH = 1920;
+const STANDARD_HEIGHT = 2000;
 
 const Container = styled.div`
   padding: 20px;
@@ -266,7 +267,6 @@ const TrackingViewer = () => {
   const drawHeatmapOverlay = async (ctx, positions, width, height) => {
     if (!positions || positions.length === 0) return;
 
-    // Vytvor gradient template
     const gradientCanvas = document.createElement('canvas');
     gradientCanvas.width = 50;
     gradientCanvas.height = 50;
@@ -281,10 +281,8 @@ const TrackingViewer = () => {
     gradientCtx.fillStyle = gradient;
     gradientCtx.fillRect(0, 0, 50, 50);
 
-    // Nájdi max count
     const maxCount = Math.max(...positions.map(p => p.count || 1));
 
-    // Vykresli všetky body
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
@@ -314,10 +312,8 @@ const TrackingViewer = () => {
     landmarks.forEach(landmark => {
       const { left, top, width, height } = landmark.position;
       
-      // Vykresli boundary box
       ctx.strokeRect(left, top, width, height);
       
-      // Vykresli label s pozadím
       const label = `${landmark.type}: ${landmark.id}`;
       const textWidth = ctx.measureText(label).width;
       
@@ -343,9 +339,21 @@ const TrackingViewer = () => {
       const startTime = performance.now();
       const ctx = canvas.getContext('2d', { alpha: false });
       
-      // ✅ OPRAVA - Použi rozmery z containerDimensions namiesto fixných
-      const canvasWidth = data.containerDimensions?.width || STANDARD_WIDTH;
-      const canvasHeight = data.containerDimensions?.height || STANDARD_HEIGHT;
+      // ✅ OPRAVA B - Zisti template rozmery
+      let canvasWidth = STANDARD_WIDTH;
+      let canvasHeight = STANDARD_HEIGHT;
+
+      // Ak máme containerDimensions s originalWidth/originalHeight, použi proportional height
+      if (data.containerDimensions && data.containerDimensions.originalWidth) {
+        canvasWidth = STANDARD_WIDTH;
+        const scale = STANDARD_WIDTH / data.containerDimensions.originalWidth;
+        canvasHeight = Math.round(data.containerDimensions.originalHeight * scale);
+        canvasHeight = Math.max(600, Math.min(10000, canvasHeight)); // Clamp
+      } else if (data.containerDimensions) {
+        // Fallback
+        canvasWidth = data.containerDimensions.width || STANDARD_WIDTH;
+        canvasHeight = data.containerDimensions.height || STANDARD_HEIGHT;
+      }
       
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
@@ -354,10 +362,22 @@ const TrackingViewer = () => {
         positions: data.aggregatedPositions?.length,
         landmarks: data.landmarks?.length,
         templateUrl: data.componentTemplateUrl,
-        size: `${canvasWidth}×${canvasHeight}` // ✅ Dynamické rozmery
+        size: `${canvasWidth}×${canvasHeight}`,
+        storageFormat: data.containerDimensions?.storageFormat || 'unknown'
       });
 
-      // ✅ 1. Načítaj component template (ak existuje)
+      // ✅ B: Konvertuj percentá na pixely (ak sú uložené ako percentá)
+      let pixelPositions = data.aggregatedPositions;
+      let pixelLandmarks = data.landmarks;
+
+      if (data.containerDimensions?.storageFormat === 'percent') {
+        console.log('🔄 Converting percent to pixels...');
+        pixelPositions = convertPercentToPixels(data.aggregatedPositions, canvasWidth, canvasHeight);
+        pixelLandmarks = convertLandmarksPercentToPixels(data.landmarks, canvasWidth, canvasHeight);
+        console.log(`✅ Converted ${pixelPositions.length} positions to pixels`);
+      }
+
+      // ✅ 1. Načítaj component template
       if (data.componentTemplateUrl) {
         try {
           await new Promise((resolve) => {
@@ -372,7 +392,6 @@ const TrackingViewer = () => {
             
             templateImg.onerror = (error) => {
               console.error('❌ Failed to load template:', error);
-              // Fallback - sivé pozadie s info textom
               ctx.fillStyle = '#f5f5f5';
               ctx.fillRect(0, 0, canvasWidth, canvasHeight);
               
@@ -394,7 +413,6 @@ const TrackingViewer = () => {
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
       } else {
-        // ⚠️ Žiadny template - sivé pozadie s info textom
         console.warn('⚠️ No component template URL available');
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -407,7 +425,7 @@ const TrackingViewer = () => {
         ctx.font = '14px Arial';
         ctx.fillStyle = '#999999';
         ctx.fillText(`${data.contentId}`, canvasWidth / 2, 110);
-        ctx.fillText(`${data.aggregatedPositions?.length || 0} tracking points`, canvasWidth / 2, 140);
+        ctx.fillText(`${pixelPositions?.length || 0} tracking points`, canvasWidth / 2, 140);
         ctx.fillText(`${data.usersCount} users`, canvasWidth / 2, 170);
         
         ctx.fillStyle = '#cccccc';
@@ -415,15 +433,14 @@ const TrackingViewer = () => {
         ctx.fillText('⚠️ Component screenshot not available', canvasWidth / 2, canvasHeight - 40);
       }
 
-      // ✅ 2. Vykresli heatmap overlay
-      if (data.aggregatedPositions && data.aggregatedPositions.length > 0) {
-        const aggregated = aggregatePositions(data.aggregatedPositions, 10);
+      // ✅ 2. Vykresli heatmap overlay (s pixel pozíciami)
+      if (pixelPositions && pixelPositions.length > 0) {
+        const aggregated = aggregatePositions(pixelPositions, 10);
         await drawHeatmapOverlay(ctx, aggregated, canvasWidth, canvasHeight);
         console.log(`✅ Drew heatmap with ${aggregated.length} aggregated points`);
       } else {
         console.warn('⚠️ No tracking positions to draw');
         
-        // Zobraz warning text
         ctx.fillStyle = '#ff9800';
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
@@ -431,8 +448,8 @@ const TrackingViewer = () => {
       }
 
       // ✅ 3. Vykresli landmarks (ak je debug mode)
-      if (showLandmarks && data.landmarks && data.landmarks.length > 0) {
-        drawLandmarkBoundaries(ctx, data.landmarks);
+      if (showLandmarks && pixelLandmarks && pixelLandmarks.length > 0) {
+        drawLandmarkBoundaries(ctx, pixelLandmarks);
       }
 
       const endTime = performance.now();
@@ -440,10 +457,11 @@ const TrackingViewer = () => {
       
       setPerformanceMetrics({
         renderTime: renderTime.toFixed(2),
-        pointsCount: data.aggregatedPositions?.length || 0,
+        pointsCount: pixelPositions?.length || 0,
         usersCount: data.usersCount || 0,
-        landmarksCount: data.landmarks?.length || 0,
-        canvasSize: `${canvasWidth}×${canvasHeight}`, // ✅ Dynamické rozmery
+        landmarksCount: pixelLandmarks?.length || 0,
+        canvasSize: `${canvasWidth}×${canvasHeight}`,
+        storageFormat: data.containerDimensions?.storageFormat || 'unknown'
       });
 
       console.log(`✅ Composite heatmap rendered in ${renderTime.toFixed(2)}ms`);
@@ -576,7 +594,7 @@ const TrackingViewer = () => {
                 🎨 Composite Heatmap
               </h2>
               <SectionSubtitle>
-                Component template (šírka {STANDARD_WIDTH}px, dynamická výška) s agregovanou heatmap zo všetkých používateľov
+                Component template (šírka 1920px, dynamická výška) s agregovanou heatmap zo všetkých používateľov
               </SectionSubtitle>
               
               {loading ? (
@@ -596,6 +614,7 @@ const TrackingViewer = () => {
                       <div>👥 Users: {performanceMetrics.usersCount}</div>
                       <div>🎯 Landmarks: {performanceMetrics.landmarksCount}</div>
                       <div>📐 Size: {performanceMetrics.canvasSize}</div>
+                      <div>💾 Format: {performanceMetrics.storageFormat}</div>
                     </PerformanceInfo>
                   )}
                   

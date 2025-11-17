@@ -1,14 +1,14 @@
 // src/utils/trackingHelpers.js
-// FINÁLNA OPRAVENÁ VERZIA - Dynamická výška + biele pozadie
+// FINÁLNA VERZIA - 1920px template + relatívne pozície (percentá)
 
 import { generateVisualization } from './visualizationGenerator';
 
 /**
- * ✅ KONŠTANTY - Fixná šírka, dynamická výška
+ * ✅ KONŠTANTY - Fixná šírka 1920px, dynamická výška
  */
-const STANDARD_WIDTH = 1200;
-const MAX_HEIGHT = 10000; // Maximum (bezpečnostný limit)
-const MIN_HEIGHT = 600;   // Minimum
+const STANDARD_WIDTH = 1920; // ✅ ZVÄČŠENÉ na fullHD
+const MAX_HEIGHT = 10000;
+const MIN_HEIGHT = 600;
 
 /**
  * Helper: Konvertuje Blob na base64 string
@@ -29,12 +29,11 @@ function calculateProportionalHeight(originalWidth, originalHeight, targetWidth)
   const scale = targetWidth / originalWidth;
   const targetHeight = Math.round(originalHeight * scale);
   
-  // Clamp medzi MIN a MAX
   return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight));
 }
 
 /**
- * ✅ OPRAVENÁ FUNKCIA - Resize s bielym pozadím (nie transparent)
+ * ✅ OPRAVENÁ FUNKCIA - Resize s bielym pozadím
  */
 async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH) {
   return new Promise((resolve, reject) => {
@@ -42,7 +41,6 @@ async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH) {
     const url = URL.createObjectURL(blob);
     
     img.onload = () => {
-      // Vypočítaj proportional height
       const targetHeight = calculateProportionalHeight(img.width, img.height, targetWidth);
       
       console.log('📏 Image resize:', {
@@ -54,17 +52,16 @@ async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH) {
       const canvas = document.createElement('canvas');
       canvas.width = targetWidth;
       canvas.height = targetHeight;
-      const ctx = canvas.getContext('2d', { alpha: false }); // ✅ Vypni alpha channel
+      const ctx = canvas.getContext('2d', { alpha: false });
       
-      // ✅ OPRAVA - Vynúť biele pozadie PRED vykreslením obrázka
+      // Biele pozadie
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, targetWidth, targetHeight);
       
-      // Vykresli obrázok (fit to width, maintain aspect ratio)
+      // Vykresli obrázok
       const scale = targetWidth / img.width;
       const scaledHeight = img.height * scale;
       
-      // Vykresli obrázok na biele pozadie
       ctx.drawImage(img, 0, 0, targetWidth, scaledHeight);
       
       canvas.toBlob((resizedBlob) => {
@@ -87,33 +84,30 @@ async function resizeImageToStandard(blob, targetWidth = STANDARD_WIDTH) {
 }
 
 /**
- * ✅ Normalizuj tracking pozície (len X-os, Y zostáva proportional)
+ * ✅ NOVÁ FUNKCIA B - Normalizuj tracking pozície ako PERCENTÁ
  */
-function normalizeTrackingPositions(positions, originalWidth, originalHeight, targetWidth, targetHeight) {
+function normalizeTrackingPositionsAsPercent(positions, originalWidth, originalHeight) {
   if (!positions || positions.length === 0) return [];
-  
-  const scaleX = targetWidth / originalWidth;
-  const scaleY = targetHeight / originalHeight;
   
   return positions.map(pos => {
     const normalized = {
-      x: Math.round(pos.x * scaleX),
-      y: Math.round(pos.y * scaleY),
+      x: Number(((pos.x / originalWidth) * 100).toFixed(4)), // % z šírky
+      y: Number(((pos.y / originalHeight) * 100).toFixed(4)), // % z výšky
       timestamp: pos.timestamp
     };
     
-    // Normalizuj aj landmark pozície
+    // Normalizuj aj landmark pozície ako percentá
     if (pos.nearestLandmark) {
       normalized.nearestLandmark = {
         id: pos.nearestLandmark.id,
         type: pos.nearestLandmark.type,
-        offsetX: Math.round(pos.nearestLandmark.offsetX * scaleX),
-        offsetY: Math.round(pos.nearestLandmark.offsetY * scaleY),
+        offsetX: Number(((pos.nearestLandmark.offsetX / originalWidth) * 100).toFixed(4)),
+        offsetY: Number(((pos.nearestLandmark.offsetY / originalHeight) * 100).toFixed(4)),
         landmarkPosition: {
-          top: Math.round(pos.nearestLandmark.landmarkPosition.top * scaleY),
-          left: Math.round(pos.nearestLandmark.landmarkPosition.left * scaleX),
-          width: Math.round(pos.nearestLandmark.landmarkPosition.width * scaleX),
-          height: Math.round(pos.nearestLandmark.landmarkPosition.height * scaleY)
+          top: Number(((pos.nearestLandmark.landmarkPosition.top / originalHeight) * 100).toFixed(4)),
+          left: Number(((pos.nearestLandmark.landmarkPosition.left / originalWidth) * 100).toFixed(4)),
+          width: Number(((pos.nearestLandmark.landmarkPosition.width / originalWidth) * 100).toFixed(4)),
+          height: Number(((pos.nearestLandmark.landmarkPosition.height / originalHeight) * 100).toFixed(4))
         }
       };
     }
@@ -123,28 +117,76 @@ function normalizeTrackingPositions(positions, originalWidth, originalHeight, ta
 }
 
 /**
- * ✅ Normalizuj landmarks
+ * ✅ NOVÁ FUNKCIA B - Normalizuj landmarks ako PERCENTÁ
  */
-function normalizeLandmarks(landmarks, originalWidth, originalHeight, targetWidth, targetHeight) {
+function normalizeLandmarksAsPercent(landmarks, originalWidth, originalHeight) {
   if (!landmarks || landmarks.length === 0) return [];
-  
-  const scaleX = targetWidth / originalWidth;
-  const scaleY = targetHeight / originalHeight;
   
   return landmarks.map(landmark => ({
     id: landmark.id,
     type: landmark.type,
     position: {
-      top: Math.round(landmark.position.top * scaleY),
-      left: Math.round(landmark.position.left * scaleX),
-      width: Math.round(landmark.position.width * scaleX),
-      height: Math.round(landmark.position.height * scaleY)
+      top: Number(((landmark.position.top / originalHeight) * 100).toFixed(4)),
+      left: Number(((landmark.position.left / originalWidth) * 100).toFixed(4)),
+      width: Number(((landmark.position.width / originalWidth) * 100).toFixed(4)),
+      height: Number(((landmark.position.height / originalHeight) * 100).toFixed(4))
     }
   }));
 }
 
 /**
- * ✅ Uloží tracking + vygeneruje heatmap overlay
+ * ✅ NOVÁ FUNKCIA B - Konvertuj percentá späť na pixely (pre zobrazenie)
+ */
+export function convertPercentToPixels(positions, templateWidth, templateHeight) {
+  if (!positions || positions.length === 0) return [];
+  
+  return positions.map(pos => {
+    const pixel = {
+      x: Math.round((pos.x / 100) * templateWidth),
+      y: Math.round((pos.y / 100) * templateHeight),
+      timestamp: pos.timestamp
+    };
+    
+    // Konvertuj aj landmark pozície
+    if (pos.nearestLandmark) {
+      pixel.nearestLandmark = {
+        id: pos.nearestLandmark.id,
+        type: pos.nearestLandmark.type,
+        offsetX: Math.round((pos.nearestLandmark.offsetX / 100) * templateWidth),
+        offsetY: Math.round((pos.nearestLandmark.offsetY / 100) * templateHeight),
+        landmarkPosition: {
+          top: Math.round((pos.nearestLandmark.landmarkPosition.top / 100) * templateHeight),
+          left: Math.round((pos.nearestLandmark.landmarkPosition.left / 100) * templateWidth),
+          width: Math.round((pos.nearestLandmark.landmarkPosition.width / 100) * templateWidth),
+          height: Math.round((pos.nearestLandmark.landmarkPosition.height / 100) * templateHeight)
+        }
+      };
+    }
+    
+    return pixel;
+  });
+}
+
+/**
+ * ✅ NOVÁ FUNKCIA B - Konvertuj landmarks percentá na pixely
+ */
+export function convertLandmarksPercentToPixels(landmarks, templateWidth, templateHeight) {
+  if (!landmarks || landmarks.length === 0) return [];
+  
+  return landmarks.map(landmark => ({
+    id: landmark.id,
+    type: landmark.type,
+    position: {
+      top: Math.round((landmark.position.top / 100) * templateHeight),
+      left: Math.round((landmark.position.left / 100) * templateWidth),
+      width: Math.round((landmark.position.width / 100) * templateWidth),
+      height: Math.round((landmark.position.height / 100) * templateHeight)
+    }
+  }));
+}
+
+/**
+ * ✅ UPRAVENÁ FUNKCIA - Uloží tracking s percentami
  */
 export const saveTrackingWithVisualization = async (trackingData, containerElement) => {
   try {
@@ -155,42 +197,29 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 
     console.log('📐 Original dimensions:', { originalWidth, originalHeight });
 
-    // Vypočítaj target rozmery (proportional height)
-    const targetWidth = STANDARD_WIDTH;
-    const targetHeight = calculateProportionalHeight(originalWidth, originalHeight, targetWidth);
-
-    console.log('📐 Target dimensions:', { targetWidth, targetHeight });
-
-    // Normalizuj tracking pozície
-    const normalizedPositions = normalizeTrackingPositions(
+    // ✅ B: Normalizuj tracking pozície ako PERCENTÁ
+    const normalizedPositions = normalizeTrackingPositionsAsPercent(
       trackingData.mousePositions,
       originalWidth,
-      originalHeight,
-      targetWidth,
-      targetHeight
+      originalHeight
     );
 
-    // Normalizuj landmarks
-    const normalizedLandmarks = normalizeLandmarks(
+    // ✅ B: Normalizuj landmarks ako PERCENTÁ
+    const normalizedLandmarks = normalizeLandmarksAsPercent(
       trackingData.landmarks || [],
       originalWidth,
-      originalHeight,
-      targetWidth,
-      targetHeight
+      originalHeight
     );
 
-    // Ulož tracking dáta do MongoDB (s normalizovanými pozíciami a landmarks)
+    // Ulož tracking dáta do MongoDB (s percentami)
     const normalizedTrackingData = {
       ...trackingData,
       mousePositions: normalizedPositions,
       landmarks: normalizedLandmarks,
       containerDimensions: {
-        width: targetWidth,
-        height: targetHeight,
-        original: {
-          width: originalWidth,
-          height: originalHeight
-        }
+        originalWidth: originalWidth,
+        originalHeight: originalHeight,
+        storageFormat: 'percent' // ✅ Označenie že sú uložené ako percentá
       }
     };
 
@@ -205,11 +234,31 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
     }
 
     const trackingResult = await trackingResponse.json();
-    console.log('✅ Tracking data saved:', trackingResult);
+    console.log('✅ Tracking data saved (percent format):', trackingResult);
 
-    // Vygeneruj heatmap overlay (už s normalizovanými pozíciami)
+    // ✅ Pre visualization konvertuj percentá na pixely template rozmerov
+    const targetWidth = STANDARD_WIDTH;
+    const targetHeight = calculateProportionalHeight(originalWidth, originalHeight, targetWidth);
+
+    const pixelPositions = convertPercentToPixels(
+      normalizedPositions,
+      targetWidth,
+      targetHeight
+    );
+
+    const pixelLandmarks = convertLandmarksPercentToPixels(
+      normalizedLandmarks,
+      targetWidth,
+      targetHeight
+    );
+
+    // Vygeneruj heatmap overlay
     const visualization = await generateVisualization(
-      normalizedTrackingData,
+      {
+        ...trackingData,
+        mousePositions: pixelPositions,
+        landmarks: pixelLandmarks
+      },
       targetWidth,
       targetHeight,
       containerElement
@@ -254,7 +303,6 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
       }),
     });
 
-    // Cleanup
     URL.revokeObjectURL(visualization.objectUrl);
 
     return {
@@ -270,7 +318,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 };
 
 /**
- * ✅ OPRAVENÁ FUNKCIA - Vygeneruje a uploaduje component template (biele pozadie)
+ * ✅ UPRAVENÁ FUNKCIA A - Template s 1920px šírkou
  */
 export const generateAndUploadComponentTemplate = async (containerElement, contentId, contentType) => {
   if (!containerElement) {
@@ -279,12 +327,10 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
   }
 
   try {
-    console.log('📸 Generating component template screenshot...');
+    console.log('📸 Generating component template screenshot (1920px)...');
 
-    // Dynamicky načítaj html2canvas
     const html2canvas = (await import('html2canvas')).default;
     
-    // ✅ OPRAVA - Vynúť biele pozadie a lepšie options
     const screenshot = await html2canvas(containerElement, {
       width: containerElement.scrollWidth,
       height: containerElement.scrollHeight,
@@ -294,14 +340,13 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       windowHeight: containerElement.scrollHeight,
       useCORS: true,
       allowTaint: false,
-      backgroundColor: '#FFFFFF', // ✅ VYNÚŤ BIELE POZADIE
+      backgroundColor: '#FFFFFF',
       scale: 1,
       logging: false,
       removeContainer: false,
-      foreignObjectRendering: false, // ✅ Vypni pre lepšiu kompatibilitu
+      foreignObjectRendering: false,
     });
 
-    // Konvertuj na Blob
     const originalBlob = await new Promise((resolve) => {
       screenshot.toBlob((blob) => resolve(blob), 'image/png', 0.95);
     });
@@ -316,16 +361,15 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       size: `${(originalBlob.size / 1024).toFixed(2)}KB`
     });
 
-    // Resize na štandardnú šírku s proporcionálnou výškou
+    // ✅ A: Resize na 1920px šírku
     const resizeResult = await resizeImageToStandard(originalBlob, STANDARD_WIDTH);
 
-    console.log('📏 Resized to standard:', {
+    console.log('📏 Resized to 1920px:', {
       width: resizeResult.width,
       height: resizeResult.height,
       size: `${(resizeResult.blob.size / 1024).toFixed(2)}KB`
     });
 
-    // Konvertuj na base64
     const base64Image = await blobToBase64(resizeResult.blob);
 
     // Upload do Cloudinary
@@ -348,7 +392,7 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
     }
 
     const result = await response.json();
-    console.log('✅ Component template uploaded:', result.data?.url);
+    console.log('✅ Component template uploaded (1920px):', result.data?.url);
 
     return result.data?.url;
 

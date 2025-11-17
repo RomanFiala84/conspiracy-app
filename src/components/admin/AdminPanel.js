@@ -472,12 +472,12 @@ const AdminPanel = () => {
     return `${(ms / 1000).toFixed(1)}s`;
   };
 
-    // ✅ FINÁLNA OPRAVENÁ VERZIA - Bez confirm dialógov, plne automatizovaná
+      // ✅ FINÁLNA VERZIA - 1920px template generation, bez confirm dialógov
   const handleGenerateTemplates = async () => {
     const confirmed = window.confirm(
       '📸 Vygenerovať component template screenshots?\n\n' +
       'Proces bude plne automatizovaný:\n' +
-      '- Všetky templates budú mať šírku 1200px a dynamickú výšku\n' +
+      '- Všetky templates budú mať šírku 1920px a dynamickú výšku\n' +
       '- Okná sa otvoria a zatvoria automaticky\n' +
       '- Počas procesu NEMANIPULUJTE s oknom\n\n' +
       'Komponenty na vygenerovanie:\n' +
@@ -512,19 +512,19 @@ const AdminPanel = () => {
         setTemplateProgress(`📸 Spracúvam ${i + 1}/${components.length}: ${comp.name}...`);
 
         try {
-          // ✅ Otvor popup okno (väčšie)
+          // ✅ OPRAVA A - Väčšie okno pre 1920px screenshot
           const fullPath = `${window.location.origin}${comp.path}`;
           const newWindow = window.open(
             fullPath, 
             '_blank', 
-            'width=1250,height=2500,scrollbars=yes,resizable=yes'
+            'width=1920,height=2500,scrollbars=yes,resizable=yes'
           );
 
           if (!newWindow) {
             throw new Error('Popup bolo zablokované! Povoľte popupy pre túto stránku.');
           }
 
-          // ✅ Počkaj 10 sekúnd na úplné načítanie (dlhšie pre React komponenty)
+          // ✅ Počkaj 10 sekúnd na úplné načítanie
           console.log(`⏳ Čakám 10s na načítanie ${comp.name}...`);
           await new Promise(resolve => setTimeout(resolve, 10000));
 
@@ -535,12 +535,10 @@ const AdminPanel = () => {
               console.log(`📏 Body height: ${bodyHeight}px`);
               
               if (bodyHeight > 0) {
-                // Scroll nadol
                 console.log('⬇️ Scrolling down...');
                 newWindow.scrollTo(0, bodyHeight);
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                // Scroll späť na vrch
                 console.log('⬆️ Scrolling back to top...');
                 newWindow.scrollTo(0, 0);
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -551,7 +549,7 @@ const AdminPanel = () => {
           }
 
           // ✅ ŽIADNY window.confirm() - priamo urob screenshot
-          console.log(`📸 Robím screenshot ${comp.name}...`);
+          console.log(`📸 Robím screenshot ${comp.name} (1920px)...`);
 
           // Nájdi container v child okne
           const container = newWindow.document.querySelector('[class*="Container"]') || newWindow.document.body;
@@ -565,7 +563,7 @@ const AdminPanel = () => {
             scrollHeight: container.scrollHeight
           });
 
-          // ✅ Použi helper funkciu
+          // ✅ Použi helper funkciu (generuje 1920px template)
           const templateUrl = await generateAndUploadComponentTemplate(
             container,
             comp.id,
@@ -576,7 +574,7 @@ const AdminPanel = () => {
             throw new Error('Failed to upload template');
           }
 
-          console.log(`✅ Template uploaded for ${comp.name}:`, templateUrl);
+          console.log(`✅ Template uploaded for ${comp.name} (1920px):`, templateUrl);
 
           results.push({ 
             component: comp.name, 
@@ -603,7 +601,7 @@ const AdminPanel = () => {
       let reportMessage = `📸 Generovanie templates dokončené!\n\n`;
       reportMessage += `✅ Úspešné: ${successCount}\n`;
       reportMessage += `❌ Neúspešné: ${failCount}\n\n`;
-      reportMessage += `Všetky templates majú šírku 1200px a dynamickú výšku\n\n`;
+      reportMessage += `Všetky templates majú šírku 1920px a dynamickú výšku\n\n`;
       reportMessage += `Detaily:\n`;
       
       results.forEach(r => {
@@ -627,6 +625,7 @@ const AdminPanel = () => {
       setTemplateProgress('');
     }
   };
+
 
 
 

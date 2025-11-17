@@ -1,5 +1,5 @@
 // api/get-tracking-by-component.js
-// Získa agregované tracking dáta pre konkrétny komponent s landmarks
+// FINÁLNA VERZIA - S percent support
 
 import { MongoClient } from 'mongodb';
 
@@ -78,15 +78,14 @@ export default async function handler(req, res) {
       users.add(record.userId);
       totalHoverTime += record.hoverMetrics?.totalHoverTime || 0;
 
-      // ✅ Zachytaj landmarks (použij prvý záznam alebo najnovší)
+      // ✅ Zachytaj landmarks (použij prvý záznam)
       if (record.landmarks && record.landmarks.length > 0 && aggregatedLandmarks.length === 0) {
         aggregatedLandmarks = record.landmarks;
       }
 
-      // ✅ OPRAVA - Zachytaj rozmery containera (preferuj tie s original)
+      // ✅ OPRAVA B - Zachytaj containerDimensions (preferuj najnovší s storageFormat)
       if (record.containerDimensions) {
-        // Ak už máme containerDimensions, prepíš len ak nový má original field
-        if (!containerDimensions || record.containerDimensions.original) {
+        if (!containerDimensions || record.containerDimensions.storageFormat) {
           containerDimensions = record.containerDimensions;
         }
       }
@@ -110,7 +109,8 @@ export default async function handler(req, res) {
       positions: aggregatedPositions.length,
       users: users.size,
       landmarks: aggregatedLandmarks.length,
-      containerDimensions: containerDimensions
+      containerDimensions: containerDimensions,
+      storageFormat: containerDimensions?.storageFormat || 'unknown'
     });
 
     return res.status(200).json({
@@ -126,9 +126,10 @@ export default async function handler(req, res) {
         avgHoverTime,
         componentTemplateUrl,
         containerDimensions: containerDimensions || { 
-          width: 1200, 
-          height: 2000 
-        }, // ✅ Fallback ak chýbajú rozmery
+          originalWidth: 1920,
+          originalHeight: 2000,
+          storageFormat: 'unknown'
+        },
         landmarks: aggregatedLandmarks,
       }
     });
