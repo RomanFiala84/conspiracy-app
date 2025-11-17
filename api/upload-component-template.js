@@ -1,5 +1,5 @@
 // api/upload-component-template.js
-// Upload referenčného screenshotu komponentu (bez heatmap)
+// Upload component template screenshots (FIXNÉ 1200×2000px)
 
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -41,9 +41,9 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('📥 Uploading component template:', contentId);
+    console.log('📥 Uploading component template:', contentId, dimensions);
 
-    // Upload referenčného screenshotu
+    // Upload do Cloudinary
     const uploadResult = await cloudinary.uploader.upload(imageBase64, {
       folder: `conspiracy-app/component-templates`,
       public_id: `template_${contentId}`,
@@ -56,13 +56,14 @@ export default async function handler(req, res) {
         'component-template',
         contentType || 'unknown',
         contentId || 'unknown',
+        `${dimensions?.width}x${dimensions?.height}`
       ],
       
       context: {
         contentId: contentId || 'unknown',
         contentType: contentType || 'unknown',
-        width: dimensions?.width,
-        height: dimensions?.height,
+        width: dimensions?.width || 1200,
+        height: dimensions?.height || 2000,
         createdAt: new Date().toISOString(),
       },
     });

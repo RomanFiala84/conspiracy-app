@@ -1,11 +1,15 @@
 // src/components/admin/TrackingViewer.js
-// FINÁLNA VERZIA - Component template + aggregated heatmap overlay (bez ESLint chýb)
+// FINÁLNA VERZIA - S landmark scaling a fixnými rozmermi
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../styles/Layout';
 import StyledButton from '../../styles/StyledButton';
+
+// ✅ KONŠTANTY - Štandardné rozmery
+const STANDARD_WIDTH = 1200;
+const STANDARD_HEIGHT = 2000;
 
 const Container = styled.div`
   padding: 20px;
@@ -193,6 +197,20 @@ const SectionSubtitle = styled.p`
   line-height: 1.5;
 `;
 
+const DebugToggle = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  cursor: pointer;
+  margin-top: 12px;
+  
+  input {
+    cursor: pointer;
+  }
+`;
+
 const TrackingViewer = () => {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
@@ -202,6 +220,7 @@ const TrackingViewer = () => {
   const [trackingData, setTrackingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
+  const [showLandmarks, setShowLandmarks] = useState(false);
 
   // Načítať zoznam komponentov
   useEffect(() => {
@@ -280,6 +299,39 @@ const TrackingViewer = () => {
     console.log(`✅ Heatmap overlay drawn (${positions.length} aggregated points)`);
   };
 
+  // ✅ NOVÁ FUNKCIA - Vykresli landmark boundaries (debug)
+  const drawLandmarkBoundaries = (ctx, landmarks) => {
+    if (!landmarks || landmarks.length === 0) return;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 3;
+
+    landmarks.forEach(landmark => {
+      const { left, top, width, height } = landmark.position;
+      
+      // Vykresli boundary box
+      ctx.strokeRect(left, top, width, height);
+      
+      // Vykresli label s pozadím
+      const label = `${landmark.type}: ${landmark.id}`;
+      const textWidth = ctx.measureText(label).width;
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(left, top - 20, textWidth + 10, 20);
+      
+      ctx.fillStyle = 'rgba(0, 255, 0, 1)';
+      ctx.fillText(label, left + 5, top - 6);
+    });
+
+    ctx.restore();
+    console.log(`✅ Drew ${landmarks.length} landmark boundaries`);
+  };
+
   // ✅ Načítať tracking dáta a vykresliť composite heatmap
   useEffect(() => {
     if (!selectedComponent) return;
@@ -291,16 +343,15 @@ const TrackingViewer = () => {
       const startTime = performance.now();
       const ctx = canvas.getContext('2d', { alpha: false });
       
-      const fullWidth = data.containerDimensions?.width || 1000;
-      const fullHeight = data.containerDimensions?.height || 2000;
-      
-      canvas.width = fullWidth;
-      canvas.height = fullHeight;
+      // ✅ FIXNÉ ROZMERY
+      canvas.width = STANDARD_WIDTH;
+      canvas.height = STANDARD_HEIGHT;
 
       console.log('🎨 Rendering composite heatmap:', {
         positions: data.aggregatedPositions?.length,
+        landmarks: data.landmarks?.length,
         templateUrl: data.componentTemplateUrl,
-        size: `${fullWidth}x${fullHeight}`
+        size: `${STANDARD_WIDTH}x${STANDARD_HEIGHT}`
       });
 
       // ✅ 1. Načítaj component template (ak existuje)
@@ -311,24 +362,23 @@ const TrackingViewer = () => {
             templateImg.crossOrigin = 'anonymous';
             
             templateImg.onload = () => {
-              ctx.drawImage(templateImg, 0, 0, fullWidth, fullHeight);
+              ctx.drawImage(templateImg, 0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
               console.log('✅ Component template loaded');
               resolve();
             };
             
             templateImg.onerror = (error) => {
               console.error('❌ Failed to load template:', error);
-              // Fallback - sivé pozadie
+              // Fallback - sivé pozadie s info textom
               ctx.fillStyle = '#f5f5f5';
-              ctx.fillRect(0, 0, fullWidth, fullHeight);
+              ctx.fillRect(0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
               
-              // Info text
               ctx.fillStyle = '#999999';
               ctx.font = '16px Arial';
               ctx.textAlign = 'center';
-              ctx.fillText('⚠️ Background template not loaded', fullWidth / 2, fullHeight / 2 - 20);
+              ctx.fillText('⚠️ Background template not loaded', STANDARD_WIDTH / 2, STANDARD_HEIGHT / 2 - 20);
               ctx.font = '14px Arial';
-              ctx.fillText('Showing heatmap overlay only', fullWidth / 2, fullHeight / 2 + 10);
+              ctx.fillText('Showing heatmap overlay only', STANDARD_WIDTH / 2, STANDARD_HEIGHT / 2 + 10);
               
               resolve();
             };
@@ -338,34 +388,34 @@ const TrackingViewer = () => {
         } catch (error) {
           console.error('❌ Template error:', error);
           ctx.fillStyle = '#f5f5f5';
-          ctx.fillRect(0, 0, fullWidth, fullHeight);
+          ctx.fillRect(0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
         }
       } else {
         // ⚠️ Žiadny template - sivé pozadie s info textom
         console.warn('⚠️ No component template URL available');
         ctx.fillStyle = '#f5f5f5';
-        ctx.fillRect(0, 0, fullWidth, fullHeight);
+        ctx.fillRect(0, 0, STANDARD_WIDTH, STANDARD_HEIGHT);
         
         ctx.fillStyle = '#666666';
         ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('📊 Heatmap Data', fullWidth / 2, 80);
+        ctx.fillText('📊 Heatmap Data', STANDARD_WIDTH / 2, 80);
         
         ctx.font = '14px Arial';
         ctx.fillStyle = '#999999';
-        ctx.fillText(`${data.contentId}`, fullWidth / 2, 110);
-        ctx.fillText(`${data.aggregatedPositions?.length || 0} tracking points`, fullWidth / 2, 140);
-        ctx.fillText(`${data.usersCount} users`, fullWidth / 2, 170);
+        ctx.fillText(`${data.contentId}`, STANDARD_WIDTH / 2, 110);
+        ctx.fillText(`${data.aggregatedPositions?.length || 0} tracking points`, STANDARD_WIDTH / 2, 140);
+        ctx.fillText(`${data.usersCount} users`, STANDARD_WIDTH / 2, 170);
         
         ctx.fillStyle = '#cccccc';
         ctx.font = '12px Arial';
-        ctx.fillText('⚠️ Component screenshot not available', fullWidth / 2, fullHeight - 40);
+        ctx.fillText('⚠️ Component screenshot not available', STANDARD_WIDTH / 2, STANDARD_HEIGHT - 40);
       }
 
       // ✅ 2. Vykresli heatmap overlay
       if (data.aggregatedPositions && data.aggregatedPositions.length > 0) {
         const aggregated = aggregatePositions(data.aggregatedPositions, 10);
-        await drawHeatmapOverlay(ctx, aggregated, fullWidth, fullHeight);
+        await drawHeatmapOverlay(ctx, aggregated, STANDARD_WIDTH, STANDARD_HEIGHT);
         console.log(`✅ Drew heatmap with ${aggregated.length} aggregated points`);
       } else {
         console.warn('⚠️ No tracking positions to draw');
@@ -374,7 +424,12 @@ const TrackingViewer = () => {
         ctx.fillStyle = '#ff9800';
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('⚠️ No tracking data available', fullWidth / 2, fullHeight / 2);
+        ctx.fillText('⚠️ No tracking data available', STANDARD_WIDTH / 2, STANDARD_HEIGHT / 2);
+      }
+
+      // ✅ 3. Vykresli landmarks (ak je debug mode)
+      if (showLandmarks && data.landmarks && data.landmarks.length > 0) {
+        drawLandmarkBoundaries(ctx, data.landmarks);
       }
 
       const endTime = performance.now();
@@ -384,7 +439,8 @@ const TrackingViewer = () => {
         renderTime: renderTime.toFixed(2),
         pointsCount: data.aggregatedPositions?.length || 0,
         usersCount: data.usersCount || 0,
-        canvasSize: `${fullWidth}x${fullHeight}`,
+        landmarksCount: data.landmarks?.length || 0,
+        canvasSize: `${STANDARD_WIDTH}x${STANDARD_HEIGHT}`,
       });
 
       console.log(`✅ Composite heatmap rendered in ${renderTime.toFixed(2)}ms`);
@@ -419,7 +475,7 @@ const TrackingViewer = () => {
     };
 
     loadAndRenderHeatmap();
-  }, [selectedComponent]);
+  }, [selectedComponent, showLandmarks]);
 
   const handleDownloadHeatmap = () => {
     const canvas = canvasRef.current;
@@ -505,6 +561,10 @@ const TrackingViewer = () => {
                   <StatLabel>Records</StatLabel>
                   <StatValue>{trackingData?.recordsCount || 0}</StatValue>
                 </StatBox>
+                <StatBox>
+                  <StatLabel>Landmarks</StatLabel>
+                  <StatValue>{trackingData?.landmarks?.length || 0}</StatValue>
+                </StatBox>
               </StatsRow>
             </Section>
 
@@ -513,7 +573,7 @@ const TrackingViewer = () => {
                 🎨 Composite Heatmap
               </h2>
               <SectionSubtitle>
-                Component template s agregovanou heatmap zo všetkých používateľov
+                Component template ({STANDARD_WIDTH}×{STANDARD_HEIGHT}px) s agregovanou heatmap zo všetkých používateľov
               </SectionSubtitle>
               
               {loading ? (
@@ -531,9 +591,19 @@ const TrackingViewer = () => {
                       <div>⚡ Render time: {performanceMetrics.renderTime}ms</div>
                       <div>📍 Points: {performanceMetrics.pointsCount}</div>
                       <div>👥 Users: {performanceMetrics.usersCount}</div>
+                      <div>🎯 Landmarks: {performanceMetrics.landmarksCount}</div>
                       <div>📐 Size: {performanceMetrics.canvasSize}</div>
                     </PerformanceInfo>
                   )}
+                  
+                  <DebugToggle>
+                    <input 
+                      type="checkbox" 
+                      checked={showLandmarks}
+                      onChange={(e) => setShowLandmarks(e.target.checked)}
+                    />
+                    🔍 Show Landmark Boundaries (Debug Mode)
+                  </DebugToggle>
                   
                   <ButtonGroup>
                     <StyledButton variant="success" onClick={handleDownloadHeatmap}>

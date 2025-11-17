@@ -1,5 +1,5 @@
 // api/get-tracking-by-component.js
-// Získa agregované tracking dáta pre konkrétny komponent
+// Získa agregované tracking dáta pre konkrétny komponent s landmarks
 
 import { MongoClient } from 'mongodb';
 
@@ -60,12 +60,13 @@ export default async function handler(req, res) {
 
     console.log(`✅ Found ${records.length} tracking records for ${contentId}`);
 
-    // Agreguj tracking dáta
+    // ✅ Agreguj tracking dáta zo všetkých používateľov
     const aggregatedPositions = [];
     const users = new Set();
     let totalHoverTime = 0;
     let componentTemplateUrl = null;
     let containerDimensions = null;
+    let aggregatedLandmarks = [];
 
     records.forEach(record => {
       // Agreguj pozície
@@ -77,16 +78,28 @@ export default async function handler(req, res) {
       users.add(record.userId);
       totalHoverTime += record.hoverMetrics?.totalHoverTime || 0;
 
-      // Zachytaj component template URL (z najnovšieho záznamu s Cloudinary dátami)
-      if (record.cloudinaryData?.url && !componentTemplateUrl) {
-        componentTemplateUrl = record.cloudinaryData.url;
+      // ✅ Zachytaj landmarks (použij prvý záznam alebo najnovší)
+      if (record.landmarks && record.landmarks.length > 0 && aggregatedLandmarks.length === 0) {
+        aggregatedLandmarks = record.landmarks;
       }
 
-      // Zachytaj rozmery containera
+      // Zachytaj rozmery containera (mali by byť štandardné)
       if (record.containerDimensions && !containerDimensions) {
         containerDimensions = record.containerDimensions;
       }
     });
+
+    // ✅ Hľadaj component template v Cloudinary
+    // Skúsime nájsť cez Cloudinary API alebo MongoDB
+    try {
+      // Príklad: template môže byť uložený v samostatnej kolekcii alebo v Cloudinary
+      const templatePublicId = `conspiracy-app/component-templates/template_${contentId}`;
+      componentTemplateUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${templatePublicId}.png`;
+      
+      console.log('🎨 Component template URL:', componentTemplateUrl);
+    } catch (error) {
+      console.warn('⚠️ Component template not found:', error.message);
+    }
 
     const avgHoverTime = records.length > 0 ? totalHoverTime / records.length : 0;
 
@@ -102,7 +115,8 @@ export default async function handler(req, res) {
         totalHoverTime,
         avgHoverTime,
         componentTemplateUrl,
-        containerDimensions,
+        containerDimensions: containerDimensions || { width: 1200, height: 2000 },
+        landmarks: aggregatedLandmarks,
       }
     });
 

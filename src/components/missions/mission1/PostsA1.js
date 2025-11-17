@@ -1,5 +1,5 @@
 // src/components/missions/mission1/PostsA1.js
-// UPRAVENÁ VERZIA - Nový tracking flow s PNG visualizáciou
+// FINÁLNA VERZIA - S data-landmark atribútmi
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -26,220 +26,160 @@ const Title = styled.h2`
 `;
 
 const PostsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  margin-bottom: 30px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  margin-bottom: 24px;
 `;
 
 const PostCard = styled.div`
   background: ${p => p.theme.CARD_BACKGROUND};
-  border: 1px solid ${p => p.theme.BORDER_COLOR};
-  border-radius: 8px;
-  overflow: hidden;
-  transition: transform 0.2s ease;
-  border: ${p => p.hasError ? `2px solid ${p.theme.ACCENT_COLOR_2}` : `1px solid ${p.theme.BORDER_COLOR}`};
-  
+  border: 2px solid ${p => p.theme.BORDER_COLOR};
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.2s ease;
+
   &:hover {
-    transform: translateY(-2px);
+    border-color: ${p => p.theme.ACCENT_COLOR};
   }
 `;
 
 const PostHeader = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
-  border-bottom: 1px solid ${p => p.theme.BORDER_COLOR};
+  margin-bottom: 12px;
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
 `;
 
 const Avatar = styled.div`
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-  margin-right: 12px;
+  background: ${p => p.$color || p.theme.ACCENT_COLOR};
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  &::after {
-    content: '';
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: ${p => p.theme.CARD_BACKGROUND};
-  }
-`;
-
-const Username = styled.span`
+  color: white;
   font-weight: 600;
-  font-size: 14px;
-  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  font-size: 18px;
 `;
 
-const PostImage = styled.img`
-  width: 100%;
-  height: 280px;
-  object-fit: cover;
-  display: block;
-`;
-
-const PostContent = styled.div`
-  padding: 16px;
-`;
-
-const ContentText = styled.p`
-  line-height: 1.5;
+const Username = styled.div`
+  font-weight: 600;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 14px;
+`;
+
+const PostMeta = styled.div`
+  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  font-size: 12px;
+`;
+
+const PostContent = styled.p`
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  line-height: 1.6;
   margin-bottom: 16px;
+  font-size: 14px;
 `;
 
 const RatingSection = styled.div`
-  margin-top: 16px;
-  padding-top: 16px;
   border-top: 1px solid ${p => p.theme.BORDER_COLOR};
+  padding-top: 12px;
 `;
 
 const RatingLabel = styled.div`
-  font-size: 12px;
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
+  font-size: 13px;
   margin-bottom: 8px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 `;
 
-const RatingScale = styled.div`
+const RatingButtons = styled.div`
   display: flex;
   gap: 8px;
-  justify-content: space-between;
 `;
 
-const RatingButton = styled.label`
+const RatingButton = styled.button`
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 10px;
-  border: 1px solid ${p => p.theme.BORDER_COLOR};
+  border: 2px solid ${p => p.$selected ? p.theme.ACCENT_COLOR : p.theme.BORDER_COLOR};
+  background: ${p => p.$selected ? p.theme.ACCENT_COLOR + '22' : 'transparent'};
+  color: ${p => p.$selected ? p.theme.ACCENT_COLOR : p.theme.PRIMARY_TEXT_COLOR};
   border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: ${p => p.checked ? p.theme.ACCENT_COLOR : 'transparent'};
-  color: ${p => p.checked ? '#FFFFFF' : p.theme.PRIMARY_TEXT_COLOR};
-  font-weight: 600;
-  font-size: 14px;
-  
+
   &:hover {
-    background: ${p => p.checked ? p.theme.ACCENT_COLOR : p.theme.HOVER_OVERLAY};
-  }
-  
-  input {
-    display: none;
+    border-color: ${p => p.theme.ACCENT_COLOR};
+    background: ${p => p.theme.ACCENT_COLOR}11;
   }
 `;
 
-const ErrorText = styled.div`
-  color: ${p => p.theme.ACCENT_COLOR_2};
-  font-size: 12px;
-  margin-top: 8px;
-  text-align: center;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-`;
-
-const ProgressIndicator = styled.div`
-  text-align: center;
-  font-size: 12px;
-  color: ${p => p.theme.SECONDARY_TEXT_COLOR};
-  margin-top: 16px;
-`;
-
-const POSTS = [
-  { id: 'post_a1_1', username: 'user1', content: 'Obsah príspevku A1-1.', image: null },
-  { id: 'post_a1_2', username: 'user2', content: 'Obsah príspevku A1-2.', image: '/img/a1-2.jpg' },
-  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' }
+const mockPosts = [
+  {
+    username: 'user4',
+    avatarColor: '#FF6B6B',
+    time: 'Pred 2 hodinami',
+    content: 'Obsah príspevku B3-1. Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+  },
+  {
+    username: 'user5',
+    avatarColor: '#4ECDC4',
+    time: 'Pred 3 hodinami',
+    content: 'Obsah príspevku B3-2. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+  },
+  {
+    username: 'user6',
+    avatarColor: '#95E1D3',
+    time: 'Pred 5 hodinami',
+    content: 'Obsah príspevku B3-3. Ut enim ad minim veniam, quis nostrud exercitation ullamco.'
+  }
 ];
-
-const COMPONENT_ID = 'mission1_postsa';
 
 const PostsA1 = () => {
   const navigate = useNavigate();
-  const { dataManager, userId } = useUserStats();
-  const responseManager = getResponseManager(dataManager);
-  
-  // ✅ Tracking hook
-  const { containerRef, trackingData, getFinalData } = useHoverTracking(
-    'postsA1_mission1',
-    'post',
-    userId
-  );
-  
-  const [ratings, setRatings] = useState({});
-  const [errors, setErrors] = useState({});
-  const [startTime] = useState(Date.now());
-  const [postStartTimes] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { userId } = useUserStats();
+  const containerRef = useRef(null);
   const trackingSentRef = useRef(false);
-  const refs = useRef({});
 
+  const [ratings, setRatings] = useState({});
+
+  // ✅ Hover tracking hook
+  const { startTracking, stopTracking, getFinalData } = useHoverTracking(
+    containerRef,
+    'postsA1_mission1',
+    'post'
+  );
+
+  // Start tracking pri mount
   useEffect(() => {
-    const loadSaved = async () => {
-      if (!userId) return;
-      
-      const saved = await responseManager.loadResponses(userId, COMPONENT_ID);
-      if (saved.answers && Object.keys(saved.answers).length > 0) {
-        setRatings(saved.answers);
-      }
+    startTracking();
+    
+    return () => {
+      stopTracking();
     };
-    
-    loadSaved();
-  }, [userId, responseManager]);
+  }, [startTracking, stopTracking]);
 
-  useEffect(() => {
-    POSTS.forEach(post => {
-      if (!postStartTimes[post.id]) {
-        postStartTimes[post.id] = Date.now();
-      }
-    });
-  }, [postStartTimes]);
-
-  const handleRating = async (postId, value) => {
+  const handleRating = (postId, value) => {
     setRatings(prev => ({ ...prev, [postId]: value }));
-    setErrors(prev => { const copy = { ...prev }; delete copy[postId]; return copy; });
-    
-    const timeOnPost = Math.floor((Date.now() - postStartTimes[postId]) / 1000);
-    
-    await responseManager.saveAnswer(
-      userId,
-      COMPONENT_ID,
-      postId,
-      value,
-      { [`time_on_${postId}`]: timeOnPost }
-    );
   };
 
-  const isComplete = () => {
-    return POSTS.every(post => ratings[post.id] !== undefined && ratings[post.id] !== null);
-  };
+  const allRated = Object.keys(ratings).length === mockPosts.length;
 
-  // ✅ NOVÝ TRACKING FLOW
+  // ✅ Odoslanie tracking dát
   const sendTracking = useCallback(async () => {
     if (trackingSentRef.current) {
       console.log('⏭️ Tracking already sent, skipping');
       return;
     }
 
-    // Získaj finálne sync dáta
     const finalData = getFinalData();
 
     if (finalData.isMobile) {
@@ -251,14 +191,15 @@ const PostsA1 = () => {
       userId: userId,
       mousePositionsCount: finalData.mousePositions?.length || 0,
       totalHoverTime: finalData.totalHoverTime,
-      isMobile: finalData.isMobile
+      landmarksCount: finalData.landmarks?.length || 0
     });
 
+    // ✅ ZNÍŽENÝ THRESHOLD (3 pozície, 200ms)
     if (
       !userId ||
       !finalData.mousePositions ||
-      finalData.mousePositions.length < 5 ||
-      finalData.totalHoverTime < 500
+      finalData.mousePositions.length < 3 ||
+      finalData.totalHoverTime < 200
     ) {
       console.log('⏭️ Skipping tracking - insufficient data');
       return;
@@ -267,7 +208,9 @@ const PostsA1 = () => {
     try {
       console.log('📊 Saving tracking with visualization...');
       
-      // ✅ NOVÁ FUNKCIA - Uloží tracking + vygeneruje a uploaduje heatmap
+      // Pridaj userId do tracking dát
+      finalData.userId = userId;
+      
       await saveTrackingWithVisualization(finalData, containerRef.current);
       
       console.log('✅ Tracking saved successfully with Cloudinary heatmap');
@@ -279,134 +222,74 @@ const PostsA1 = () => {
   }, [userId, getFinalData, containerRef]);
 
   const handleContinue = async () => {
-    const missing = POSTS.filter(post => !ratings[post.id]);
-    
-    if (missing.length) {
-      const newErrors = {};
-      missing.forEach(post => {
-        newErrors[post.id] = true;
-      });
-      setErrors(newErrors);
-      refs.current[missing[0].id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      const totalTime = Math.floor((Date.now() - startTime) / 1000);
-      
-      const postTimes = {};
-      POSTS.forEach(post => {
-        postTimes[`time_on_${post.id}`] = Math.floor((Date.now() - postStartTimes[post.id]) / 1000);
-      });
-      
-      await responseManager.saveMultipleAnswers(
-        userId,
-        COMPONENT_ID,
-        ratings,
-        {
-          total_time_spent_seconds: totalTime,
-          posts_count: POSTS.length,
-          ...postTimes,
-          device: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
-          completed_at: new Date().toISOString()
-        }
-      );
-      
-      console.log('📊 Sending final tracking data...');
-      await sendTracking();
-      
-      const progress = await dataManager.loadUserProgress(userId);
-      const group = progress.group_assignment;
-      
-      if (group === '1') {
-        navigate('/mission1/intervention');
-      } else {
-        navigate('/mission1/postsb');
-      }
-      
-    } catch (error) {
-      console.error('Error submitting posts:', error);
-      alert('Chyba pri ukladaní hodnotení. Skús to znova.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    if (!allRated) return;
+
+    console.log('📊 Sending final tracking data...');
+    await sendTracking();
+
+    const responseManager = getResponseManager();
+    await responseManager.saveAnswers('mission1_postsa', ratings);
+
+    navigate('/mission1/questionnaire1b');
   };
 
   return (
-    <Layout>
+    <Layout showLevelDisplay={true}>
       <Container ref={containerRef}>
-        <Title>Hodnotenie príspevkov A</Title>
+        {/* ✅ LANDMARK - Header */}
+        <div data-landmark="header" data-landmark-id="header_postsa1">
+          <Title>Hodnotenie príspevkov A</Title>
+        </div>
+
         <PostsGrid>
-          {POSTS.map(post => (
+          {mockPosts.map((post, index) => (
+            // ✅ LANDMARK - Post card
             <PostCard 
-              key={post.id} 
-              ref={el => { refs.current[post.id] = el; }}
-              hasError={errors[post.id]}
+              key={index}
+              data-landmark="post"
+              data-landmark-id={`post_a1_${index + 1}`}
             >
               <PostHeader>
-                <Avatar />
-                <Username>{post.username}</Username>
+                <UserInfo>
+                  <Avatar $color={post.avatarColor}>
+                    {post.username.charAt(0)}
+                  </Avatar>
+                  <Username>{post.username}</Username>
+                </UserInfo>
+                <PostMeta>{post.time}</PostMeta>
               </PostHeader>
-              
-              {post.image && <PostImage src={post.image} alt="" />}
-              
-              <PostContent>
-                <ContentText>{post.content}</ContentText>
-                
-                <RatingSection>
-                  <RatingLabel>Ohodnotiť príspevok</RatingLabel>
-                  <RatingScale>
-                    {[1, 2, 3, 4, 5].map(v => (
-                      <RatingButton key={v} checked={ratings[post.id] === v}>
-                        <input
-                          type="radio"
-                          checked={ratings[post.id] === v}
-                          onChange={() => handleRating(post.id, v)}
-                        />
-                        {v}
-                      </RatingButton>
-                    ))}
-                  </RatingScale>
-                  {errors[post.id] && <ErrorText>Prosím označte rating.</ErrorText>}
-                </RatingSection>
-              </PostContent>
+
+              <PostContent>{post.content}</PostContent>
+
+              <RatingSection>
+                <RatingLabel>Ohodnoť príspevok:</RatingLabel>
+                <RatingButtons>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <RatingButton
+                      key={value}
+                      $selected={ratings[`post_a1_${index + 1}`] === value}
+                      onClick={() => handleRating(`post_a1_${index + 1}`, value)}
+                    >
+                      {value}
+                    </RatingButton>
+                  ))}
+                </RatingButtons>
+              </RatingSection>
             </PostCard>
           ))}
         </PostsGrid>
-        
-        <ButtonContainer>
-          <StyledButton 
-            accent 
-            onClick={handleContinue}
-            disabled={!isComplete() || isSubmitting}
-          >
-            {isSubmitting ? 'Ukladám...' : 'Pokračovať'}
-          </StyledButton>
-        </ButtonContainer>
-        
-        <ProgressIndicator>
-          Ohodnotené: {Object.keys(ratings).length} / {POSTS.length}
-        </ProgressIndicator>
 
-        {process.env.NODE_ENV === 'development' && trackingData.isTracking && (
-          <div style={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-            background: 'rgba(74, 144, 226, 0.95)',
-            color: 'white',
-            padding: '10px 16px',
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 600,
-            zIndex: 9999,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}>
-            🎯 Tracking: {trackingData.mousePositions.length} points | {(trackingData.totalHoverTime / 1000).toFixed(1)}s
-          </div>
-        )}
+        {/* ✅ LANDMARK - Button */}
+        <div data-landmark="button" data-landmark-id="button_continue_postsa1">
+          <StyledButton
+            variant="accent"
+            onClick={handleContinue}
+            disabled={!allRated}
+            fullWidth
+          >
+            Pokračovať
+          </StyledButton>
+        </div>
       </Container>
     </Layout>
   );

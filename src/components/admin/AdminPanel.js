@@ -1,5 +1,5 @@
 // src/components/admin/AdminPanel.js
-// FINÁLNA VERZIA - S Generate Component Templates
+// FINÁLNA VERZIA - S template generation na fixné rozmery (1200×2000)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +8,9 @@ import Layout from '../../styles/Layout';
 import StyledButton from '../../styles/StyledButton';
 import { useUserStats } from '../../contexts/UserStatsContext';
 import * as XLSX from 'xlsx';
+import { generateAndUploadComponentTemplate } from '../../utils/trackingHelpers';
 
-// Všetky styled components ostávajú rovnaké...
+// Styled components (všetky zostávajú rovnaké)
 const Container = styled.div`
   padding: 20px;
   max-width: 1400px;
@@ -379,7 +380,6 @@ const TrackingBadge = styled.span`
   }};
 `;
 
-// ✅ NOVÝ styled component
 const ProgressText = styled.div`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 14px;
@@ -412,8 +412,6 @@ const AdminPanel = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [trackingComponents, setTrackingComponents] = useState([]);
   const [trackingLoading, setTrackingLoading] = useState(false);
-  
-  // ✅ NOVÝ state pre template generation
   const [generatingTemplates, setGeneratingTemplates] = useState(false);
   const [templateProgress, setTemplateProgress] = useState('');
 
@@ -474,10 +472,11 @@ const AdminPanel = () => {
     return `${(ms / 1000).toFixed(1)}s`;
   };
 
-  // ✅ NOVÁ FUNKCIA - Generate Component Templates
+  // ✅ UPRAVENÁ FUNKCIA - Generate Component Templates (s fixnými rozmermi)
   const handleGenerateTemplates = async () => {
     const confirmed = window.confirm(
       '📸 Vygenerovať component template screenshots?\n\n' +
+      'Všetky templates budú 1200×2000px (fixné rozmery)\n\n' +
       'Táto funkcia MANUÁLNE otvorí nové okno pre každý tracked komponent,\n' +
       'urobí screenshot a uploadne ho do Cloudinary.\n\n' +
       '⚠️ DÔLEŽITÉ:\n' +
@@ -538,11 +537,11 @@ const AdminPanel = () => {
           // Počkaj 5 sekúnd na načítanie
           await new Promise(resolve => setTimeout(resolve, 5000));
 
-          // Interaktívny prompt pre užívateľa
+          // Interaktívny prompt
           const ready = window.confirm(
             `📸 ${comp.name} je načítaný v novom okne.\n\n` +
             `Skontrolujte, že komponent je správne zobrazený.\n\n` +
-            `Kliknite OK pre vytvorenie screenshot a pokračovanie.`
+            `Kliknite OK pre vytvorenie screenshot (1200×2000px) a pokračovanie.`
           );
 
           if (!ready) {
@@ -550,63 +549,23 @@ const AdminPanel = () => {
             throw new Error('Používateľ zrušil generovanie');
           }
 
-          // Urob screenshot pomocou html2canvas v child okne
-          const html2canvas = (await import('html2canvas')).default;
-          
+          // Nájdi container v child okne
           const container = newWindow.document.querySelector('[class*="Container"]') || newWindow.document.body;
           
-          const canvas = await html2canvas(container, {
-            width: container.scrollWidth,
-            height: container.scrollHeight,
-            scrollX: 0,
-            scrollY: 0,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            scale: 1,
-            logging: false,
-          });
+          // ✅ Použi helper funkciu s fixnými rozmermi
+          const templateUrl = await generateAndUploadComponentTemplate(
+            container,
+            comp.id,
+            comp.type
+          );
 
-          // Konvertuj na blob
-          const blob = await new Promise((resolve) => {
-            canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
-          });
-
-          if (!blob) {
-            throw new Error('Failed to create blob from canvas');
+          if (!templateUrl) {
+            throw new Error('Failed to upload template');
           }
 
-          // Konvertuj na base64
-          const base64Image = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
+          console.log(`✅ Template uploaded for ${comp.name}:`, templateUrl);
 
-          // Upload do Cloudinary
-          const response = await fetch('/api/upload-component-template', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageBase64: base64Image,
-              contentId: comp.id,
-              contentType: comp.type,
-              dimensions: {
-                width: canvas.width,
-                height: canvas.height
-              }
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Upload failed: ${response.status}`);
-          }
-
-          const result = await response.json();
-          console.log(`✅ Template uploaded for ${comp.name}:`, result.data?.url);
-
-          results.push({ component: comp.name, status: 'success', url: result.data?.url });
+          results.push({ component: comp.name, status: 'success', url: templateUrl });
           successCount++;
 
           // Zatvor okno
@@ -626,6 +585,7 @@ const AdminPanel = () => {
       let reportMessage = `📸 Generovanie templates dokončené!\n\n`;
       reportMessage += `✅ Úspešné: ${successCount}\n`;
       reportMessage += `❌ Neúspešné: ${failCount}\n\n`;
+      reportMessage += `Všetky templates sú 1200×2000px (fixné rozmery)\n\n`;
       reportMessage += `Detaily:\n`;
       
       results.forEach(r => {
@@ -637,6 +597,9 @@ const AdminPanel = () => {
       });
 
       alert(reportMessage);
+
+      // Refresh tracking components
+      await loadTrackingComponents();
 
     } catch (error) {
       console.error('❌ Template generation error:', error);
@@ -1047,16 +1010,17 @@ const AdminPanel = () => {
           <SectionTitle>🔥 Tracking Heatmaps</SectionTitle>
           <InfoText>
             Zobrazenie agregovaných heatmap pohybov myši od všetkých používateľov pre jednotlivé komponenty.
+            Všetky templates sú štandardizované na 1200×2000px.
           </InfoText>
           
-          {/* ✅ NOVÉ TLAČIDLO - Generate Templates */}
+          {/* ✅ TLAČIDLO - Generate Templates */}
           <ButtonGroup>
             <StyledButton
               variant="accent"
               onClick={handleGenerateTemplates}
               disabled={generatingTemplates}
             >
-              📸 Generate Component Templates
+              📸 Generate Component Templates (1200×2000px)
             </StyledButton>
             <StyledButton
               variant="outline"
