@@ -472,18 +472,14 @@ const AdminPanel = () => {
     return `${(ms / 1000).toFixed(1)}s`;
   };
 
-    // ✅ UPRAVENÁ FUNKCIA - Generate Component Templates (lepšie popup handling)
+    // ✅ FINÁLNA OPRAVENÁ VERZIA - Bez confirm dialógov, plne automatizovaná
   const handleGenerateTemplates = async () => {
     const confirmed = window.confirm(
       '📸 Vygenerovať component template screenshots?\n\n' +
-      'Všetky templates budú mať šírku 1200px a dynamickú výšku podľa obsahu\n\n' +
-      'Táto funkcia MANUÁLNE otvorí nové okno pre každý tracked komponent,\n' +
-      'urobí screenshot a uploadne ho do Cloudinary.\n\n' +
-      '⚠️ DÔLEŽITÉ:\n' +
-      '- Nechajte toto okno otvorené\n' +
-      '- Počkajte kým sa všetky komponenty spracujú\n' +
-      '- Neuzatvárajte vyskakovacie okná manuálne\n' +
-      '- Pre komponenty s viacerými príspevkami (9+) sa počká 10 sekúnd\n\n' +
+      'Proces bude plne automatizovaný:\n' +
+      '- Všetky templates budú mať šírku 1200px a dynamickú výšku\n' +
+      '- Okná sa otvoria a zatvoria automaticky\n' +
+      '- Počas procesu NEMANIPULUJTE s oknom\n\n' +
       'Komponenty na vygenerovanie:\n' +
       '• PostsA1, PostsB1 (Mission 1)\n' +
       '• PostsA2, PostsB2 (Mission 2)\n' +
@@ -495,18 +491,6 @@ const AdminPanel = () => {
 
     setGeneratingTemplates(true);
     setTemplateProgress('Pripravujem generovanie templates...');
-
-    alert(
-      '📸 Generovanie templates spustené!\n\n' +
-      '⚠️ Postupujte takto:\n\n' +
-      '1. Teraz sa otvorí väčšie okno s každým komponentom\n' +
-      '2. Počkajte 8-10 sekúnd aby sa komponent úplne načítal\n' +
-      '3. Automaticky sa scrollne nadol a späť pre načítanie všetkých príspevkov\n' +
-      '4. Stlačte "OK" v ďalšom dialógu aby sa urobil screenshot\n' +
-      '5. Okno sa automaticky zatvorí\n' +
-      '6. Proces sa opakuje pre všetky komponenty\n\n' +
-      'Pripravený? Kliknite OK pre začatie.'
-    );
 
     // Definícia komponentov
     const components = [
@@ -528,64 +512,60 @@ const AdminPanel = () => {
         setTemplateProgress(`📸 Spracúvam ${i + 1}/${components.length}: ${comp.name}...`);
 
         try {
-          // ✅ OPRAVA - Väčšie popup okno (1200×2400) so scrollbarmi
+          // ✅ Otvor popup okno (väčšie)
           const fullPath = `${window.location.origin}${comp.path}`;
           const newWindow = window.open(
             fullPath, 
             '_blank', 
-            'width=1200,height=2400,scrollbars=yes,resizable=yes'
+            'width=1250,height=2500,scrollbars=yes,resizable=yes'
           );
 
           if (!newWindow) {
             throw new Error('Popup bolo zablokované! Povoľte popupy pre túto stránku.');
           }
 
-          // ✅ OPRAVA - Počkaj 8 sekúnd na načítanie (viac pre dlhé komponenty)
-          console.log(`⏳ Čakám 8s na načítanie ${comp.name}...`);
-          await new Promise(resolve => setTimeout(resolve, 8000));
+          // ✅ Počkaj 10 sekúnd na úplné načítanie (dlhšie pre React komponenty)
+          console.log(`⏳ Čakám 10s na načítanie ${comp.name}...`);
+          await new Promise(resolve => setTimeout(resolve, 10000));
 
-          // ✅ NOVÉ - Scroll check pre načítanie všetkých príspevkov
+          // ✅ Scroll check (bez chýb)
           try {
             if (newWindow.document && newWindow.document.body) {
               const bodyHeight = newWindow.document.body.scrollHeight;
               console.log(`📏 Body height: ${bodyHeight}px`);
               
-              // Scroll nadol
-              console.log('⬇️ Scrolling down...');
-              newWindow.scrollTo(0, bodyHeight);
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              // Scroll späť na vrch
-              console.log('⬆️ Scrolling back to top...');
-              newWindow.scrollTo(0, 0);
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              if (bodyHeight > 0) {
+                // Scroll nadol
+                console.log('⬇️ Scrolling down...');
+                newWindow.scrollTo(0, bodyHeight);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Scroll späť na vrch
+                console.log('⬆️ Scrolling back to top...');
+                newWindow.scrollTo(0, 0);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
             }
           } catch (scrollError) {
             console.warn('⚠️ Scroll check failed:', scrollError);
           }
 
-          // Interaktívny prompt
-          const ready = window.confirm(
-            `📸 ${comp.name} je načítaný v novom okne.\n\n` +
-            `Skontrolujte, že komponent je správne zobrazený.\n` +
-            `(Šírka: 1200px, dynamická výška podľa obsahu)\n\n` +
-            `Kliknite OK pre vytvorenie screenshot a pokračovanie.`
-          );
-
-          if (!ready) {
-            newWindow.close();
-            throw new Error('Používateľ zrušil generovanie');
-          }
+          // ✅ ŽIADNY window.confirm() - priamo urob screenshot
+          console.log(`📸 Robím screenshot ${comp.name}...`);
 
           // Nájdi container v child okne
           const container = newWindow.document.querySelector('[class*="Container"]') || newWindow.document.body;
           
+          if (!container) {
+            throw new Error('Container element not found in popup');
+          }
+
           console.log('📏 Container dimensions:', {
             scrollWidth: container.scrollWidth,
             scrollHeight: container.scrollHeight
           });
 
-          // ✅ Použi helper funkciu s dynamickými rozmermi
+          // ✅ Použi helper funkciu
           const templateUrl = await generateAndUploadComponentTemplate(
             container,
             comp.id,
@@ -610,7 +590,7 @@ const AdminPanel = () => {
           newWindow.close();
 
           // Krátka pauza medzi komponentami
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
 
         } catch (error) {
           console.error(`❌ Failed to generate template for ${comp.name}:`, error);
@@ -647,6 +627,7 @@ const AdminPanel = () => {
       setTemplateProgress('');
     }
   };
+
 
 
   const handleToggleBlock = async (participantCode, currentBlockedState) => {
