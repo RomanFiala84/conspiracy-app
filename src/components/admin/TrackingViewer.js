@@ -284,7 +284,6 @@ const TrackingViewer = () => {
   useEffect(() => {
     if (!selectedComponent) return;
 
-    // ✅ Definícia renderCompositeHeatmap vnútri useEffect (fix ESLint warning)
     const renderCompositeHeatmap = async (data) => {
       const canvas = canvasRef.current;
       if (!canvas || !data) return;
@@ -304,7 +303,7 @@ const TrackingViewer = () => {
         size: `${fullWidth}x${fullHeight}`
       });
 
-      // 1. Načítaj template
+      // ✅ 1. Načítaj component template (ak existuje)
       if (data.componentTemplateUrl) {
         try {
           await new Promise((resolve) => {
@@ -319,8 +318,18 @@ const TrackingViewer = () => {
             
             templateImg.onerror = (error) => {
               console.error('❌ Failed to load template:', error);
-              ctx.fillStyle = '#ffffff';
+              // Fallback - sivé pozadie
+              ctx.fillStyle = '#f5f5f5';
               ctx.fillRect(0, 0, fullWidth, fullHeight);
+              
+              // Info text
+              ctx.fillStyle = '#999999';
+              ctx.font = '16px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText('⚠️ Background template not loaded', fullWidth / 2, fullHeight / 2 - 20);
+              ctx.font = '14px Arial';
+              ctx.fillText('Showing heatmap overlay only', fullWidth / 2, fullHeight / 2 + 10);
+              
               resolve();
             };
             
@@ -328,26 +337,44 @@ const TrackingViewer = () => {
           });
         } catch (error) {
           console.error('❌ Template error:', error);
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = '#f5f5f5';
           ctx.fillRect(0, 0, fullWidth, fullHeight);
         }
       } else {
-        ctx.fillStyle = '#ffffff';
+        // ⚠️ Žiadny template - sivé pozadie s info textom
+        console.warn('⚠️ No component template URL available');
+        ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, fullWidth, fullHeight);
         
-        ctx.fillStyle = '#cccccc';
-        ctx.font = '18px Arial';
+        ctx.fillStyle = '#666666';
+        ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('⚠️ Component template not available', fullWidth / 2, 100);
+        ctx.fillText('📊 Heatmap Data', fullWidth / 2, 80);
+        
         ctx.font = '14px Arial';
         ctx.fillStyle = '#999999';
-        ctx.fillText('Showing heatmap data only', fullWidth / 2, 130);
+        ctx.fillText(`${data.contentId}`, fullWidth / 2, 110);
+        ctx.fillText(`${data.aggregatedPositions?.length || 0} tracking points`, fullWidth / 2, 140);
+        ctx.fillText(`${data.usersCount} users`, fullWidth / 2, 170);
+        
+        ctx.fillStyle = '#cccccc';
+        ctx.font = '12px Arial';
+        ctx.fillText('⚠️ Component screenshot not available', fullWidth / 2, fullHeight - 40);
       }
 
-      // 2. Vykresli heatmap overlay
+      // ✅ 2. Vykresli heatmap overlay
       if (data.aggregatedPositions && data.aggregatedPositions.length > 0) {
         const aggregated = aggregatePositions(data.aggregatedPositions, 10);
         await drawHeatmapOverlay(ctx, aggregated, fullWidth, fullHeight);
+        console.log(`✅ Drew heatmap with ${aggregated.length} aggregated points`);
+      } else {
+        console.warn('⚠️ No tracking positions to draw');
+        
+        // Zobraz warning text
+        ctx.fillStyle = '#ff9800';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️ No tracking data available', fullWidth / 2, fullHeight / 2);
       }
 
       const endTime = performance.now();
@@ -369,21 +396,30 @@ const TrackingViewer = () => {
         const response = await fetch(
           `/api/get-tracking-by-component?contentId=${selectedComponent.contentId}&contentType=${selectedComponent.contentType}`
         );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         if (data.success) {
           setTrackingData(data.data);
           await renderCompositeHeatmap(data.data);
+        } else {
+          console.error('API returned error:', data.error);
+          alert(`Chyba: ${data.error}`);
         }
       } catch (error) {
         console.error('Error loading tracking data:', error);
+        alert(`Nepodarilo sa načítať tracking dáta: ${error.message}`);
       } finally {
         setLoading(false);
       }
     };
 
     loadAndRenderHeatmap();
-  }, [selectedComponent]); // ✅ Teraz je dependency array správny
+  }, [selectedComponent]);
 
   const handleDownloadHeatmap = () => {
     const canvas = canvasRef.current;

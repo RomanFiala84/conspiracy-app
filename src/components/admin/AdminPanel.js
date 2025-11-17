@@ -1,5 +1,5 @@
 // src/components/admin/AdminPanel.js
-// FINÁLNA OPRAVENÁ VERZIA - Fix API endpoint pre tracking komponenty
+// FINÁLNA VERZIA - S Generate Component Templates
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ import StyledButton from '../../styles/StyledButton';
 import { useUserStats } from '../../contexts/UserStatsContext';
 import * as XLSX from 'xlsx';
 
-// ... všetky styled components zostávajú rovnaké ...
+// Všetky styled components ostávajú rovnaké...
 const Container = styled.div`
   padding: 20px;
   max-width: 1400px;
@@ -379,6 +379,17 @@ const TrackingBadge = styled.span`
   }};
 `;
 
+// ✅ NOVÝ styled component
+const ProgressText = styled.div`
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  font-size: 14px;
+  margin-top: 12px;
+  padding: 12px;
+  background: ${p => p.theme.ACCENT_COLOR}11;
+  border-radius: 6px;
+  font-weight: 500;
+`;
+
 // ADMIN PANEL KOMPONENT
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -401,6 +412,10 @@ const AdminPanel = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [trackingComponents, setTrackingComponents] = useState([]);
   const [trackingLoading, setTrackingLoading] = useState(false);
+  
+  // ✅ NOVÝ state pre template generation
+  const [generatingTemplates, setGeneratingTemplates] = useState(false);
+  const [templateProgress, setTemplateProgress] = useState('');
 
   const loadStats = useCallback(async () => {
     setLoading(true);
@@ -457,6 +472,179 @@ const AdminPanel = () => {
   const formatTime = (ms) => {
     if (!ms) return '0s';
     return `${(ms / 1000).toFixed(1)}s`;
+  };
+
+  // ✅ NOVÁ FUNKCIA - Generate Component Templates
+  const handleGenerateTemplates = async () => {
+    const confirmed = window.confirm(
+      '📸 Vygenerovať component template screenshots?\n\n' +
+      'Táto funkcia MANUÁLNE otvorí nové okno pre každý tracked komponent,\n' +
+      'urobí screenshot a uploadne ho do Cloudinary.\n\n' +
+      '⚠️ DÔLEŽITÉ:\n' +
+      '- Nechajte toto okno otvorené\n' +
+      '- Počkajte kým sa všetky komponenty spracujú\n' +
+      '- Neuzatvárajte vyskakovacie okná manuálne\n\n' +
+      'Komponenty na vygenerovanie:\n' +
+      '• PostsA1, PostsB1 (Mission 1)\n' +
+      '• PostsA2, PostsB2 (Mission 2)\n' +
+      '• PostsA3, PostsB3 (Mission 3)\n\n' +
+      'Pokračovať?'
+    );
+
+    if (!confirmed) return;
+
+    setGeneratingTemplates(true);
+    setTemplateProgress('Pripravujem generovanie templates...');
+
+    alert(
+      '📸 Generovanie templates spustené!\n\n' +
+      '⚠️ Postupujte takto:\n\n' +
+      '1. Teraz sa otvorí nové okno s každým komponentom\n' +
+      '2. Počkajte 5 sekúnd aby sa komponent načítal\n' +
+      '3. Stlačte "OK" v ďalšom dialógu aby sa urobil screenshot\n' +
+      '4. Okno sa automaticky zatvorí\n' +
+      '5. Proces sa opakuje pre všetky komponenty\n\n' +
+      'Pripravený? Kliknite OK pre začatie.'
+    );
+
+    // Definícia komponentov
+    const components = [
+      { id: 'postsA1_mission1', type: 'post', name: 'PostsA1', path: '/mission1/postsa' },
+      { id: 'postsB1_mission1', type: 'post', name: 'PostsB1', path: '/mission1/postsb' },
+      { id: 'postsA2_mission2', type: 'post', name: 'PostsA2', path: '/mission2/postsa' },
+      { id: 'postsB2_mission2', type: 'post', name: 'PostsB2', path: '/mission2/postsb' },
+      { id: 'postsA3_mission3', type: 'post', name: 'PostsA3', path: '/mission3/postsa' },
+      { id: 'postsB3_mission3', type: 'post', name: 'PostsB3', path: '/mission3/postsb' },
+    ];
+
+    let successCount = 0;
+    let failCount = 0;
+    const results = [];
+
+    try {
+      for (let i = 0; i < components.length; i++) {
+        const comp = components[i];
+        setTemplateProgress(`📸 Spracúvam ${i + 1}/${components.length}: ${comp.name}...`);
+
+        try {
+          // Otvor komponent v novom okne
+          const fullPath = `${window.location.origin}${comp.path}`;
+          const newWindow = window.open(fullPath, '_blank', 'width=1024,height=768');
+
+          if (!newWindow) {
+            throw new Error('Popup bolo zablokované! Povoľte popupy pre túto stránku.');
+          }
+
+          // Počkaj 5 sekúnd na načítanie
+          await new Promise(resolve => setTimeout(resolve, 5000));
+
+          // Interaktívny prompt pre užívateľa
+          const ready = window.confirm(
+            `📸 ${comp.name} je načítaný v novom okne.\n\n` +
+            `Skontrolujte, že komponent je správne zobrazený.\n\n` +
+            `Kliknite OK pre vytvorenie screenshot a pokračovanie.`
+          );
+
+          if (!ready) {
+            newWindow.close();
+            throw new Error('Používateľ zrušil generovanie');
+          }
+
+          // Urob screenshot pomocou html2canvas v child okne
+          const html2canvas = (await import('html2canvas')).default;
+          
+          const container = newWindow.document.querySelector('[class*="Container"]') || newWindow.document.body;
+          
+          const canvas = await html2canvas(container, {
+            width: container.scrollWidth,
+            height: container.scrollHeight,
+            scrollX: 0,
+            scrollY: 0,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            scale: 1,
+            logging: false,
+          });
+
+          // Konvertuj na blob
+          const blob = await new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
+          });
+
+          if (!blob) {
+            throw new Error('Failed to create blob from canvas');
+          }
+
+          // Konvertuj na base64
+          const base64Image = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+
+          // Upload do Cloudinary
+          const response = await fetch('/api/upload-component-template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageBase64: base64Image,
+              contentId: comp.id,
+              contentType: comp.type,
+              dimensions: {
+                width: canvas.width,
+                height: canvas.height
+              }
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.status}`);
+          }
+
+          const result = await response.json();
+          console.log(`✅ Template uploaded for ${comp.name}:`, result.data?.url);
+
+          results.push({ component: comp.name, status: 'success', url: result.data?.url });
+          successCount++;
+
+          // Zatvor okno
+          newWindow.close();
+
+          // Krátka pauza medzi komponentami
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (error) {
+          console.error(`❌ Failed to generate template for ${comp.name}:`, error);
+          results.push({ component: comp.name, status: 'failed', error: error.message });
+          failCount++;
+        }
+      }
+
+      // Finálny report
+      let reportMessage = `📸 Generovanie templates dokončené!\n\n`;
+      reportMessage += `✅ Úspešné: ${successCount}\n`;
+      reportMessage += `❌ Neúspešné: ${failCount}\n\n`;
+      reportMessage += `Detaily:\n`;
+      
+      results.forEach(r => {
+        if (r.status === 'success') {
+          reportMessage += `✅ ${r.component}: OK\n`;
+        } else {
+          reportMessage += `❌ ${r.component}: ${r.error}\n`;
+        }
+      });
+
+      alert(reportMessage);
+
+    } catch (error) {
+      console.error('❌ Template generation error:', error);
+      alert(`❌ Chyba: ${error.message}`);
+    } finally {
+      setGeneratingTemplates(false);
+      setTemplateProgress('');
+    }
   };
 
   const handleToggleBlock = async (participantCode, currentBlockedState) => {
@@ -723,7 +911,6 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ ZMENENÉ: Nový endpoint
   const handleDeleteTracking = async () => {
     if (!window.confirm('⚠️ VYMAZAŤ TRACKING DB (všetky tracking dáta)?\n\nTáto akcia je nevratná!')) return;
     if (!window.confirm('Ste si istý? Všetky tracking dáta budú natrvalo vymazané!')) return;
@@ -737,7 +924,7 @@ const AdminPanel = () => {
 
       if (response.ok) {
         alert('✅ Tracking DB vymazaná!');
-        await loadTrackingComponents(); // ✅ Refresh tracking components
+        await loadTrackingComponents();
       } else {
         const errorData = await response.json();
         alert(`❌ Chyba: ${errorData.error || response.statusText}`);
@@ -747,7 +934,6 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ ZMENENÉ: Nový endpoint
   const handleDeleteAll = async () => {
     if (!window.confirm('⚠️ VYMAZAŤ VŠETKY DATABÁZY?\n\n- Progress DB\n- Responses DB\n- Tracking DB\n\nTáto akcia je NEVRATNÁ!')) return;
     if (!window.confirm('Ste si ABSOLÚTNE istý? Všetky dáta vo VŠETKÝCH databázach budú natrvalo vymazané!')) return;
@@ -777,7 +963,7 @@ const AdminPanel = () => {
       dataManager.clearAllData();
       alert('✅ Všetky databázy vymazané!\n\n- Progress DB\n- Responses DB\n- Tracking DB');
       await loadStats();
-      await loadTrackingComponents(); // ✅ Refresh tracking
+      await loadTrackingComponents();
     } catch (error) {
       alert(`❌ Chyba: ${error.message}`);
     } finally {
@@ -800,6 +986,14 @@ const AdminPanel = () => {
   return (
     <Layout showLevelDisplay={false}>
       <Container>
+        {generatingTemplates && (
+          <LoadingOverlay>
+            <LoadingSpinner>
+              {templateProgress}
+            </LoadingSpinner>
+          </LoadingOverlay>
+        )}
+
         <Header>
           <Title>⚙️ Admin Panel</Title>
           <RefreshButton variant="accent" size="small" onClick={loadStats}>
@@ -855,6 +1049,27 @@ const AdminPanel = () => {
             Zobrazenie agregovaných heatmap pohybov myši od všetkých používateľov pre jednotlivé komponenty.
           </InfoText>
           
+          {/* ✅ NOVÉ TLAČIDLO - Generate Templates */}
+          <ButtonGroup>
+            <StyledButton
+              variant="accent"
+              onClick={handleGenerateTemplates}
+              disabled={generatingTemplates}
+            >
+              📸 Generate Component Templates
+            </StyledButton>
+            <StyledButton
+              variant="outline"
+              onClick={handleOpenTracking}
+            >
+              🔍 View All Heatmaps
+            </StyledButton>
+          </ButtonGroup>
+
+          {generatingTemplates && (
+            <ProgressText>{templateProgress}</ProgressText>
+          )}
+          
           {trackingLoading ? (
             <InfoText>Načítavam tracking komponenty...</InfoText>
           ) : trackingComponents.length === 0 ? (
@@ -862,45 +1077,32 @@ const AdminPanel = () => {
               Žiadne tracking dáta zatiaľ nie sú dostupné. Tracking dáta sa zbierajú automaticky, keď používatelia prejdú cez tracked komponenty.
             </InfoText>
           ) : (
-            <>
-              <TrackingGrid>
-                {trackingComponents.slice(0, 6).map((component, index) => (
-                  <TrackingCard key={index}>
-                    <TrackingTitle>
-                      <TrackingBadge type={component.contentType}>
-                        {component.contentType}
-                      </TrackingBadge>
-                      {component.contentId}
-                    </TrackingTitle>
-                    <TrackingMeta>
-                      <div>👥 {component.usersCount} users</div>
-                      <div>📍 {component.totalPoints?.toLocaleString()} points</div>
-                      <div>⏱️ {formatTime(component.avgHoverTime)} avg</div>
-                      <div>📊 {component.recordsCount} records</div>
-                    </TrackingMeta>
-                    <StyledButton
-                      variant="outline"
-                      size="small"
-                      fullWidth
-                      onClick={handleOpenTracking}
-                    >
-                      🔍 View Heatmap
-                    </StyledButton>
-                  </TrackingCard>
-                ))}
-              </TrackingGrid>
-              
-              {trackingComponents.length > 6 && (
-                <ButtonGroup style={{ marginTop: 16 }}>
+            <TrackingGrid>
+              {trackingComponents.slice(0, 6).map((component, index) => (
+                <TrackingCard key={index}>
+                  <TrackingTitle>
+                    <TrackingBadge type={component.contentType}>
+                      {component.contentType}
+                    </TrackingBadge>
+                    {component.contentId}
+                  </TrackingTitle>
+                  <TrackingMeta>
+                    <div>👥 {component.usersCount} users</div>
+                    <div>📍 {component.totalPoints?.toLocaleString()} points</div>
+                    <div>⏱️ {formatTime(component.avgHoverTime)} avg</div>
+                    <div>📊 {component.recordsCount} records</div>
+                  </TrackingMeta>
                   <StyledButton
-                    variant="accent"
+                    variant="outline"
+                    size="small"
+                    fullWidth
                     onClick={handleOpenTracking}
                   >
-                    📊 View All ({trackingComponents.length}) Tracking Components
+                    🔍 View Heatmap
                   </StyledButton>
-                </ButtonGroup>
-              )}
-            </>
+                </TrackingCard>
+              ))}
+            </TrackingGrid>
           )}
         </TrackingSection>
 
