@@ -1,12 +1,12 @@
 // src/hooks/useHoverTracking.js
-// FINÁLNA OPRAVENÁ VERZIA - Page-relative tracking (pre full-page template)
+// FINÁLNA OPRAVENÁ VERZIA - Page-relative tracking + fixed return values
 
 import { useEffect, useRef, useCallback } from 'react';
 import { saveTrackingWithVisualization, generateAndUploadComponentTemplate } from '../utils/trackingHelpers';
 import { useUserStats } from '../contexts/UserStatsContext';
 
-const TRACKING_SAMPLE_INTERVAL = 100; // Sample každých 100ms
-const LANDMARK_THRESHOLD = 200; // Distance threshold pre landmark detection
+const TRACKING_SAMPLE_INTERVAL = 100;
+const LANDMARK_THRESHOLD = 200;
 
 export const useHoverTracking = (contentId, contentType, containerRef, options = {}) => {
   const { userId } = useUserStats();
@@ -32,7 +32,7 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
     ]
   } = options;
 
-  // ✅ OPRAVENÁ FUNKCIA - Detekuj landmarks s page-relative pozíciami
+  // ✅ Detekuj landmarks s page-relative pozíciami
   const detectPageLandmarks = useCallback(() => {
     if (!containerRef.current || !detectLandmarks) return;
 
@@ -47,7 +47,6 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
                           el.getAttribute('data-testid') || 
                           `${selector.replace(/[[\]]/g, '')}_${index}`;
         
-        // ✅ OPRAVA - Pozícia relatívna k CELEJ STRÁNKE
         const pageTop = rect.top + window.scrollY;
         const pageLeft = rect.left + window.scrollX;
         
@@ -66,16 +65,10 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
 
     landmarks.current = detectedLandmarks;
     
-    console.log(`🎯 Detected ${detectedLandmarks.length} landmarks (page-relative):`, 
-      detectedLandmarks.map(l => ({
-        id: l.id,
-        pageY: l.position.top,
-        pageX: l.position.left
-      }))
-    );
+    console.log(`🎯 Detected ${detectedLandmarks.length} landmarks (page-relative)`);
   }, [containerRef, detectLandmarks, landmarkSelectors]);
 
-  // ✅ OPRAVENÁ FUNKCIA - Nájdi nearest landmark
+  // ✅ Nájdi nearest landmark
   const findNearestLandmark = useCallback((pageX, pageY) => {
     if (landmarks.current.length === 0) return null;
 
@@ -85,11 +78,9 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
     landmarks.current.forEach(landmark => {
       const { top, left, width, height } = landmark.position;
       
-      // Center landmark
       const landmarkCenterX = left + width / 2;
       const landmarkCenterY = top + height / 2;
       
-      // Distance calculation
       const dx = pageX - landmarkCenterX;
       const dy = pageY - landmarkCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -109,7 +100,7 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
     return nearest;
   }, []);
 
-  // ✅ OPRAVENÁ FUNKCIA - Record mouse position (PAGE coordinates)
+  // ✅ Record mouse position (PAGE coordinates)
   const recordMousePosition = useCallback((e) => {
     if (!isTracking.current || !containerRef.current) return;
 
@@ -118,7 +109,6 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
 
     lastSampleTime.current = now;
 
-    // ✅ OPRAVA - Používaj PAGE coordinates (e.pageX, e.pageY)
     const pageX = e.pageX;
     const pageY = e.pageY;
 
@@ -128,7 +118,6 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
       timestamp: now
     };
 
-    // Pridaj nearest landmark
     const nearestLandmark = findNearestLandmark(pageX, pageY);
     if (nearestLandmark) {
       position.nearestLandmark = nearestLandmark;
@@ -138,14 +127,22 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
 
   }, [containerRef, findNearestLandmark]);
 
-  // Start tracking
+  // ✅ Start tracking
   const startTracking = useCallback(async () => {
-    if (!enableTracking || isTracking.current || !containerRef.current) {
-      console.warn('⚠️ Tracking not started:', {
-        enableTracking,
-        isTracking: isTracking.current,
-        hasContainer: !!containerRef.current
-      });
+    if (!enableTracking || isTracking.current) {
+      return;
+    }
+
+    // ✅ OPRAVA - Počkaj na container
+    let attempts = 0;
+    while (!containerRef.current && attempts < 20) {
+      console.log(`⏳ Waiting for container... attempt ${attempts + 1}/20`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!containerRef.current) {
+      console.error('❌ Container not found after waiting');
       return;
     }
 
@@ -154,7 +151,7 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
     startTime.current = Date.now();
     isTracking.current = true;
 
-    // ✅ OPRAVA - Ulož FULL PAGE dimensions
+    // ✅ Ulož FULL PAGE dimensions
     containerDimensions.current = {
       width: document.documentElement.scrollWidth,
       height: document.documentElement.scrollHeight,
@@ -166,10 +163,9 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
 
     console.log('📐 Page dimensions:', containerDimensions.current);
 
-    // Detect landmarks
     detectPageLandmarks();
 
-    // ✅ Generate template (len raz)
+    // Generate template
     if (!templateGenerated.current) {
       try {
         console.log('📸 Generating component template...');
@@ -181,15 +177,17 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
       }
     }
 
-    // Add event listeners
     document.addEventListener('mousemove', recordMousePosition);
     console.log('✅ Tracking started');
 
   }, [enableTracking, containerRef, contentId, contentType, userId, detectPageLandmarks, recordMousePosition]);
 
-  // Stop tracking a ulož dáta
+  // ✅ Stop tracking
   const stopTracking = useCallback(async () => {
-    if (!isTracking.current) return;
+    if (!isTracking.current) {
+      console.warn('⚠️ Tracking already stopped');
+      return;
+    }
 
     console.log('🛑 Stopping tracking...');
     
@@ -218,7 +216,6 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
     console.log('💾 Saving tracking data:', {
       positions: mousePositions.current.length,
       landmarks: landmarks.current.length,
-      dimensions: containerDimensions.current,
       time: `${(totalHoverTime.current / 1000).toFixed(1)}s`
     });
 
@@ -239,23 +236,18 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
 
   // Lifecycle
   useEffect(() => {
-    if (!enableTracking || !containerRef.current) return;
+    if (!enableTracking) return;
 
-    const startTrackingWithDelay = async () => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await startTracking();
-    };
-
-    startTrackingWithDelay();
+    startTracking();
 
     return () => {
       if (isTracking.current) {
         stopTracking();
       }
     };
-  }, [enableTracking, containerRef, startTracking, stopTracking]);
+  }, [enableTracking, startTracking, stopTracking]);
 
-  // Window unload handler
+  // Window unload
   useEffect(() => {
     const handleUnload = () => {
       if (isTracking.current) {
@@ -270,6 +262,7 @@ export const useHoverTracking = (contentId, contentType, containerRef, options =
     };
   }, [stopTracking]);
 
+  // ✅ OPRAVA - Return správne hodnoty
   return {
     startTracking,
     stopTracking,
