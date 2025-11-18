@@ -1,5 +1,5 @@
 // src/utils/trackingHelpers.js
-// FINÁLNA VERZIA - 1920px template + percentá + individuálne heatmapy
+// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels
 
 import { generateVisualization } from './visualizationGenerator';
 
@@ -132,12 +132,18 @@ function normalizeLandmarksAsPercent(landmarks, originalWidth, originalHeight) {
 }
 
 /**
- * ✅ Konvertuj percentá na pixely
+ * ✅ OPRAVENÁ KONVERZIA - Konvertuj percentá na pixely (používa TEMPLATE rozmery)
  */
 export function convertPercentToPixels(positions, templateWidth, templateHeight) {
   if (!positions || positions.length === 0) return [];
   
-  return positions.map(pos => {
+  console.log('🔄 Converting percent to pixels:', {
+    positionsCount: positions.length,
+    templateSize: `${templateWidth}×${templateHeight}`,
+    sampleBefore: positions[0]
+  });
+  
+  const converted = positions.map(pos => {
     const pixel = {
       x: Math.round((pos.x / 100) * templateWidth),
       y: Math.round((pos.y / 100) * templateHeight),
@@ -161,15 +167,27 @@ export function convertPercentToPixels(positions, templateWidth, templateHeight)
     
     return pixel;
   });
+  
+  console.log('✅ Conversion complete:', {
+    sampleAfter: converted[0]
+  });
+  
+  return converted;
 }
 
 /**
- * ✅ Konvertuj landmarks percentá na pixely
+ * ✅ OPRAVENÁ KONVERZIA - Konvertuj landmarks percentá na pixely
  */
 export function convertLandmarksPercentToPixels(landmarks, templateWidth, templateHeight) {
   if (!landmarks || landmarks.length === 0) return [];
   
-  return landmarks.map(landmark => ({
+  console.log('🔄 Converting landmarks percent to pixels:', {
+    landmarksCount: landmarks.length,
+    templateSize: `${templateWidth}×${templateHeight}`,
+    sampleBefore: landmarks[0]
+  });
+  
+  const converted = landmarks.map(landmark => ({
     id: landmark.id,
     type: landmark.type,
     position: {
@@ -179,6 +197,12 @@ export function convertLandmarksPercentToPixels(landmarks, templateWidth, templa
       height: Math.round((landmark.position.height / 100) * templateHeight)
     }
   }));
+  
+  console.log('✅ Landmarks conversion complete:', {
+    sampleAfter: converted[0]
+  });
+  
+  return converted;
 }
 
 /**
@@ -238,7 +262,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 
     console.log('📐 Target dimensions for heatmap:', { targetWidth, targetHeight });
 
-    // Konvertuj percentá na pixely (pre 1920px template)
+    // ✅ Konvertuj percentá na pixely (pre 1920px template)
     const pixelPositions = convertPercentToPixels(
       normalizedPositions,
       targetWidth,
