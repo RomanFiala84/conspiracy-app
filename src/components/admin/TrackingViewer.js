@@ -1,5 +1,5 @@
 // src/components/admin/TrackingViewer.js
-// FINÁLNA OPRAVENÁ VERZIA - S detailnými debug logmi
+// FINÁLNA OPRAVENÁ VERZIA - S canvas wait loop
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -328,16 +328,26 @@ const TrackingViewer = () => {
     console.log(`✅ Drew ${landmarks.length} landmark boundaries`);
   };
 
-  // ✅ OPRAVENÁ HLAVNÁ FUNKCIA - S detailnými debug logmi
+  // ✅ OPRAVENÁ HLAVNÁ FUNKCIA - S canvas wait loop
   useEffect(() => {
     if (!selectedComponent) return;
 
     const renderCompositeHeatmap = async (data) => {
+      // ✅ OPRAVA - Počkaj na canvas (môže byť null pri prvom renderi)
+      let attempts = 0;
+      while (!canvasRef.current && attempts < 10) {
+        console.log(`⏳ Waiting for canvas... attempt ${attempts + 1}/10`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
       const canvas = canvasRef.current;
       if (!canvas || !data) {
-        console.error('❌ No canvas or data');
+        console.error('❌ No canvas or data after waiting');
         return;
       }
+
+      console.log('✅ Canvas found!');
 
       const startTime = performance.now();
       const ctx = canvas.getContext('2d', { alpha: false });
@@ -345,7 +355,7 @@ const TrackingViewer = () => {
       // ✅ DEBUG - Log celé data
       console.log('🔍 DEBUG - Raw data from API:', {
         containerDimensions: data.containerDimensions,
-        aggregatedPositions: data.aggregatedPositions?.slice(0, 3), // Prvé 3 pozície
+        aggregatedPositions: data.aggregatedPositions?.slice(0, 3),
         positionsCount: data.aggregatedPositions?.length,
         landmarks: data.landmarks,
         templateUrl: data.componentTemplateUrl
@@ -355,10 +365,8 @@ const TrackingViewer = () => {
       let canvasWidth = STANDARD_WIDTH;
       let canvasHeight = STANDARD_HEIGHT;
 
-      // ✅ OPRAVA - Lepšia detekcia rozmerov
       if (data.containerDimensions) {
         if (data.containerDimensions.originalWidth && data.containerDimensions.originalHeight) {
-          // ✅ Nový formát (percent)
           canvasWidth = STANDARD_WIDTH;
           const scale = STANDARD_WIDTH / data.containerDimensions.originalWidth;
           canvasHeight = Math.round(data.containerDimensions.originalHeight * scale);
@@ -372,7 +380,6 @@ const TrackingViewer = () => {
             scale: scale.toFixed(2)
           });
         } else if (data.containerDimensions.width && data.containerDimensions.height) {
-          // ✅ Starý formát (pixely)
           canvasWidth = data.containerDimensions.width;
           canvasHeight = data.containerDimensions.height;
           
