@@ -1,5 +1,5 @@
 // src/utils/trackingHelpers.js
-// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels + High-quality template
+// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels + FIX posúvania textu
 
 import { generateVisualization } from './visualizationGenerator';
 
@@ -33,7 +33,7 @@ function calculateProportionalHeight(originalWidth, originalHeight, targetWidth)
 }
 
 /**
- * ✅ OPRAVENÁ FUNKCIA - High-quality resize s Bicubic interpoláciou
+ * ✅ OPRAVENÁ FUNKCIA - Vysoká kvalita resize bez posúvania textu
  */
 async function resizeImageToStandardHighQuality(blob, targetWidth = STANDARD_WIDTH) {
   return new Promise((resolve, reject) => {
@@ -54,15 +54,12 @@ async function resizeImageToStandardHighQuality(blob, targetWidth = STANDARD_WID
       canvas.height = targetHeight;
       const ctx = canvas.getContext('2d', { alpha: false });
       
-      // ✅ OPRAVA - High-quality settings
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, targetWidth, targetHeight);
       
-      // ✅ OPRAVA - Lepšie nastavenia pre rendering
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';  // ✅ HIGH quality interpolation
+      ctx.imageSmoothingQuality = 'high';
       
-      // ✅ OPRAVA - Priama konverzia z original rozmerov
       ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, targetWidth, targetHeight);
       
       canvas.toBlob((resizedBlob) => {
@@ -72,7 +69,7 @@ async function resizeImageToStandardHighQuality(blob, targetWidth = STANDARD_WID
           width: targetWidth,
           height: targetHeight 
         });
-      }, 'image/png', 0.98);  // ✅ OPRAVA - Vyššia kvalita (0.98)
+      }, 'image/png', 0.98);
     };
     
     img.onerror = () => {
@@ -349,7 +346,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 };
 
 /**
- * ✅ OPRAVENÁ FUNKCIA - Template generation (1920px, bez scale:2, high-quality)
+ * ✅ OPRAVENÁ FUNKCIA - Template generation bez posúvania textu
  */
 export const generateAndUploadComponentTemplate = async (containerElement, contentId, contentType) => {
   if (!containerElement) {
@@ -362,18 +359,34 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
 
     const html2canvas = (await import('html2canvas')).default;
     
-    // ✅ OPRAVA - Bez scale: 2, používame scale: 1 pre presnosť
+    const containerWidth = containerElement.scrollWidth;
+    const containerHeight = containerElement.scrollHeight;
+    
+    // ✅ OPRAVA - Vypočítaj scale factor
+    const scaleFactor = STANDARD_WIDTH / containerWidth;
+    
+    console.log('📐 Screenshot scale calculation:', {
+      containerWidth,
+      containerHeight,
+      targetWidth: STANDARD_WIDTH,
+      scaleFactor: scaleFactor.toFixed(4)
+    });
+
+    // ✅ OPRAVA - Generuj screenshot s HIGH scale faktorom (pre lepšiu kvalitu)
+    // Potom resample späť na 1920px
+    const highQualityScale = Math.max(scaleFactor, 2); // Minimálne 2x pre kvalitu
+    
     const screenshot = await html2canvas(containerElement, {
-      width: containerElement.scrollWidth,
-      height: containerElement.scrollHeight,
+      width: containerWidth,
+      height: containerHeight,
       scrollX: 0,
       scrollY: 0,
-      windowWidth: containerElement.scrollWidth,
-      windowHeight: containerElement.scrollHeight,
+      windowWidth: containerWidth,
+      windowHeight: containerHeight,
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#FFFFFF',
-      scale: 1,  // ✅ OPRAVA - Bez scale: 2
+      scale: highQualityScale,  // ✅ OPRAVA - Vysoká qualita scale
       logging: false,
       removeContainer: false,
       foreignObjectRendering: false,
@@ -389,16 +402,17 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       throw new Error('Failed to create blob from screenshot');
     }
 
-    console.log('📏 Original screenshot size:', {
+    console.log('📏 High-quality screenshot generated:', {
       width: screenshot.width,
       height: screenshot.height,
+      scale: highQualityScale,
       size: `${(originalBlob.size / 1024).toFixed(2)}KB`
     });
 
-    // ✅ OPRAVENÁ FUNKCIA - Lepší resample algoritmus
+    // ✅ OPRAVA - Resample späť na 1920px s high-quality interpoláciou
     const resizeResult = await resizeImageToStandardHighQuality(originalBlob, STANDARD_WIDTH);
 
-    console.log('📏 Resized to 1920px (high quality):', {
+    console.log('📏 Resampled to 1920px (high quality):', {
       width: resizeResult.width,
       height: resizeResult.height,
       size: `${(resizeResult.blob.size / 1024).toFixed(2)}KB`
@@ -425,7 +439,7 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
     }
 
     const result = await response.json();
-    console.log('✅ Component template uploaded (1920px):', result.data?.url);
+    console.log('✅ Component template uploaded (1920px, fixed text shift):', result.data?.url);
 
     return result.data?.url;
 

@@ -1,5 +1,5 @@
 // src/utils/visualizationGenerator.js
-// FINÁLNA VERZIA - Individuálna heatmap overlay (1920px template)
+// FINÁLNA VERZIA - Individuálna heatmap overlay (1920px template, high-quality)
 
 /**
  * ✅ Vygeneruje individuálnu heatmap overlay (transparent pozadie)
@@ -32,8 +32,8 @@ export const generateVisualization = async (trackingData, width, height, contain
 
     console.log(`📊 Aggregated ${trackingData.mousePositions.length} positions into ${aggregated.length} grid points`);
 
-    // ✅ Vykresli heatmap gradient
-    await drawHeatmapGradient(ctx, aggregated, width, height);
+    // ✅ Vykresli heatmap gradient (HIGH QUALITY)
+    await drawHeatmapGradientHighQuality(ctx, aggregated, width, height);
 
     // ✅ Vykresli trajectory
     if (trackingData.mousePositions.length > 1) {
@@ -45,7 +45,7 @@ export const generateVisualization = async (trackingData, width, height, contain
 
     // Konvertuj canvas na Blob
     const blob = await new Promise((resolve) => {
-      canvas.toBlob((b) => resolve(b), 'image/png', 0.95);
+      canvas.toBlob((b) => resolve(b), 'image/png', 0.98);  // ✅ 0.98 kvalita
     });
 
     if (!blob || blob.size === 0) {
@@ -98,43 +98,50 @@ function aggregatePositionsToGrid(positions, gridSize = 10) {
 }
 
 /**
- * ✅ Vykresli heatmap gradient overlay
+ * ✅ OPRAVENÁ FUNKCIA - Vykresli heatmap gradient overlay (HIGH QUALITY)
  */
-async function drawHeatmapGradient(ctx, positions, width, height) {
+async function drawHeatmapGradientHighQuality(ctx, positions, width, height) {
   if (!positions || positions.length === 0) return;
 
-  // Vytvor gradient template (kruhový gradient)
+  // ✅ OPRAVA - Väčší radius pre lepšiu kvalitu
+  const radius = 75;
   const gradientCanvas = document.createElement('canvas');
-  const radius = 50;
   gradientCanvas.width = radius * 2;
   gradientCanvas.height = radius * 2;
   const gradientCtx = gradientCanvas.getContext('2d');
   
+  // ✅ OPRAVA - Radiálny gradient s lepšími farbami
   const gradient = gradientCtx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-  gradient.addColorStop(0, 'rgba(255, 0, 0, 0.8)');    // Červená (stred)
-  gradient.addColorStop(0.3, 'rgba(255, 165, 0, 0.6)'); // Oranžová
-  gradient.addColorStop(0.6, 'rgba(255, 255, 0, 0.4)'); // Žltá
-  gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');     // Transparent (okraj)
+  gradient.addColorStop(0, 'rgba(255, 0, 0, 0.9)');      // Červená (stred) - intenzívnejšia
+  gradient.addColorStop(0.25, 'rgba(255, 100, 0, 0.7)'); // Oranžová
+  gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.5)');  // Žltá
+  gradient.addColorStop(0.75, 'rgba(255, 255, 0, 0.2)'); // Svetlo žltá
+  gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');      // Transparent (okraj)
   
   gradientCtx.fillStyle = gradient;
   gradientCtx.fillRect(0, 0, radius * 2, radius * 2);
 
+  // ✅ OPRAVA - Image smoothing pre lepšiu kvalitu
+  gradientCtx.imageSmoothingEnabled = true;
+  gradientCtx.imageSmoothingQuality = 'high';
+
   // Nájdi max count pre intensity scaling
   const maxCount = Math.max(...positions.map(p => p.count || 1));
 
-  // Vykresli všetky body s intenzitou
+  // ✅ OPRAVA - Lepšia blending
   ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalCompositeOperation = 'lighten';  // ✅ Svetlejšie blending pre lepší efekt
 
   positions.forEach(pos => {
     const intensity = (pos.count || 1) / maxCount;
-    ctx.globalAlpha = Math.min(0.3 + intensity * 0.7, 1);
+    // ✅ OPRAVA - Lepšia alpha kalkulácia
+    ctx.globalAlpha = Math.min(0.4 + intensity * 0.6, 0.95);
     ctx.drawImage(gradientCanvas, pos.x - radius, pos.y - radius);
   });
 
   ctx.restore();
   
-  console.log(`✅ Heatmap overlay drawn (${positions.length} aggregated points)`);
+  console.log(`✅ High-quality heatmap overlay drawn (${positions.length} aggregated points)`);
 }
 
 /**
