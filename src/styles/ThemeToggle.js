@@ -6,8 +6,8 @@ import styled from 'styled-components';
 
 const Toggle = styled.button`
   position: fixed;
-  top: 20px; // ✅ Dolný roh
-  right: 20px;  // ✅ Pravá strana
+  bottom: 20px; // ✅ Dolný roh
+  left: 20px;  // ✅ Pravá strana
   z-index: 1100;
   padding: 10px 16px;
   border-radius: 12px;
