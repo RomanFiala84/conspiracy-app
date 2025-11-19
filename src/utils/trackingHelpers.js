@@ -1,5 +1,5 @@
 // src/utils/trackingHelpers.js
-// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels + FIX posúvania textu
+// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels + FIX scroll offsetu
 
 import { generateVisualization } from './visualizationGenerator';
 
@@ -346,7 +346,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 };
 
 /**
- * ✅ OPRAVENÁ FUNKCIA - Template generation bez posúvania textu
+ * ✅ OPRAVENÁ FUNKCIA - Template generation BEZ scroll offsetu
  */
 export const generateAndUploadComponentTemplate = async (containerElement, contentId, contentType) => {
   if (!containerElement) {
@@ -354,15 +354,34 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
     return null;
   }
 
+  let originalScrollTop = 0;
+  let originalScrollLeft = 0;
+
   try {
     console.log('📸 Generating component template screenshot (1920px)...');
 
     const html2canvas = (await import('html2canvas')).default;
     
+    // ✅ OPRAVA - Ulož original scroll pozíciu
+    originalScrollTop = containerElement.scrollTop;
+    originalScrollLeft = containerElement.scrollLeft;
+    
+    console.log('📐 Original scroll position:', {
+      scrollTop: originalScrollTop,
+      scrollLeft: originalScrollLeft
+    });
+    
+    // ✅ OPRAVA - Reset scroll na top-left
+    containerElement.scrollTop = 0;
+    containerElement.scrollLeft = 0;
+    
+    // ✅ OPRAVA - Počkaj na reflow
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    
     const containerWidth = containerElement.scrollWidth;
     const containerHeight = containerElement.scrollHeight;
     
-    // ✅ OPRAVA - Vypočítaj scale factor
+    // ✅ Vypočítaj scale factor
     const scaleFactor = STANDARD_WIDTH / containerWidth;
     
     console.log('📐 Screenshot scale calculation:', {
@@ -372,27 +391,31 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       scaleFactor: scaleFactor.toFixed(4)
     });
 
-    // ✅ OPRAVA - Generuj screenshot s HIGH scale faktorom (pre lepšiu kvalitu)
-    // Potom resample späť na 1920px
-    const highQualityScale = Math.max(scaleFactor, 2); // Minimálne 2x pre kvalitu
+    // ✅ Vysoká qualita scale
+    const highQualityScale = Math.max(scaleFactor, 2);
     
     const screenshot = await html2canvas(containerElement, {
       width: containerWidth,
       height: containerHeight,
-      scrollX: 0,
-      scrollY: 0,
+      scrollX: 0,  // ✅ HOLD na 0
+      scrollY: 0,  // ✅ HOLD na 0
       windowWidth: containerWidth,
       windowHeight: containerHeight,
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#FFFFFF',
-      scale: highQualityScale,  // ✅ OPRAVA - Vysoká qualita scale
+      scale: highQualityScale,
       logging: false,
       removeContainer: false,
       foreignObjectRendering: false,
       imageTimeout: 0,
       letterRendering: true,
     });
+
+    // ✅ OPRAVA - Obnoví original scroll pozíciu
+    containerElement.scrollTop = originalScrollTop;
+    containerElement.scrollLeft = originalScrollLeft;
+    await new Promise(resolve => requestAnimationFrame(resolve));
 
     const originalBlob = await new Promise((resolve) => {
       screenshot.toBlob((blob) => resolve(blob), 'image/png', 0.95);
@@ -409,7 +432,7 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       size: `${(originalBlob.size / 1024).toFixed(2)}KB`
     });
 
-    // ✅ OPRAVA - Resample späť na 1920px s high-quality interpoláciou
+    // ✅ Resample späť na 1920px s high-quality interpoláciou
     const resizeResult = await resizeImageToStandardHighQuality(originalBlob, STANDARD_WIDTH);
 
     console.log('📏 Resampled to 1920px (high quality):', {
@@ -439,12 +462,18 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
     }
 
     const result = await response.json();
-    console.log('✅ Component template uploaded (1920px, fixed text shift):', result.data?.url);
+    console.log('✅ Component template uploaded (1920px, no scroll shift):', result.data?.url);
 
     return result.data?.url;
 
   } catch (error) {
     console.error('❌ Failed to generate/upload component template:', error);
+    
+    // ✅ OPRAVA - Obnoví scroll aj v prípade chyby
+    if (containerElement) {
+      containerElement.scrollTop = originalScrollTop;
+      containerElement.scrollLeft = originalScrollLeft;
+    }
     return null;
   }
 };
