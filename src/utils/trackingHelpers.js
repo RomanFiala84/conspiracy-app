@@ -1,5 +1,5 @@
 // src/utils/trackingHelpers.js
-// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels + FIX scroll offsetu
+// FINÁLNA OPRAVENÁ VERZIA - Správna konverzia percent → pixels + FIX animácií
 
 import { generateVisualization } from './visualizationGenerator';
 
@@ -346,7 +346,7 @@ export const saveTrackingWithVisualization = async (trackingData, containerEleme
 };
 
 /**
- * ✅ OPRAVENÁ FUNKCIA - Template generation BEZ scroll offsetu
+ * ✅ OPRAVENÁ FUNKCIA - Template generation BEZ animácií a transakcií
  */
 export const generateAndUploadComponentTemplate = async (containerElement, contentId, contentType) => {
   if (!containerElement) {
@@ -354,34 +354,34 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
     return null;
   }
 
-  let originalScrollTop = 0;
-  let originalScrollLeft = 0;
+  let styleSheet = null;
 
   try {
     console.log('📸 Generating component template screenshot (1920px)...');
 
     const html2canvas = (await import('html2canvas')).default;
     
-    // ✅ OPRAVA - Ulož original scroll pozíciu
-    originalScrollTop = containerElement.scrollTop;
-    originalScrollLeft = containerElement.scrollLeft;
+    // ✅ OPRAVA - Vypni CSS animácie a transitions
+    styleSheet = document.createElement('style');
+    styleSheet.id = 'no-animations-for-screenshot';
+    styleSheet.textContent = `
+      * {
+        animation: none !important;
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        transition: none !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
+      }
+    `;
+    document.head.appendChild(styleSheet);
     
-    console.log('📐 Original scroll position:', {
-      scrollTop: originalScrollTop,
-      scrollLeft: originalScrollLeft
-    });
-    
-    // ✅ OPRAVA - Reset scroll na top-left
-    containerElement.scrollTop = 0;
-    containerElement.scrollLeft = 0;
-    
-    // ✅ OPRAVA - Počkaj na reflow
+    // ✅ Počkaj na reflow
     await new Promise(resolve => requestAnimationFrame(resolve));
     
     const containerWidth = containerElement.scrollWidth;
     const containerHeight = containerElement.scrollHeight;
     
-    // ✅ Vypočítaj scale factor
     const scaleFactor = STANDARD_WIDTH / containerWidth;
     
     console.log('📐 Screenshot scale calculation:', {
@@ -391,14 +391,13 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       scaleFactor: scaleFactor.toFixed(4)
     });
 
-    // ✅ Vysoká qualita scale
     const highQualityScale = Math.max(scaleFactor, 2);
     
     const screenshot = await html2canvas(containerElement, {
       width: containerWidth,
       height: containerHeight,
-      scrollX: 0,  // ✅ HOLD na 0
-      scrollY: 0,  // ✅ HOLD na 0
+      scrollX: 0,
+      scrollY: 0,
       windowWidth: containerWidth,
       windowHeight: containerHeight,
       useCORS: true,
@@ -412,10 +411,10 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
       letterRendering: true,
     });
 
-    // ✅ OPRAVA - Obnoví original scroll pozíciu
-    containerElement.scrollTop = originalScrollTop;
-    containerElement.scrollLeft = originalScrollLeft;
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    // ✅ OPRAVA - Odstráň style sheet
+    if (styleSheet && styleSheet.parentNode) {
+      document.head.removeChild(styleSheet);
+    }
 
     const originalBlob = await new Promise((resolve) => {
       screenshot.toBlob((blob) => resolve(blob), 'image/png', 0.95);
@@ -462,18 +461,22 @@ export const generateAndUploadComponentTemplate = async (containerElement, conte
     }
 
     const result = await response.json();
-    console.log('✅ Component template uploaded (1920px, no scroll shift):', result.data?.url);
+    console.log('✅ Component template uploaded (1920px, animations disabled):', result.data?.url);
 
     return result.data?.url;
 
   } catch (error) {
     console.error('❌ Failed to generate/upload component template:', error);
     
-    // ✅ OPRAVA - Obnoví scroll aj v prípade chyby
-    if (containerElement) {
-      containerElement.scrollTop = originalScrollTop;
-      containerElement.scrollLeft = originalScrollLeft;
+    // ✅ OPRAVA - Cleanup - Odstráň style sheet aj v prípade chyby
+    if (styleSheet && styleSheet.parentNode) {
+      try {
+        document.head.removeChild(styleSheet);
+      } catch (e) {
+        console.error('Failed to remove style sheet:', e);
+      }
     }
+    
     return null;
   }
 };

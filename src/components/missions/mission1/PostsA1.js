@@ -167,7 +167,11 @@ const ProgressIndicator = styled.div`
 const POSTS = [
   { id: 'post_a1_1', username: 'user1', content: 'Obsah príspevku A1-1.', image: null },
   { id: 'post_a1_2', username: 'user2', content: 'Obsah príspevku A1-2.', image: '/img/a1-2.jpg' },
-  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' }
+  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' },
+  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' },
+  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' },
+  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' },
+  { id: 'post_a1_3', username: 'user3', content: 'Obsah príspevku A1-3.', image: '/img/a1-3.jpg' },
 ];
 
 const COMPONENT_ID = 'mission1_postsa';
