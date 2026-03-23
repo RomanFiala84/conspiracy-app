@@ -26,7 +26,7 @@ const Card = styled.div`
 
 const PageTitle = styled.h2`
   color: ${p => p.theme.ACCENT_COLOR};
-  text-align: justify;
+  text-align: center;
   margin-bottom: 8px;
   font-size: 20px;
   font-weight: 700;
@@ -34,7 +34,7 @@ const PageTitle = styled.h2`
 
 const PageSubtitle = styled.p`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
-  text-align: justify;
+  text-align: center;
   font-size: 15px;
   margin-bottom: 24px;
 `;
@@ -53,6 +53,7 @@ const BodyText = styled.p`
   font-size: 15px;
   line-height: 1.8;
   margin-bottom: 14px;
+  text-align: justify;
 `;
 
 const ItemLabel = styled.strong`
@@ -66,6 +67,7 @@ const ItemDesc = styled.span`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 15px;
   line-height: 1.6;
+  text-align: justify;
 `;
 
 const ContentList = styled.ol`
@@ -80,6 +82,7 @@ const ContentListItem = styled.li`
   font-size: 15px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
+  text-align: justify;
 `;
 
 const NestedList = styled.ol`
@@ -89,6 +92,7 @@ const NestedList = styled.ol`
   display: flex;
   flex-direction: column;
   gap: 5px;
+  text-align: justify;
 `;
 
 const NestedItem = styled.li`
