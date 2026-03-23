@@ -26,7 +26,7 @@ const Card = styled.div`
 
 const PageTitle = styled.h2`
   color: ${p => p.theme.ACCENT_COLOR};
-  text-align: center;
+  text-align: justify;
   margin-bottom: 8px;
   font-size: 20px;
   font-weight: 700;
@@ -34,7 +34,7 @@ const PageTitle = styled.h2`
 
 const PageSubtitle = styled.p`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
-  text-align: center;
+  text-align: justify;
   font-size: 15px;
   margin-bottom: 24px;
 `;
@@ -150,7 +150,7 @@ const AccordionHeader = styled.button`
   background: ${p => p.open ? p.theme.ACCENT_COLOR + '15' : p.theme.CARD_BACKGROUND};
   border: none;
   cursor: pointer;
-  text-align: left;
+  text-align: justify;
   transition: background 0.2s ease;
   &:hover { background: ${p => p.theme.ACCENT_COLOR}15; }
 `;
@@ -238,7 +238,7 @@ const QuizWrapper = styled.div`
 
 const QuizOption = styled.button`
   width: 100%;
-  text-align: left;
+  text-align: justify;
   padding: 12px 16px;
   border-radius: 8px;
   border: 2px solid ${p =>
@@ -514,7 +514,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
     <AccordionItem title="Ako vznikajú?" isRead={readSections.has('p1_s4')} onRead={() => markRead('p1_s4')}>
       <SectionAudioPlayer src="/sound/detektiv5.mp3" audioId="p1_s4_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s4_audio']} onPlayed={markAudioPlayed} />
-      <BodyText>Konšpiračné presvedčenia nevznikajú v prázdnote:</BodyText>
+      <BodyText>Konšpiračné presvedčenia nevznikajú v prázdnote. Vznikajú v špecifických podmienkach.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Udalosť alebo neistota</ItemLabel><ItemDesc>Niečo sa stane, napríklad pandémia, politický škandál, ekonomická kríza... alebo jednoducho nerozumieme nejakej udalosti, ktorá sa stala.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Alternatívne vysvetlenie</ItemLabel><ItemDesc>Nejaký jednotlivec alebo skupina vytvorí teóriu, ktorá spája pôvodnú neistotu s konkrétnym vinníkom. Táto teória je jednoduchá, emotívna a dáva „zmysel".</ItemDesc></ContentListItem>
@@ -642,7 +642,7 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
           <NestedList>
             <NestedItem>Ak autor uvádza meno, ale bez detailov o kvalifikácii — čo ho kvalifikuje na to, aby o tomto hovoril?</NestedItem>
             <NestedItem>Ak autor uvádza inštitúciu — dá sa overiť, či v nej naozaj pracuje?</NestedItem>
-            <NestedItem>Ak sa autor rozhodol vynechať informácie — prečo? Je to zámerné?</NestedItem>
+            <NestedItem></NestedItem>
           </NestedList>
         </ContentListItem>
         <ContentListItem>
