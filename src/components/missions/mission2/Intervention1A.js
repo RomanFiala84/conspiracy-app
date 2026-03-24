@@ -83,6 +83,9 @@ const ContentListItem = styled.li`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
   text-align: justify;
+   &::marker {
+    font-weight: 700;
+  }
 `;
 
 const NestedList = styled.ol`
@@ -489,13 +492,16 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
     <AccordionItem title="Čo je to vlastne konšpiračné presvedčenie?" isRead={readSections.has('p1_s1')} onRead={() => markRead('p1_s1')}>
       <SectionAudioPlayer src="/sound/detektiv2.mp3" audioId="p1_s1_audio" label="Prehrať" played={!!playedAudios['p1_s1_audio']} onPlayed={markAudioPlayed} />
-      <BodyText>Čo sú to vlastne tie konšpiračné presvedčenia? Konšpiračné presvedčenia hovoria o tom, že tajné skupiny manipulujú udalosti, spoločnosť alebo nám skrývajú skutočnú pravdu.<br /> Ale prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“? Nie je to preto, že sme hlúpi, naše mozgy sú navrhnuté hľadať vzory a zmysel, ale niekedy hľadajú vzory a zmysel aj tam, kde neexistujú.<br /> 
-      Poďme sa spolu teraz pozrieť na to, prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“, ako ich identifikovať a ako sa voči nim brániť.<br /> Ale pozor! Predtým ako si pozriete odpovede k otázkam, skúste si ich najskôr zodpovedať pre seba v myšlienkach. Ste pripravený? Poďme na to!
-      </BodyText>
+      <ContentList>
+        <ContentListItem><ItemLabel>Čo sú to vlastne tie konšpiračné presvedčenia?</ItemLabel><ItemDesc>Konšpiračné presvedčenia hovoria o tom, že tajné skupiny manipulujú udalosti, spoločnosť alebo nám skrývajú skutočnú pravdu.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Ale prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“?</ItemLabel><ItemDesc>Nie je to preto, že sme hlúpi, naše mozgy sú navrhnuté hľadať vzory a zmysel, ale niekedy hľadajú vzory a zmysel aj tam, kde neexistujú.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel></ItemLabel><ItemDesc></ItemDesc></ContentListItem> 
+        <BodyText>Poďme sa spolu teraz pozrieť na to, prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“, ako ich identifikovať a ako sa voči nim brániť.<br /> Ale pozor! Predtým ako si pozriete odpovede k otázkam, skúste si ich najskôr zodpovedať pre seba v myšlienkach. Ste pripravený? Poďme na to!</BodyText>
+      </ContentList>
     </AccordionItem>
 
     <AccordionItem title="Aké sú ich spoločné znaky?" isRead={readSections.has('p1_s2')} onRead={() => markRead('p1_s2')}>
-      <SectionAudioPlayer src="/sound/detektiv3.mp3" audioId="p1_s2_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s2_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektiv3.mp3" audioId="p1_s2_audio" label="Prehrať" played={!!playedAudios['p1_s2_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Konšpiračné presvedčenia sa často vyskytujú v rôznych formách, ale majú niekoľko spoločných znakov:</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Údajné tajné sprisahanie</ItemLabel><ItemDesc>Tvrdenie, že určitá skupina, či už vláda, inštitúcie, médiá alebo špecifická skupina ľudí, tajne a úmyselne koná.</ItemDesc></ContentListItem>
@@ -507,7 +513,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Prečo sa im darí?" isRead={readSections.has('p1_s3')} onRead={() => markRead('p1_s3')}>
-      <SectionAudioPlayer src="/sound/detektiv4.mp3" audioId="p1_s3_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s3_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektiv4.mp3" audioId="p1_s3_audio" label="Prehrať" played={!!playedAudios['p1_s3_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Konšpiračné presvedčenia sa často objavujú ako logické vysvetlenie udalostí alebo situácií, ktoré sú ťažko zrozumiteľné, a dodávajú falošný pocit moci a vplyvu.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Hľadanie vzorov a zmyslu</ItemLabel><ItemDesc>Keď sa niečo deje, automaticky hľadáme odpovede na otázku prečo a kto za tým stojí. Konšpiračné presvedčenia nám ponúkajú jednoduché odpovede. A jednoduché odpovede sú upokojujúce.</ItemDesc></ContentListItem>
@@ -517,7 +523,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Ako vznikajú?" isRead={readSections.has('p1_s4')} onRead={() => markRead('p1_s4')}>
-      <SectionAudioPlayer src="/sound/detektiv5.mp3" audioId="p1_s4_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s4_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektiv5.mp3" audioId="p1_s4_audio" label="Prehrať" played={!!playedAudios['p1_s4_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Konšpiračné presvedčenia nevznikajú v prázdnote. Vznikajú v špecifických podmienkach.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Udalosť alebo neistota</ItemLabel><ItemDesc>Niečo sa stane, napríklad pandémia, politický škandál, ekonomická kríza... alebo jednoducho nerozumieme nejakej udalosti, ktorá sa stala.</ItemDesc></ContentListItem>
@@ -527,7 +533,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Prečo ich ľudia šíria?" isRead={readSections.has('p1_s5')} onRead={() => markRead('p1_s5')}>
-      <SectionAudioPlayer src="/sound/detektiv6.mp3" audioId="p1_s5_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s5_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektiv6.mp3" audioId="p1_s5_audio" label="Prehrať" played={!!playedAudios['p1_s5_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Ľudia konšpiračné presvedčenia šíria z mnohých dôvodov a väčšinou si to ani neuvedomujú.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Chcú pomôcť</ItemLabel><ItemDesc>Osoba verí, že objavila „pravdu", a chce ju zdieľať s ostatnými. Šírenie presvedčenia môže byť vnímané ako morálna povinnosť.</ItemDesc></ContentListItem>
@@ -539,24 +545,43 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Sebareflexia — otázky, ktoré ti pomôžu" isRead={readSections.has('p1_s6')} onRead={() => markRead('p1_s6')}>
-      <SectionAudioPlayer src="/sound/detektiv8.mp3" audioId="p1_s6_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s6_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektiv8.mp3" audioId="p1_s6_audio" label="Prehrať" played={!!playedAudios['p1_s6_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Tieto sebareflektujúce otázky môžu byť užitočným nástrojom nielen pri odhaľovaní konšpiračných presvedčení, ale aj v každodennom živote.</BodyText>
       <ContentList>
         <ContentListItem>
           <ItemLabel>Ako som prišiel k tomuto názoru?</ItemLabel>
-          <ItemDesc>Každé presvedčenie má pôvod. Keď si uvedomíte, odkiaľ pochádza vaše presvedčenie, môžete si položiť otázku: je to moje presvedčenie, alebo som ho len prevzal od ostatných? Premýšľajte o tom: Kde ste sa prvýkrát s týmto tvrdením stretli? Ako dlho ste o tom presvedčený? Čo vás viedlo k tomu, aby ste tomu uverili? A skúmali ste to tvrdenie, alebo ste ho len prijali?</ItemDesc>
+          <ItemDesc>Každé presvedčenie má pôvod. Keď si uvedomíte, odkiaľ pochádza vaše presvedčenie, môžete si položiť otázku: je to moje presvedčenie, alebo som ho len prevzal od ostatných?</ItemDesc>
+          <ItemLabel>Premýšľajte o tom:</ItemLabel>
+          <ItemDesc>Kde ste sa prvýkrát s týmto tvrdením stretli?</ItemDesc>    
+          <ItemDesc>Ako dlho ste o tom presvedčený?</ItemDesc>        
+          <ItemDesc>Čo vás viedlo k tomu, aby ste tomu uverili?</ItemDesc> 
+          <ItemDesc>A skúmali ste to tvrdenie, alebo ste ho len prijali?</ItemDesc> 
         </ContentListItem>
         <ContentListItem>
           <ItemLabel>Čo ma presvedčilo, že je to pravda?</ItemLabel>
-          <ItemDesc>Existuje rozdiel medzi tým, čo vás presvedčilo na základe faktov, a tým čo vás presvedčilo na základe emócií. Premýšľajte o tom: Aké konkrétne dôkazy alebo argumenty vás presvedčili? Sú to faktické dôkazy, ako články či štúdie, alebo emócie ako strach, hnev či pocit nespravodlivosti? Overili ste si tieto dôkazy aj z iných zdrojov? A pozreli ste sa aj na argumenty, ktoré spochybňujú vaše presvedčenie?</ItemDesc>
+          <ItemDesc>Existuje rozdiel medzi tým, čo vás presvedčilo na základe faktov, a tým čo vás presvedčilo na základe emócií. </ItemDesc>
+          <ItemLabel>Premýšľajte o tom:</ItemLabel>
+          <ItemDesc>Aké konkrétne dôkazy alebo argumenty vás presvedčili?</ItemDesc> 
+          <ItemDesc>Sú to faktické dôkazy, ako články či štúdie, alebo emócie ako strach, hnev či pocit nespravodlivosti?</ItemDesc> 
+          <ItemDesc>Overili ste si tieto dôkazy aj z iných zdrojov?</ItemDesc> 
+          <ItemDesc>A pozreli ste sa aj na argumenty, ktoré spochybňujú vaše presvedčenie?</ItemDesc> 
         </ContentListItem>
         <ContentListItem>
           <ItemLabel>Existujú aj iné pohľady na túto tému?</ItemLabel>
-          <ItemDesc>Každá téma má viacero legitímnych pohľadov. Premýšľajte o tom: Poznám ľudí, ktorí majú iný názor na konkrétnu tému? Ako sa cítim, keď s niekým nesúhlasím? A vidím v inom argumente čokoľvek, čo by malo zmysel, alebo všetko automaticky odmietam? </ItemDesc>
+          <ItemDesc>Každá téma má viacero legitímnych pohľadov.</ItemDesc>
+          <ItemLabel>Premýšľajte o tom:</ItemLabel>
+          <ItemDesc>Poznám ľudí, ktorí majú iný názor na konkrétnu tému?</ItemDesc>
+          <ItemDesc>Ako sa cítim, keď s niekým nesúhlasím?</ItemDesc> 
+          <ItemDesc>A vidím v inom argumente čokoľvek, čo by malo zmysel, alebo všetko automaticky odmietam?</ItemDesc> 
         </ContentListItem>
         <ContentListItem>
           <ItemLabel>Čo by mi pomohlo pochopiť veci z iného uhla pohľadu?</ItemLabel>
-          <ItemDesc>Toto je najhlbšia otázka. Ak si dokážete predstaviť situáciu, v ktorej by ste mohli zmeniť názor, je to dobrý znak otvorenosti. Premýšľajte o tom: Ako by som sa cítil, keby som mal opačný názor? Aké dôkazy by ma presvedčili, že sa mýlim? Čo by som musel vidieť, počuť alebo skúsiť, aby som pochopil iný pohľad? A bolo v mojej minulosti obdobie, keď som zmenil názor, a čo ma k tomu viedlo? </ItemDesc>
+          <ItemDesc>Toto je najhlbšia otázka. Ak si dokážete predstaviť situáciu, v ktorej by ste mohli zmeniť názor, je to dobrý znak otvorenosti.</ItemDesc>
+          <ItemLabel>Premýšľajte o tom:</ItemLabel>
+          <ItemDesc>Ako by som sa cítil, keby som mal opačný názor?:</ItemDesc>
+          <ItemDesc>Aké dôkazy by ma presvedčili, že sa mýlim?</ItemDesc>
+          <ItemDesc>Čo by som musel vidieť, počuť alebo skúsiť, aby som pochopil iný pohľad?</ItemDesc>
+          <ItemDesc> A bolo v mojej minulosti obdobie, keď som zmenil názor, a čo ma k tomu viedlo?</ItemDesc>
         </ContentListItem>
       </ContentList>
     </AccordionItem>
@@ -567,10 +592,10 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
 const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed }) => (
   <>
-    <ModuleTitle>🏛️ Inštitúcie EÚ</ModuleTitle>
+    <ModuleTitle>Inštitúcie EÚ</ModuleTitle>
 
     <AccordionItem title="Aké sú inštitúcie EÚ a čo robia?" isRead={readSections.has('p2_s1')} onRead={() => markRead('p2_s1')}>
-      <SectionAudioPlayer src="/sound/p2_s1.mp3" audioId="p2_s1_audio" label="Prehrať nahrávku" played={!!playedAudios['p2_s1_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p2_s1.mp3" audioId="p2_s1_audio" label="Prehrať" played={!!playedAudios['p2_s1_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Tieto inštitúcie EÚ sú najkľúčovejšie:</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Európsky parlament</ItemLabel><ItemDesc>Priamo volený občanmi, rozhoduje o zákonoch a kontroluje ostatné inštitúcie.</ItemDesc></ContentListItem>
@@ -584,7 +609,7 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Ako EÚ zabezpečuje transparentnosť?" isRead={readSections.has('p2_s2')} onRead={() => markRead('p2_s2')}>
-      <SectionAudioPlayer src="/sound/p2_s2.mp3" audioId="p2_s2_audio" label="Prehrať nahrávku" played={!!playedAudios['p2_s2_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p2_s2.mp3" audioId="p2_s2_audio" label="Prehrať" played={!!playedAudios['p2_s2_audio']} onPlayed={markAudioPlayed} />
       <BodyText>
         Základným znakom dôveryhodnej inštitúcie je, ak sú transparentné a zodpovedné.
         Teraz si dajme krátky kvíz — ako si myslíte, že EÚ transparentnosť zabezpečuje?
@@ -593,7 +618,7 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Čo EÚ robí pre vás?" isRead={readSections.has('p2_s3')} onRead={() => markRead('p2_s3')}>
-      <SectionAudioPlayer src="/sound/p2_s3.mp3" audioId="p2_s3_audio" label="Prehrať nahrávku" played={!!playedAudios['p2_s3_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p2_s3.mp3" audioId="p2_s3_audio" label="Prehrať" played={!!playedAudios['p2_s3_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Dôveryhodné inštitúcie nekonajú len efektívne a transparentne — konajú v záujme ľudí:</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Voľný pohyb</ItemLabel><ItemDesc>Môžete študovať, pracovať, žiť alebo odísť do dôchodku kdekoľvek v EÚ bez vízových obmedzení.</ItemDesc></ContentListItem>
@@ -614,7 +639,7 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     <ModuleTitle>🚦 Príspevkový semafor</ModuleTitle>
 
     <AccordionItem title="Základné tri otázky" isRead={readSections.has('p3_s1')} onRead={() => markRead('p3_s1')}>
-      <SectionAudioPlayer src="/sound/p3_s1.mp3" audioId="p3_s1_audio" label="Prehrať nahrávku" played={!!playedAudios['p3_s1_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p3_s1.mp3" audioId="p3_s1_audio" label="Prehrať" played={!!playedAudios['p3_s1_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Poďme začať so základnými troma otázkami, z ktorých sa každá farba semaforu skladá:</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Kto profituje?</ItemLabel><ItemDesc>Keď si čítate príspevok, zastavte sa a spýtajte sa: Kto to napísal? Kto má záujem, aby ste verili konkrétnemu príspevku?</ItemDesc></ContentListItem>
@@ -625,7 +650,7 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="🔴 Červená — znaky manipulatívneho príspevku" isRead={readSections.has('p3_s2')} onRead={() => markRead('p3_s2')}>
-      <SectionAudioPlayer src="/sound/p3_s2.mp3" audioId="p3_s2_audio" label="Prehrať nahrávku" played={!!playedAudios['p3_s2_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p3_s2.mp3" audioId="p3_s2_audio" label="Prehrať" played={!!playedAudios['p3_s2_audio']} onPlayed={markAudioPlayed} />
       <TrafficSemafor active="red" />
       <BodyText>Ak sa tvorca pokúša o manipuláciu, často si môžete všimnúť tieto znaky:</BodyText>
       <ContentList>
@@ -636,7 +661,7 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="🟠 Oranžová — znaky neistého príspevku" isRead={readSections.has('p3_s3')} onRead={() => markRead('p3_s3')}>
-      <SectionAudioPlayer src="/sound/p3_s3.mp3" audioId="p3_s3_audio" label="Prehrať nahrávku" played={!!playedAudios['p3_s3_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p3_s3.mp3" audioId="p3_s3_audio" label="Prehrať" played={!!playedAudios['p3_s3_audio']} onPlayed={markAudioPlayed} />
       <TrafficSemafor active="orange" />
       <BodyText>Ako aj na cestách, predtým ako prejdeme na zelenú je dôležité dať si pozor — môže ísť o manipulatívny príspevok, ale aj o dôveryhodný:</BodyText>
       <ContentList>
@@ -672,7 +697,7 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="🟢 Zelená — znaky dôveryhodného príspevku" isRead={readSections.has('p3_s4')} onRead={() => markRead('p3_s4')}>
-      <SectionAudioPlayer src="/sound/p3_s4.mp3" audioId="p3_s4_audio" label="Prehrať nahrávku" played={!!playedAudios['p3_s4_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/p3_s4.mp3" audioId="p3_s4_audio" label="Prehrať" played={!!playedAudios['p3_s4_audio']} onPlayed={markAudioPlayed} />
       <TrafficSemafor active="green" />
       <BodyText>Ak sa tvorca pokúša informovať o faktoch, často si môžete všimnúť tieto znaky:</BodyText>
       <ContentList>
@@ -697,7 +722,7 @@ const REQUIRED_SECTIONS = [
 const PAGES = [
   {
     key: 'page0',
-    title: 'Modul 1 — Konšpiračné presvedčenia',
+    title: 'Modul 1 - Konšpiračné presvedčenia',
     subtitle: 'Informačné očkovanie',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page1Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
@@ -712,10 +737,10 @@ const PAGES = [
     subtitle: 'Budovanie dôvery',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page2Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
-    detectiveTipIntro: `...`,
-    detectiveTipIntroAudio: { src: '/sound/tip_p1.mp3', audioId: 'tip_p1_audio' },
-    detectiveTipOutro: `...`,
-    detectiveTipOutroAudio: { src: '/sound/tip_p11.mp3', audioId: 'tip_p11_audio' },
+    detectiveTipIntro: `<p><strong>Vitajte v ďalšej časti druhej misie. V tejto časti absolvujete detektívny tréning v ktorom získate nástroje, ktoré sú využiteľné aj v každodennom živote. Jednotlivé časti si môžete prečítať, alebo si ich prehrať pomocou nahrávok, ktoré som pre vás pripravil. S tvrdeniami, ktoré ste v predošlej časti mohli vidieť, sa pravdepodobne stretávate v bežnom živote každý deň. Často sa vyskytujú na sociálnych sieťach v podobe rôznych príspevkov, komentárov, videí... každé môže mať inú formu. Ale všetky majú jednu vec spoločnú: chcú vás o niečom presvedčiť. A preto je dôležité vedieť rozoznať, čo je dôveryhodné a čo je konšpirácia. Poďme sa teda spolu pozrieť do zákulisia konšpiračných presvedčení.</strong></p>`,
+    detectiveTipIntroAudio: { src: '/sound/detektiv1', audioId: 'tip_p1_audio' },
+    detectiveTipOutro: `<p><strong>Výborne! Prvú časť máte za sebou, nezabudnite si dať krátku prestávku a potom môžeme pokračovať.</strong></p>`,
+    detectiveTipOutroAudio: { src: '/sound/detektiv9.mp3', audioId: 'tip_p11_audio' },
   },
   {
     key: 'page2',
