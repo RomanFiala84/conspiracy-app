@@ -554,6 +554,7 @@ const OutroMission0 = () => {
           </InfoList>
 
           <DetectiveTipSmall
+            style={{ textAlign: "justify" }}
             tip={`
             <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
                 <strong>Výborne! Úspešne ste dokončili predvýskum. Vaše odpovede a spätná väzba nám pomôžu vylepšiť hlavný výskum.</strong>

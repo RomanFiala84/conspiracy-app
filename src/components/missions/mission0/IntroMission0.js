@@ -248,6 +248,7 @@ const IntroMission0 = () => {
             detectiveName="Inšpektor Kritan"
             imageUrl="/images/detective.png"
             iconUrl="/images/detective-icon.png"
+            style={{ textAlign: "justify" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
                 <strong>Ďakujeme, že ste sa rozhodli zúčastniť v predvýskume!</strong>

@@ -859,6 +859,7 @@ const Intervention1A = () => {
             audioId={tipAudio?.audioId}
             played={tipAudio ? !!playedAudios[tipAudio.audioId] : undefined}
             onPlayed={markAudioPlayed}
+            style={{ textAlign: "justify" }}
           />
 
           {page.content(readSections[currentPage], markRead, playedAudios, markAudioPlayed)}
