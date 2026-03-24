@@ -89,13 +89,16 @@ const ContentListItem = styled.li`
 `;
 
 const NestedList = styled.ol`
-  list-style-type: lower-alpha;
+  list-style-type: decimal;
   padding-left: 20px;
   margin-top: 6px;
   display: flex;
   flex-direction: column;
   gap: 5px;
   text-align: justify;
+  &::marker {
+    font-weight: 700;
+  }
 `;
 
 const NestedItem = styled.li`
@@ -584,7 +587,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
           <ItemDesc>Toto je najhlbšia otázka. Ak si dokážete predstaviť situáciu, v ktorej by ste mohli zmeniť názor, je to dobrý znak otvorenosti.</ItemDesc>
           <ItemLabel>Premýšľajte o tom:</ItemLabel>
           <NestedList>
-            <NestedItem>Ako by som sa cítil, keby som mal opačný názor?:</NestedItem>
+            <NestedItem>Ako by som sa cítil, keby som mal opačný názor?</NestedItem>
             <NestedItem>Aké dôkazy by ma presvedčili, že sa mýlim?</NestedItem>
             <NestedItem>Čo by som musel vidieť, počuť alebo skúsiť, aby som pochopil iný pohľad?</NestedItem>
             <NestedItem> A bolo v mojej minulosti obdobie, keď som zmenil názor, a čo ma k tomu viedlo?</NestedItem>
