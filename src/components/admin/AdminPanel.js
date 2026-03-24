@@ -30,10 +30,10 @@ const Header = styled.div`
 
 const Title = styled.h1`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
-  font-size: 24px;
+  font-size: 25px;
   margin: 0;
   font-weight: 700;
-  @media (max-width: 768px) { font-size: 20px; }
+  @media (max-width: 768px) { font-size: 25px; }
 `;
 
 const RefreshButton = styled(StyledButton)`
@@ -52,12 +52,11 @@ const Section = styled.div`
 const SectionTitle = styled.h2`
   color: ${p => p.theme.ACCENT_COLOR};
   margin: 0 0 12px 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 6px;
-  @media (max-width: 768px) { font-size: 15px; }
 `;
 
 const ButtonGroup = styled.div`
@@ -74,7 +73,7 @@ const ButtonGroup = styled.div`
 const InfoText = styled.p`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
   margin: 0 0 12px 0;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
 `;
 
@@ -90,23 +89,23 @@ const StatCard = styled.div`
   background: ${p => p.theme.ACCENT_COLOR}11;
   padding: 10px;
   border-radius: 6px;
-  border: 1px solid ${p => p.theme.ACCENT_COLOR}33;
+  border: 1px solid ${p => p.theme.ACCENT_COLOR}45;
   text-align: center;
 `;
 
 const StatLabel = styled.div`
   color: ${p => p.theme.SECONDARY_TEXT_COLOR};
-  font-size: 10px;
+  font-size: 15px;
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 `;
 
 const StatValue = styled.div`
-  color: ${p => p.theme.ACCENT_COLOR};
-  font-size: 20px;
+  color: ${p => p.theme.PRIMARY_TEXT_COLOR};
+  font-size: 15px;
   font-weight: 700;
-  @media (max-width: 768px) { font-size: 18px; }
+  @media (max-width: 768px) { font-size: 15px; }
 `;
 
 const TableWrapper = styled.div`
@@ -121,7 +120,7 @@ const TableWrapper = styled.div`
 const UserTable = styled.table`
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 15px;
   min-width: 1000px;
 `;
 
@@ -132,7 +131,7 @@ const Th = styled.th`
   text-align: left;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: 15px;
   letter-spacing: 0.3px;
   position: sticky;
   top: 0;
@@ -142,21 +141,21 @@ const Th = styled.th`
 
 const Td = styled.td`
   padding: 6px;
-  border-bottom: 1px solid ${p => p.theme.BORDER_COLOR}22;
+  border-bottom: 1px solid ${p => p.theme.BORDER_COLOR}45;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   background: ${p => p.blocked ? 'rgba(239, 68, 68, 0.08)' : 'transparent'};
   text-align: center;
-  font-size: 12px;
+  font-size: 15px;
   &:first-child {
     font-weight: 600;
     color: ${p => p.blocked ? '#ef4444' : p.theme.ACCENT_COLOR};
     text-align: left;
-    font-size: 11px;
+    font-size: 15px;
   }
 `;
 
 const BlockButton = styled(StyledButton)`
-  font-size: 10px;
+  font-size: 15px;
   padding: 3px 6px;
   min-width: 70px;
 `;
@@ -174,7 +173,7 @@ const MissionToggleButton = styled.button`
   };
   border-radius: 3px;
   padding: 2px 6px;
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.15s ease;
   min-width: 28px;
@@ -182,7 +181,7 @@ const MissionToggleButton = styled.button`
     background: ${p =>
       p.completed ? '#10b98133' :
       p.unlocked  ? '#fbbf2433' :
-      p.theme.ACCENT_COLOR + '22'
+      p.theme.ACCENT_COLOR + '45'
     };
     transform: scale(1.08);
   }
@@ -208,7 +207,7 @@ const MissionRow = styled.div`
 const MissionLabel = styled.div`
   font-weight: 600;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
-  font-size: 13px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -247,12 +246,12 @@ const DeleteRow = styled.div`
 const DeleteLabel = styled.div`
   font-weight: 600;
   color: #ef4444;
-  font-size: 13px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   gap: 6px;
   span {
-    font-size: 11px;
+    font-size: 15px;
     color: ${p => p.theme.SECONDARY_TEXT_COLOR};
     font-weight: normal;
   }
@@ -272,7 +271,7 @@ const LoadingOverlay = styled.div`
 const LoadingSpinner = styled.div`
   text-align: center;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   &::before {
     content: '⏳';
     display: block;
@@ -282,7 +281,6 @@ const LoadingSpinner = styled.div`
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 `;
-
 
 const Divider = styled.hr`
   margin: 16px 0;
@@ -301,6 +299,7 @@ const AdminPanel = () => {
   const [stats, setStats] = useState({
     total: 0, blocked: 0,
     group0: 0, group1: 0, group2: 0,
+    versionA: 0, versionB: 0,
     mission0Complete: 0, mission1Complete: 0,
     mission2Complete: 0, mission3Complete: 0,
   });
@@ -320,6 +319,8 @@ const AdminPanel = () => {
       group0:           participants.filter(p => p.group_assignment === '0').length,
       group1:           participants.filter(p => p.group_assignment === '1').length,
       group2:           participants.filter(p => p.group_assignment === '2').length,
+      versionA:         participants.filter(p => p.question_version === 'A').length,
+      versionB:         participants.filter(p => p.question_version === 'B').length,
       mission0Complete: participants.filter(p => p.mission0_completed).length,
       mission1Complete: participants.filter(p => p.mission1_completed).length,
       mission2Complete: participants.filter(p => p.mission2_completed).length,
@@ -337,7 +338,7 @@ const AdminPanel = () => {
   }, [userId, dataManager, navigate, loadStats]);
 
   const handleToggleMissionForUser = async (participantCode, missionId, currentUnlockedState) => {
-    const action = currentUnlockedState ? 'zamknúť' : 'odomknúť';
+    const action = currentUnlockedState ? 'Zamknúť' : 'Odomknúť';
     const emoji  = currentUnlockedState ? '🔒' : '🔓';
     if (!window.confirm(`${emoji} ${action} Misiu ${missionId} pre ${participantCode}?`)) return;
     try {
@@ -397,6 +398,7 @@ const AdminPanel = () => {
           'Blokovaný':              p.blocked ? 'ÁNO' : 'NIE',
           'Blokovaný dňa':          p.blocked_at ? new Date(p.blocked_at).toLocaleString('sk-SK') : '',
           'Skupina':                p.group_assignment || '',
+          'Verzia otázok':          p.question_version || '',
           'Sharing kód':            p.sharing_code || '',
           'Použitý referral kód':   p.used_referral_code || '',
           'Odporučil ho':           p.referred_by || '',
@@ -446,7 +448,7 @@ const AdminPanel = () => {
 
       const ws = XLSX.utils.json_to_sheet(rows);
       if (rows.length > 0) {
-        ws['!cols']   = Object.keys(rows[0]).map(h => ({ wch: Math.min(Math.max(h.length, ...rows.map(r => String(r[h] || '').length)) + 2, 50) }));
+        ws['!cols'] = Object.keys(rows[0]).map(h => ({ wch: Math.min(Math.max(h.length, ...rows.map(r => String(r[h] || '').length)) + 2, 50) }));
       }
       ws['!freeze'] = { xSplit: 1, ySplit: 1 };
 
@@ -459,6 +461,8 @@ const AdminPanel = () => {
         ['Skupina 0',     participants.filter(p => p.group_assignment === '0').length],
         ['Skupina 1',     participants.filter(p => p.group_assignment === '1').length],
         ['Skupina 2',     participants.filter(p => p.group_assignment === '2').length], [''],
+        ['Verzia A',      participants.filter(p => p.question_version === 'A').length],
+        ['Verzia B',      participants.filter(p => p.question_version === 'B').length], [''],
         ['M0 dokončená',  participants.filter(p => p.mission0_completed).length],
         ['M1 dokončená',  participants.filter(p => p.mission1_completed).length],
         ['M2 dokončená',  participants.filter(p => p.mission2_completed).length],
@@ -580,6 +584,8 @@ const AdminPanel = () => {
             <StatCard><StatLabel>Sk 0</StatLabel><StatValue>{stats.group0}</StatValue></StatCard>
             <StatCard><StatLabel>Sk 1</StatLabel><StatValue>{stats.group1}</StatValue></StatCard>
             <StatCard><StatLabel>Sk 2</StatLabel><StatValue>{stats.group2}</StatValue></StatCard>
+            <StatCard><StatLabel>Ver A</StatLabel><StatValue>{stats.versionA}</StatValue></StatCard>
+            <StatCard><StatLabel>Ver B</StatLabel><StatValue>{stats.versionB}</StatValue></StatCard>
             <StatCard><StatLabel>M0</StatLabel><StatValue>{stats.mission0Complete}</StatValue></StatCard>
             <StatCard><StatLabel>M1</StatLabel><StatValue>{stats.mission1Complete}</StatValue></StatCard>
             <StatCard><StatLabel>M2</StatLabel><StatValue>{stats.mission2Complete}</StatValue></StatCard>
@@ -590,7 +596,7 @@ const AdminPanel = () => {
         {/* EXPORT */}
         <Section>
           <SectionTitle>💾 Export</SectionTitle>
-          <InfoText>2 sheety: dáta + súhrn.</InfoText>
+          <InfoText>Export všetkých dát</InfoText>
           <StyledButton
             variant="success"
             fullWidth
@@ -603,8 +609,8 @@ const AdminPanel = () => {
 
         {/* MISSIONS */}
         <Section>
-          <SectionTitle>🔓 Misie (globálne)</SectionTitle>
-          <InfoText>Odomknúť/zamknúť pre všetkých.</InfoText>
+          <SectionTitle>Kontrola misií (globálne)</SectionTitle>
+          <InfoText>Odomknúť alebo zamknúť pre všetkých.</InfoText>
           {[0, 1, 2, 3].map(missionId => (
             <MissionRow key={missionId}>
               <MissionLabel>M{missionId}</MissionLabel>
@@ -619,7 +625,7 @@ const AdminPanel = () => {
         {/* USER TABLE */}
         <Section>
           <SectionTitle>👥 Účastníci ({allUsers.length})</SectionTitle>
-          <InfoText>Klikni 🔒/🔓 pre individuálnu správu misií. ✅ = dokončená misia.</InfoText>
+          <InfoText>Klikni 🔒 alebo 🔓 pre individuálnu správu misií. Dokončená misia = ✅.</InfoText>
           {allUsers.length === 0 ? (
             <InfoText>Žiadni účastníci.</InfoText>
           ) : (
@@ -627,10 +633,10 @@ const AdminPanel = () => {
               <UserTable>
                 <thead>
                   <tr>
-                    <Th>Kód</Th><Th>St</Th><Th>Sk</Th><Th>Mis</Th><Th>Bon</Th><Th>∑</Th><Th>Ref</Th>
+                    <Th>IDK</Th><Th>STAV</Th><Th>SKUPINA</Th><Th>VERZIA</Th><Th>BODY</Th><Th>BONUSOVE BODY</Th><Th>CELKOM BODOV</Th><Th>ZDIELANI</Th>
                     <Th>M0🔓</Th><Th>M0✅</Th><Th>M1🔓</Th><Th>M1✅</Th>
                     <Th>M2🔓</Th><Th>M2✅</Th><Th>M3🔓</Th><Th>M3✅</Th>
-                    <Th>Reg</Th><Th>Akcia</Th>
+                    <Th>REGISTRACIA</Th><Th>AKCIA</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -643,6 +649,7 @@ const AdminPanel = () => {
                         <Td blocked={isBlocked}>{u.participant_code}</Td>
                         <Td blocked={isBlocked}>{isBlocked ? '🚫' : '✅'}</Td>
                         <Td blocked={isBlocked}>{u.group_assignment}</Td>
+                        <Td blocked={isBlocked}>{u.question_version || '—'}</Td>
                         <Td blocked={isBlocked}>{missionPoints}</Td>
                         <Td blocked={isBlocked}>{bonusPoints}</Td>
                         <Td blocked={isBlocked}><strong>{missionPoints + bonusPoints}</strong></Td>
@@ -662,7 +669,8 @@ const AdminPanel = () => {
                               </MissionToggleButton>
                             </Td>
                             <Td blocked={isBlocked}>
-                              <span style={{ fontSize: '16px', display: 'inline-block', opacity: u[`mission${missionId}_completed`] ? 1 : 0.3 }}
+                              <span
+                                style={{ fontSize: '16px', display: 'inline-block', opacity: u[`mission${missionId}_completed`] ? 1 : 0.3 }}
                                 title={u[`mission${missionId}_completed`] ? `M${missionId} dokončená` : `M${missionId} nedokončená`}
                               >
                                 {u[`mission${missionId}_completed`] ? '✅' : '⬜'}
@@ -692,23 +700,23 @@ const AdminPanel = () => {
 
         {/* DANGER ZONE */}
         <DangerSection>
-          <SectionTitle style={{ color: '#ef4444' }}>⚠️ Danger Zone</SectionTitle>
-          <InfoText><strong>NEVRATNÉ</strong> akcie!</InfoText>
+          <SectionTitle style={{ color: '#ef4444' }}>⚠️ Nebezpečná zóna</SectionTitle>
+          <InfoText><strong>NEVRATNÉ AKCIE!!!</strong></InfoText>
 
           <DeleteRow>
-            <DeleteLabel>Progress DB <span>(users, progress)</span></DeleteLabel>
+            <DeleteLabel>Databáza respondentov <span>(users, progress)</span></DeleteLabel>
             <StyledButton variant="danger" size="small" onClick={handleDeleteProgress}>🗑️</StyledButton>
           </DeleteRow>
 
           <DeleteRow>
-            <DeleteLabel>Responses DB <span>(answers)</span></DeleteLabel>
+            <DeleteLabel>Databáza odpovedí <span>(answers)</span></DeleteLabel>
             <StyledButton variant="danger" size="small" onClick={handleDeleteResponses}>🗑️</StyledButton>
           </DeleteRow>
 
           <Divider />
 
           <DeleteRow style={{ borderColor: '#ef4444', borderWidth: '2px' }}>
-            <DeleteLabel style={{ fontSize: '14px' }}>💥 VŠETKO <span>(Progress + Responses)</span></DeleteLabel>
+            <DeleteLabel style={{ fontSize: '15px' }}>💥 VŠETKO <span>(Progress + Responses)</span></DeleteLabel>
             <StyledButton variant="danger" onClick={handleDeleteAll}>🔥 Vymazať všetko</StyledButton>
           </DeleteRow>
         </DangerSection>
