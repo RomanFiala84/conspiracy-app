@@ -864,12 +864,12 @@ const Intervention1A = () => {
             <DetectiveTipSmall
               key={`outro-${currentPage}`}
               tip={page.detectiveTipOutro}
-              audioSrc={page.detectiveTipOutroAudio?.src}
-              audioId={page.detectiveTipOutroAudio?.audioId}
+              audioSrc={tipOutroAudio?.src}
+              audioId={tipOutroAudio?.audioId}
               detectiveName="Inšpektor Kritan"
               autoOpen={true}
               autoOpenDelay={300}
-              played={page.detectiveTipOutroAudio ? !!playedAudios[page.detectiveTipOutroAudio.audioId] : undefined} 
+              played={tipOutroAudio? !!playedAudios[tipOutroAudio.audioId] : undefined} 
               onPlayed={markAudioPlayed}
             />
           )}
