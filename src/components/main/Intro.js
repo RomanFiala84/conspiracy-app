@@ -63,7 +63,7 @@ const Subtitle = styled.h2`
   color: ${props => props.theme.ACCENT_COLOR};
   text-align: center;
   font-weight: 600;
-  
+  text-align: justify;
   @media (max-width: 480px) {
     font-size: 20px;
   }
@@ -76,7 +76,7 @@ const Text = styled.p`
   color: ${props => props.theme.PRIMARY_TEXT_COLOR};
   text-align: center;
   max-width: 700px;
-  
+  text-align: justify;
   strong {
     color: ${props => props.theme.PRIMARY_TEXT_COLOR};
     font-weight: 600;
@@ -174,7 +174,7 @@ const InfoSection = styled.div`
   max-width: 700px;
   width: 100%;
   transition: all 0.2s ease;
-  
+  text-align: justify;
   &:hover {
     border-color: ${p => p.theme.ACCENT_COLOR}60;
   }
@@ -196,7 +196,7 @@ const InfoTitle = styled.h3`
   gap: 8px;
   
   &::before {
-    content: '🎯';
+    content: '';
     font-size: 18px;
   }
   
@@ -222,7 +222,7 @@ const InfoItem = styled.li`
   background: ${p => p.theme.ACCENT_COLOR}15;
   border-radius: 8px;
   transition: all 0.2s ease;
-  
+  text-align: justify;
   &::before {
     content: '✓';
     position: absolute;
@@ -399,6 +399,7 @@ const Intro = () => {
             detectiveName="Inšpektor Kritan"
             imageUrl="/images/detective.png"
             iconUrl="/images/detective-icon.png"
+            style={{ textAlign: "justify" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; color: ${theme.PRIMARY_TEXT_COLOR}; margin-bottom: 12px;">
                 <strong>Ahoj, milý/á respondent/ka!</strong>
