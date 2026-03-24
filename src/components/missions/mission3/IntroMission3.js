@@ -249,7 +249,7 @@ const IntroMission3 = () => {
             detectiveName="Inšpektor Kritan"
             imageUrl="/images/detective.png"
             iconUrl="/images/detective-icon.png"
-            style={{ textAlign: "justify" }}
+            style={{ textAlign: "left" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
                 <strong>Vítam vás späť v druhej časti hlavného výskumu!</strong>

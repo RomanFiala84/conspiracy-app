@@ -19,7 +19,7 @@ const GradientCircleList = styled.ul`
   padding-left: 20px;
   padding-right: 20px;
   margin: 0;
-  text-align: justify;
+  text-align: left;
   > li {
     padding-left: 0;
     position: relative;
@@ -60,7 +60,7 @@ const NestedListItem = styled.div`
   position: relative;
   margin-bottom: 10px;
   line-height: 1.6;
-  text-align: justify;
+  text-align: left;
   &::before {
     content: '→';
     position: absolute;
@@ -993,7 +993,7 @@ const MainMenu = () => {
               <SubNote style={{ marginTop: '12px' }}>
                 <strong>Ak sa účastníte druhej časti hlavného výskumu - pokračujte prosím Misiou 3.</strong><br/>
                 Po ukončení prvej časti hlavného výskumu bude táto misia neustále odomknutá.<br/>
-                Pred spustením Misie 3 si prosím skontrulujte v hlavnom menu, či máte dokočenú Misiu 1 a Misiu 2.
+                Pred spustením Misie 3 si prosím skontrolujte v hlavnom menu, či máte dokočenú Misiu 1 a Misiu 2.
               </SubNote>
             </InstructionCard>
           </InstructionsWrapper>
@@ -1123,7 +1123,7 @@ const MainMenu = () => {
           autoOpen={false}
           showBadge={true}
           position="right"
-          style={{ textAlign: "justify" }}
+          style={{ textAlign: "left" }}
         />
 
         {modal.open && (

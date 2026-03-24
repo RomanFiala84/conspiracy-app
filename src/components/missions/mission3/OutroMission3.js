@@ -191,7 +191,7 @@ const DebriefText = styled.p`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
   margin: 0;
-  text-align: justify;
+  text-align: left;
 `;
 
 const DebriefLink = styled.a`
@@ -269,7 +269,7 @@ const OutroMission3 = () => {
           </InfoList>
 
           <DetectiveTipSmall
-            style={{ textAlign: "justify" }}
+            style={{ textAlign: "left" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
                 <strong>Výborne! Úspešne ste dokončili celý výskum.</strong>

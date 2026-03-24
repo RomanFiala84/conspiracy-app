@@ -134,7 +134,7 @@ const Question = styled.p`
   font-size: 15px;
   font-weight: 500;
   line-height: 1.5;
-  text-align: justify;
+  text-align: left;
   /* ✅ PRIDANÉ: Markdown styling */
   p {
     margin: 0;
@@ -1901,7 +1901,7 @@ const Questionnaire2B = () => {
             <DetectiveTipSmall
               tip={page.instruction}  // ← SPRÁVNY PROP
               detectiveName="Inšpektor Kritan"
-              style={{ textAlign: "justify" }}
+              style={{ textAlign: "left" }}
             />
           )}
 

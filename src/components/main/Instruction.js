@@ -17,7 +17,7 @@ const LocalList = styled.ul`
   padding-left: 20px;
   padding-right: 20px;
   margin: 0;
-  text-align: justify;
+  text-align: left;
   > li {
     padding-left: 0;
     position: relative;
@@ -58,7 +58,7 @@ const LocalNestedItem = styled.div`
   position: relative;
   margin-bottom: 10px;
   line-height: 1.6;
-  text-align: justify;
+  text-align: left;
   &::before {
     content: '→';
     position: absolute;
@@ -206,7 +206,7 @@ const AccordionHeader = styled.button`
   padding: 12px 16px;
   background: ${props => props.$isOpen ? props.theme.CARD_BACKGROUND : 'transparent'};
   border: none;
-  text-align: justify;
+  text-align: left;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -339,7 +339,7 @@ const ContestInner = styled.div`
   font-size: 10px;
   opacity: ${props => props.$isOpen ? '1' : '0'};
   transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
-  text-align: justify;
+  text-align: left;
   /* ✅ ODSTRÁNENÉ: padding-top a padding-bottom animácie */
   
   h3 {
@@ -420,7 +420,7 @@ const ConsentText = styled.div`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.5;
   margin-top: 12px;
-  text-align: justify;
+  text-align: left;
 `;
 
 const CheckboxContainer = styled.div`

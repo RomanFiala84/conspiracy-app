@@ -777,7 +777,7 @@ const Intervention2B = () => {
             detectiveName="Inšpektor Kritan"
             autoOpen={true}
             autoOpenDelay={200}
-            style={{ textAlign: "justify" }}
+            style={{ textAlign: "left" }}
           />
 
           {/* ✅ Predaj playedAudios + markAudioPlayed do content */}

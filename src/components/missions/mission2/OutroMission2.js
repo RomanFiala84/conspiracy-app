@@ -479,7 +479,7 @@ const OutroMission2 = () => {
           </InfoList>
 
           <DetectiveTipSmall
-            style={{ textAlign: "justify" }}
+            style={{ textAlign: "left" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
                 <strong>Výborne! Úspešne ste dokončili prvú časť hlavného výskumu.</strong>

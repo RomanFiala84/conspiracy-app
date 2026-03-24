@@ -1910,7 +1910,7 @@ const Questionnaire3B = () => {
             <DetectiveTipSmall
               tip={page.instruction}  // ← SPRÁVNY PROP
               detectiveName="Inšpektor Kritan"
-              style={{ textAlign: "justify" }}
+              style={{ textAlign: "left" }}
             />
           )}
 

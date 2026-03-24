@@ -63,7 +63,7 @@ const Subtitle = styled.h2`
   color: ${props => props.theme.ACCENT_COLOR};
   text-align: center;
   font-weight: 600;
-  text-align: justify;
+  text-align: left;
   @media (max-width: 480px) {
     font-size: 20px;
   }
@@ -174,7 +174,7 @@ const InfoSection = styled.div`
   max-width: 700px;
   width: 100%;
   transition: all 0.2s ease;
-  text-align: justify;
+  text-align: left;
   &:hover {
     border-color: ${p => p.theme.ACCENT_COLOR}60;
   }
@@ -222,7 +222,7 @@ const InfoItem = styled.li`
   background: ${p => p.theme.ACCENT_COLOR}15;
   border-radius: 8px;
   transition: all 0.2s ease;
-  text-align: justify;
+  text-align: left;
   &::before {
     content: '✓';
     position: absolute;
@@ -399,7 +399,7 @@ const Intro = () => {
             detectiveName="Inšpektor Kritan"
             imageUrl="/images/detective.png"
             iconUrl="/images/detective-icon.png"
-            style={{ textAlign: "justify" }}
+            style={{ textAlign: "left" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; color: ${theme.PRIMARY_TEXT_COLOR}; margin-bottom: 12px;">
                 <strong>Ahoj, milý/á respondent/ka!</strong>

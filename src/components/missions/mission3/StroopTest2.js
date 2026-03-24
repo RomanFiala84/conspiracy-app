@@ -334,7 +334,7 @@ const StroopTest2 = () => {
                             minReadTime={5000}
                             showBadge={false}
                             onClose={() => setShowDetectiveTip(false)}
-                            style={{ textAlign: "justify" }}
+                            style={{ textAlign: "left" }}
                           />
                         )}
             <CompletionMessage>
@@ -371,7 +371,7 @@ const StroopTest2 = () => {
               minReadTime={10000}
               showBadge={true}
               onClose={() => setShowDetectiveTip(false)}
-              style={{ textAlign: "justify" }}
+              style={{ textAlign: "left" }}
             />
           )}
 
