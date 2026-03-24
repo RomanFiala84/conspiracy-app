@@ -701,12 +701,10 @@ const PAGES = [
     subtitle: 'Informačné očkovanie',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page1Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
-    detectiveTipIntro: `
-      <p><strong>S tvrdeniami, ktoré ste v predošlej časti mohli vidieť, sa pravdepodobne stretávate v bežnom živote každý deň.</strong></p>
-      <p>Často sa vyskytujú na sociálnych sieťach v podobe rôznych príspevkov, komentárov, videí... každý môže mať inú formu. Ale všetky majú jednu vec spoločnú: <strong>chcú vás o niečom presvedčiť.</strong></p>
-      <p>Poďme sa spolu pozrieť na to, prečo nám konšpiračné presvedčenia tak ľahko padnú do siete, ako ich identifikovať a ako sa voči nim brániť.</p>
-    `,
-    detectiveTipAudio: { src: '/sound/tip_p0.mp3', audioId: 'tip_p0_audio' },
+    detectiveTipIntro: `...`,
+    detectiveTipIntroAudio: { src: '/sound/tip_p0.mp3', audioId: 'tip_p0_audio' },
+    detectiveTipOutro: `...`,
+    detectiveTipOutroAudio: { src: '/sound/tip_p00.mp3', audioId: 'tip_p00_audio' },
   },
   {
     key: 'page1',
@@ -714,12 +712,10 @@ const PAGES = [
     subtitle: 'Budovanie dôvery',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page2Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
-    detectiveTipIntro: `
-      <p><strong>Prvú časť máte za sebou, nezabudnite si dať krátku prestávku a potom môžeme pokračovať.</strong></p>
-      <p>V prvej časti sme sa zaoberali konšpiračnými presvedčeniami. Teraz sa poďme spolu pozrieť na <strong>inštitúcie EÚ</strong> — čo robia, ako fungujú a čo nám prinášajú.</p>
-      <p><strong>Oddýchnutý? Poďme na to!</strong></p>
-    `,
-    detectiveTipAudio: { src: '/sound/tip_p1.mp3', audioId: 'tip_p1_audio' },
+    detectiveTipIntro: `...`,
+    detectiveTipIntroAudio: { src: '/sound/tip_p1.mp3', audioId: 'tip_p1_audio' },
+    detectiveTipOutro: `...`,
+    detectiveTipOutroAudio: { src: '/sound/tip_p11.mp3', audioId: 'tip_p11_audio' },
   },
   {
     key: 'page2',
@@ -727,14 +723,13 @@ const PAGES = [
     subtitle: 'Bonus',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page3Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
-    detectiveTipIntro: `
-      <p><strong>V tomto bonuse sa vrátime kúsok späť.</strong></p>
-      <p>Naše mozgy sú prirodzene navrhnuté hľadať vzory. Ale náš mozog sa stal tak dobrým v hľadaní vzorov, že ich niekedy vidí aj tam, kde neexistujú. <strong>Obzvlášť na sociálnych sieťach.</strong></p>
-      <p>Ukážem vám jednoduchý nástroj — <strong>Príspevkový semafor</strong> — ktorý vám pomôže vidieť sociálne siete úplne inak.</p>
-    `,
-    detectiveTipAudio: { src: '/sound/tip_p2.mp3', audioId: 'tip_p2_audio' },
+    detectiveTipIntro: `...`,
+    detectiveTipIntroAudio: { src: '/sound/tip_p2.mp3', audioId: 'tip_p2_audio' },
+    detectiveTipOutro: `...`,
+    detectiveTipOutroAudio: { src: '/sound/tip_p22.mp3', audioId: 'tip_p22_audio' },
   },
 ];
+
 
 const TOTAL_PAGES  = PAGES.length;
 const COMPONENT_ID = 'mission2_intervention_a';
@@ -809,7 +804,9 @@ const Intervention1A = () => {
   }, [userId, responseManager]);
 
   const page              = PAGES[currentPage];
-  const tipAudio          = page.detectiveTipAudio;
+  const tipAudio      = page.detectiveTipIntroAudio;
+  const tipOutroAudio = page.detectiveTipOutroAudio;
+
 
   // Všetky povinné audios vrátane tip audia ak existuje
   
@@ -855,14 +852,27 @@ const Intervention1A = () => {
             detectiveName="Inšpektor Kritan"
             autoOpen={true}
             autoOpenDelay={200}
-            audioSrc={tipAudio?.src}
-            audioId={tipAudio?.audioId}
+            audioSrc={page.detectiveTipIntroAudio?.src}
+            audioId={page.detectiveTipIntroAudio?.audioId}
             played={tipAudio ? !!playedAudios[tipAudio.audioId] : undefined}
             onPlayed={markAudioPlayed}
             style={{ textAlign: "justify" }}
           />
 
           {page.content(readSections[currentPage], markRead, playedAudios, markAudioPlayed)}
+          {canContinue && (
+            <DetectiveTipSmall
+              key={`outro-${currentPage}`}
+              tip={page.detectiveTipOutro}
+              audioSrc={page.detectiveTipOutroAudio?.src}
+              audioId={page.detectiveTipOutroAudio?.audioId}
+              detectiveName="Inšpektor Kritan"
+              autoOpen={true}
+              autoOpenDelay={300}
+              played={page.detectiveTipOutroAudio ? !!playedAudios[page.detectiveTipOutroAudio.audioId] : undefined}  {/* ← CHÝBA */}
+              onPlayed={markAudioPlayed}  {/* ← CHÝBA */}
+            />
+          )}
 
           <ButtonContainer>
             <StyledButton
