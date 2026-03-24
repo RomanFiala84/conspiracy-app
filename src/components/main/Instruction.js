@@ -152,14 +152,14 @@ const WelcomeSubtitle = styled.p`
   color: ${props => props.theme.PRIMARY_TEXT_COLOR};
   margin-bottom: 16px;
   font-weight: 600;
-  text-align: justify;
+  text-align: center;
   @media (max-width: 768px) {
     font-size: 15px;
   }
 `;
 
 const WelcomeInstructions = styled.div`
-  text-align: justify;
+  text-align: center;
   font-size: 15px;
   line-height: 1.6;
   color: ${props => props.theme.PRIMARY_TEXT_COLOR};
@@ -1087,9 +1087,8 @@ export default function Instruction() {
       content: (
       <LocalList>
         <li>Účasť je určená len pre dospelé osoby (18 a viac rokov), ktoré sú schopné samostatne posúdiť informácie o výskume a rozhodnúť sa o svojej účasti.</li>
-        <li>Pre účasť je ďalej potrebné, aby účastník pochádzal/a zo Slovenska, prípadne mal/a trvalý/dlhodobý pobyt na území Slovenskej republiky.</li>
+        <li>Pre účasť je ďalej potrebné, aby respondent/ka pochádzal/a zo Slovenska, prípadne mal/a trvalý/dlhodobý pobyt na území Slovenskej republiky.</li>
         <li>Pozorne si prečítajte každú otázku a tvrdenie, odpovedajte prosím úprimne. Veľmi dlho nad otázkami a tvrdeniami nepremýšľajte. Pri jednotlivých položkách nie sú správne alebo nesprávne odpovede.</li>
-        <li>Pre lepšie spracovanie dát vás prosíme aby ste použili počítač alebo notebook, ak použijete mobilný telefón alebo tablet neobmedzí to vašu účasť vo výskume.</li>
         <li>V prípade porušenia podmienok výskumu, môžete byť z výskumu a súťaže o ceny vylúčený, následkom čoho bude zablokovanie vášho prístupu do aplikácie.</li>
       </LocalList>
       )
@@ -1152,13 +1151,13 @@ export default function Instruction() {
         </LocalList>
         
         <LocalNestedItem>
-          Misia 1 (5-10 minút) - Úvodný dotazník
+          Misia 1 (5-10 minút) - Úvodný dotazník.
         </LocalNestedItem>
         <LocalNestedItem>
-          Misia 2 (10-15 minút) - Prebehne bezprostredne po dokončení úvodného dotazníka
+          Misia 2 (10-15 minút) - Prebehne bezprostredne po dokončení úvodného dotazníka.
         </LocalNestedItem>
         <LocalNestedItem>
-          Misia 3 (10-15 minút) - Prebehne po piatich dňoch od dokončenia Misie 1
+          Misia 3 (10-15 minút) - Prebehne po piatich dňoch od dokončenia Misie 1.
         </LocalNestedItem>
         
         <LocalList>
@@ -1405,7 +1404,7 @@ export default function Instruction() {
               <strong>Pre 4. znak: Zadajte tretie písmeno vášho priezviska.</strong>
             </LocalNestedItem>
             <LocalNestedItem>
-              <strong>Pre dvojčíslie: Zadajte číselne váš mesiac narodenia vo formáte MM (napr. pre 1. január zadajte 01).</strong>
+              <strong>Pre dvojčíslie: Zadajte číselne váš mesiac narodenia vo formáte MM (napr. pre január zadajte 01).</strong>
             </LocalNestedItem>
             <LocalNestedItem>
               Príklad: Jožko Mrkvička narodený v novembri = JORK11.
@@ -1462,11 +1461,11 @@ export default function Instruction() {
               Za absolvovanie druhej časti hlavného výskumu (follow up meranie) získava účastník 25 bodov.
             </LocalNestedItem>
             <LocalNestedItem>
-              Za odporúčanie ďalším účastníkom získava účastník 10 bodov za každého nového účastníka.
+              Za odporúčanie ďalším účastníkom získava účastník 10 bodov za každého nového účastníka, ktorý dokončí aspoň predvýskum alebo prvú časť výskumu.
             </LocalNestedItem>
             
             <LocalList>
-              <li><strong>Hlavnou cenou je darčekový poukaz v hodnote 50 € pre jedného výhercu, ktorý získa najviac platných dokončení od nových respondentov prostredníctvom svojho referral kódu (zdieľacieho kódu) a splní podmienky účasti v súťaži.</strong></li>
+              <li><strong>Hlavnou cenou je darčekový poukaz v hodnote 50 € pre jedného výhercu, ktorý získa najviac zdieľaní - platných dokončení od nových respondentov prostredníctvom svojho referral kódu (zdieľacieho kódu) a splní podmienky účasti v súťaži.</strong></li>
               <li><strong>Vedľajšími cenami sú darčekové poukazy, každý v hodnote 10 € pre troch výhercov, ktorí získajú minimálne 50 bodov do žrebovania a splnia podmienky účasti v súťaži.</strong></li>
               <li><strong>Výhercovia si určia, v ktorom obchode si chcú uplatniť darčekový poukaz a na základe toho im bude poukaz poskytnutý.</strong></li>
               <li><strong>Organizátor si vyhradzuje právo zmeniť typ ceny za inú v rovnakej alebo vyššej hodnote (napr. iný typ poukážky), ak pôvodnú cenu nebude možné zabezpečiť.</strong></li>
@@ -1637,7 +1636,7 @@ export default function Instruction() {
                   <li>Za absolvovanie predvýskumu získava účastník 50 bodov.</li>
                   <li>Za absolvovanie prvej časti hlavného výskumu získava účastník 50 bodov.</li>
                   <li>Za absolvovanie druhej časti hlavného výskumu (follow-up meranie) získava účastník 25 bodov.</li>
-                  <li>Za odporúčanie ďalším účastníkom 10 bodov za nového účastníka.</li>
+                  <li>Za odporúčanie ďalším účastníkom získava účastník 10 bodov za každého nového účastníka, ktorý dokončí aspoň predvýskum alebo prvú časť výskumu.</li>
                 </LocalList>
                 
                 <LocalNestedItem>
@@ -1655,7 +1654,7 @@ export default function Instruction() {
 
                 <h4>Výhry:</h4>
                 <LocalList>
-                  <li>Hlavnou cenou je darčekový poukaz v hodnote 50 € pre jedného výhercu, ktorý získa najviac platných dokončení od nových respondentov prostredníctvom svojho referral kódu (zdieľacieho kódu) a splní podmienky účasti v súťaži.</li>
+                  <li>Hlavnou cenou je darčekový poukaz v hodnote 50 € pre jedného výhercu, ktorý získa najviac zdieľaní - platných dokončení od nových respondentov prostredníctvom svojho referral kódu (zdieľacieho kódu) a splní podmienky účasti v súťaži.</li>
                   <li>Vedľajšími cenami sú darčekové poukazy, každý v hodnote 10 € pre troch výhercov, ktorí získajú minimálne 50 bodov do žrebovania a splnia podmienky účasti v súťaži.</li>
                   <li>Výhercovia si určia, v ktorom obchode si chcú uplatniť darčekový poukaz a na základe toho im bude poukaz poskytnutý.</li>
                   <li>Organizátor si vyhradzuje právo zmeniť typ ceny za inú v rovnakej alebo vyššej hodnote (napr. iný typ poukážky), ak pôvodnú cenu nebude možné zabezpečiť.</li>

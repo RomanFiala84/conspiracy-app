@@ -19,7 +19,7 @@ const GradientCircleList = styled.ul`
   padding-left: 20px;
   padding-right: 20px;
   margin: 0;
-  
+  text-align: justify;
   > li {
     padding-left: 0;
     position: relative;
@@ -60,7 +60,7 @@ const NestedListItem = styled.div`
   position: relative;
   margin-bottom: 10px;
   line-height: 1.6;
-  
+  text-align: justify;
   &::before {
     content: '→';
     position: absolute;
@@ -1123,6 +1123,7 @@ const MainMenu = () => {
           autoOpen={false}
           showBadge={true}
           position="right"
+          style={{ textAlign: "justify" }}
         />
 
         {modal.open && (
@@ -1195,7 +1196,7 @@ const MainMenu = () => {
                     <li>Za absolvovanie predvýskumu získava účastník 50 bodov.</li>
                     <li>Za absolvovanie prvej časti hlavného výskumu získava účastník 50 bodov.</li>
                     <li>Za absolvovanie druhej časti hlavného výskumu (follow-up meranie) získava účastník 25 bodov.</li>
-                    <li>Za odporúčanie ďalším účastníkom 10 bodov za nového účastníka.</li>
+                    <li>Za odporúčanie ďalším účastníkom 10 bodov za nového účastníka, ktorý dokončí aspoň predvýskum alebo prvú časť výskumu.</li>
                   </GradientCircleList>
                   
                   <NestedListItem>
@@ -1213,7 +1214,7 @@ const MainMenu = () => {
 
                   <h4>Výhry:</h4>
                   <GradientCircleList>
-                    <li>Hlavnou cenou je darčekový poukaz v hodnote 50 € pre jedného výhercu, ktorý získa najviac platných dokončení od nových respondentov prostredníctvom svojho referral kódu (zdieľacieho kódu) a splní podmienky účasti v súťaži.</li>
+                    <li>Hlavnou cenou je darčekový poukaz v hodnote 50 € pre jedného výhercu, ktorý získa najviac zdieľaní - platných dokončení od nových respondentov prostredníctvom svojho referral kódu (zdieľacieho kódu) a splní podmienky účasti v súťaži.</li>
                     <li>Vedľajšími cenami sú darčekové poukazy, každý v hodnote 10 € pre troch výhercov, ktorí získajú minimálne 50 bodov do žrebovania a splnia podmienky účasti v súťaži.</li>
                     <li>Výhercovia si určia, v ktorom obchode si chcú uplatniť darčekový poukaz a na základe toho im bude poukaz poskytnutý.</li>
                     <li>Organizátor si vyhradzuje právo zmeniť typ ceny za inú v rovnakej alebo vyššej hodnote (napr. iný typ poukážky), ak pôvodnú cenu nebude možné zabezpečiť.</li>
