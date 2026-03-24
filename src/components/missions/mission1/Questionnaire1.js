@@ -2152,7 +2152,7 @@ const Questionnaire1 = () => {
             <DetectiveTipSmall
               tip={page.instruction}  // ← SPRÁVNY PROP
               detectiveName="Inšpektor Kritan"
-              style={{ textAlign: "left" }}
+              style={{ textAlign: "justify" }}
             />
           )}
 

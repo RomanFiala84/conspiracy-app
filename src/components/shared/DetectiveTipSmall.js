@@ -126,7 +126,7 @@ const TipText = styled.div`
   line-height: 1.6;
   position: relative;
   z-index: 1;
-  text-align: left; 
+  text-align: justify; 
   @media (max-width: 480px) {
     font-size: 15px;
     line-height: 1.5;

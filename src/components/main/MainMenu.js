@@ -1123,7 +1123,7 @@ const MainMenu = () => {
           autoOpen={false}
           showBadge={true}
           position="right"
-          style={{ textAlign: "left" }}
+          style={{ textAlign: "justify" }}
         />
 
         {modal.open && (

@@ -24,7 +24,7 @@ export const GlobalStyles = createGlobalStyle`
     transition: background-color 0.3s ease, color 0.3s ease; // ✅ ZRÝCHLENÉ
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 16px; // ✅ ZMENENÉ z 14px na 16px (lepšia čitateľnosť)
+    font-size: 15px; // ✅ ZMENENÉ z 14px na 16px (lepšia čitateľnosť)
     line-height: 1.6; // ✅ ZMENENÉ z 1.5 na 1.6
     overflow-x: hidden; // ✅ NOVÉ - Zabráň horizontálnemu scrollu
     

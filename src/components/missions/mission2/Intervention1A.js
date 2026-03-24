@@ -53,7 +53,7 @@ const BodyText = styled.p`
   font-size: 15px;
   line-height: 1.8;
   margin-bottom: 14px;
-  text-align: justify;
+  text-align: left;
 `;
 
 const ItemLabel = styled.strong`
@@ -67,7 +67,7 @@ const ItemDesc = styled.span`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 15px;
   line-height: 1.6;
-  text-align: justify;
+  text-align: left;
 `;
 
 const ContentList = styled.ol`
@@ -82,7 +82,7 @@ const ContentListItem = styled.li`
   font-size: 15px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
-  text-align: justify;
+  text-align: left;
    &::marker {
     font-weight: 700;
   }
@@ -95,7 +95,7 @@ const NestedList = styled.ol`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  text-align: justify;
+  text-align: left;
   &::marker {
     font-weight: 700;
   }
@@ -160,7 +160,7 @@ const AccordionHeader = styled.button`
   background: ${p => p.open ? p.theme.ACCENT_COLOR + '15' : p.theme.CARD_BACKGROUND};
   border: none;
   cursor: pointer;
-  text-align: justify;
+  text-align: left;
   transition: background 0.2s ease;
   &:hover { background: ${p => p.theme.ACCENT_COLOR}15; }
 `;
@@ -248,7 +248,7 @@ const QuizWrapper = styled.div`
 
 const QuizOption = styled.button`
   width: 100%;
-  text-align: justify;
+  text-align: left;
   padding: 12px 16px;
   border-radius: 8px;
   border: 2px solid ${p =>
@@ -906,6 +906,7 @@ const Intervention1A = () => {
               autoOpenDelay={300}
               played={tipOutroAudio? !!playedAudios[tipOutroAudio.audioId] : undefined} 
               onPlayed={markAudioPlayed}
+              style={{ textAlign: "justify" }}
             />
           )}
 

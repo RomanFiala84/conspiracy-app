@@ -399,7 +399,7 @@ const Intro = () => {
             detectiveName="Inšpektor Kritan"
             imageUrl="/images/detective.png"
             iconUrl="/images/detective-icon.png"
-            style={{ textAlign: "left" }}
+            style={{ textAlign: "justify" }}
             tip={`
               <p style="font-size: 15px; font-weight: bold; color: ${theme.PRIMARY_TEXT_COLOR}; margin-bottom: 12px;">
                 <strong>Ahoj, milý/á respondent/ka!</strong>
