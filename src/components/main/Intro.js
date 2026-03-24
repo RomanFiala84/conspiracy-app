@@ -63,7 +63,6 @@ const Subtitle = styled.h2`
   color: ${props => props.theme.ACCENT_COLOR};
   text-align: center;
   font-weight: 600;
-  text-align: left;
   @media (max-width: 480px) {
     font-size: 20px;
   }
@@ -76,7 +75,6 @@ const Text = styled.p`
   color: ${props => props.theme.PRIMARY_TEXT_COLOR};
   text-align: center;
   max-width: 700px;
-  text-align: center;
   strong {
     color: ${props => props.theme.PRIMARY_TEXT_COLOR};
     font-weight: 600;

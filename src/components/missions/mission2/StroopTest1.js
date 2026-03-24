@@ -378,7 +378,8 @@ const StroopTest1 = () => {
           <Header>
             <Title><strong>Detektívna úloha</strong></Title>
             <Subtitle><strong>Prípad: Kukučie hniezdo</strong></Subtitle>
-            <Instructions><strong>Nájdite symbol, ktorý nepatrí medzi ostatné! Téma príbuzných symbolov je: VEDA.</strong></Instructions>
+            <Instructions><strong>Nájdite symbol, ktorý nepatrí medzi ostatné!</strong></Instructions>
+            <Instructions><strong>Téma príbuzných symbolov je: VEDA.</strong></Instructions>
           </Header>
 
 

@@ -499,10 +499,10 @@ const OutroMission2 = () => {
 
             <DebriefBlock>
               <DebriefTitle>ℹ️ Dôležité informácie k zobrazeným tvrdeniam</DebriefTitle>
-              <DebriefText>Počas výskumu ste hodnotili rôzne tvrdenia o spoločenských a politických témach. Niektoré z nich boli v súlade s dostupnými faktami a vedeckými poznatkami, iné patrili medzi takzvané <strong>konšpiračné presvedčenia</strong> — teda vysvetlenia udalostí, ktoré pripisujú skryté úmysly mocným skupinám alebo jednotlivcom, zvyčajne bez dostatočných dôkazov.</DebriefText>
+              <DebriefText>Počas výskumu ste hodnotili rôzne tvrdenia o spoločenských a politických témach. Niektoré z nich boli v súlade s dostupnými faktami a vedeckými poznatkami, iné patrili medzi takzvané konšpiračné presvedčenia — teda vysvetlenia udalostí, ktoré pripisujú skryté úmysly mocným skupinám alebo jednotlivcom, zvyčajne bez dostatočných dôkazov.</DebriefText>
               <DebriefText>Konšpiračné presvedčenia môžu byť nebezpečné, pretože vedú k nedôvere voči legitímnym inštitúciám, vede a médiám, môžu podnecovať sociálne napätie a v krajných prípadoch aj k odmietaniu zdravotnej starostlivosti či k preberaniu extrémnych postojov.</DebriefText>
               <DebriefText>V dotazníku sme zámerne neoznačovali, ktoré tvrdenia sú dôveryhodné a ktoré nie. Cieľom bolo zistiť, ako ľudia prirodzene reagujú na rôzne typy tvrdení – čo znie presvedčivo, kde majú pochybnosti a s čím majú tendenciu súhlasiť.</DebriefText>
-              <DebriefText>V prípade záujmu nás prosím kontaktujte na nižšie uvedenú emailovú adresu, kedy vám následne vieme poskytnúť zoznam jednotlivých tvrdení spolu s informáciou, pri ktorých ide o typické konšpiračné výklady udalostí alebo motívov a pri ktorých nie. <strong>Túto možnosť môžete využiť až po ukončení celého výskumu.</strong></DebriefText>
+              <DebriefText>V prípade záujmu nás prosím kontaktujte na nižšie uvedenú emailovú adresu, kedy vám následne vieme poskytnúť zoznam jednotlivých tvrdení spolu s informáciou, pri ktorých ide o typické konšpiračné výklady udalostí alebo motívov a pri ktorých nie.Túto možnosť môžete využiť až po ukončení celého výskumu.</DebriefText>
             </DebriefBlock>
 
             <DebriefDivider />
@@ -533,7 +533,7 @@ const OutroMission2 = () => {
 
             <DebriefBlock>
               <DebriefTitle>Kedy bude vyhodnotená súťaž?</DebriefTitle>
-              <DebriefText>Súťaž bude vyhodnotená na základe stanovených pravidiel (viď podmienky súťaže v hlavnom menu) do 7 dní od ukončenia výskumu.</DebriefText>
+              <DebriefText>Súťaž bude vyhodnotená na základe stanovených pravidiel (viď podmienky súťaže v hlavnom menu) do 10 dní od ukončenia výskumu.</DebriefText>
             </DebriefBlock>
 
             <DebriefDivider />

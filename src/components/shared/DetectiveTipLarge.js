@@ -321,7 +321,7 @@ const TipText = styled.div`
   margin-bottom: 20px; // ✅ ZVÄČŠI z 16px na 20px
   flex: 1;
   overflow-y: auto; // ✅ PRIDAJ - Scroll len pre text ak je dlhý
-  
+  text-align: justify; 
   @media (max-width: 480px) {
     font-size: 15px;
     line-height: 1.6;

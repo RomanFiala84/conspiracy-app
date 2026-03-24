@@ -53,7 +53,7 @@ const BodyText = styled.p`
   font-size: 15px;
   line-height: 1.8;
   margin-bottom: 14px;
-  text-align: left;
+  text-align: justify;
 `;
 
 const ItemLabel = styled.strong`
@@ -67,7 +67,7 @@ const ItemDesc = styled.span`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 15px;
   line-height: 1.6;
-  text-align: left;
+  text-align: justify;
 `;
 
 const ContentList = styled.ol`
@@ -82,7 +82,7 @@ const ContentListItem = styled.li`
   font-size: 15px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
-  text-align: left;
+  text-align: justify;
    &::marker {
     font-weight: 700;
   }
@@ -95,7 +95,7 @@ const NestedList = styled.ol`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  text-align: left;
+  text-align: justify;
   &::marker {
     font-weight: 700;
   }
