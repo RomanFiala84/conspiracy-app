@@ -489,8 +489,8 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
     <AccordionItem title="Čo je to vlastne konšpiračné presvedčenie?" isRead={readSections.has('p1_s1')} onRead={() => markRead('p1_s1')}>
       <SectionAudioPlayer src="/sound/detektiv2.mp3" audioId="p1_s1_audio" label="Prehrať" played={!!playedAudios['p1_s1_audio']} onPlayed={markAudioPlayed} />
-      <BodyText>Čo sú to vlastne tie konšpiračné presvedčenia? Konšpiračné presvedčenia hovoria o tom, že tajné skupiny manipulujú udalosti, spoločnosť alebo nám skrývajú skutočnú pravdu. Ale prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“? Nie je to preto, že sme hlúpi, naše mozgy sú navrhnuté hľadať vzory a zmysel, ale niekedy hľadajú vzory a zmysel aj tam, kde neexistujú. 
-      Poďme sa spolu teraz pozrieť na to, prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“, ako ich identifikovať a ako sa voči nim brániť. Ale pozor! Predtým ako si pozriete odpovede k otázkam, skúste si ich najskôr zodpovedať pre seba v myšlienkach. Ste pripravený? Poďme na to!
+      <BodyText>Čo sú to vlastne tie konšpiračné presvedčenia? Konšpiračné presvedčenia hovoria o tom, že tajné skupiny manipulujú udalosti, spoločnosť alebo nám skrývajú skutočnú pravdu.<br /> Ale prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“? Nie je to preto, že sme hlúpi, naše mozgy sú navrhnuté hľadať vzory a zmysel, ale niekedy hľadajú vzory a zmysel aj tam, kde neexistujú.<br /> 
+      Poďme sa spolu teraz pozrieť na to, prečo nám konšpiračné presvedčenia tak ľahko „padnú do siete“, ako ich identifikovať a ako sa voči nim brániť.<br /> Ale pozor! Predtým ako si pozriete odpovede k otázkam, skúste si ich najskôr zodpovedať pre seba v myšlienkach. Ste pripravený? Poďme na to!
       </BodyText>
     </AccordionItem>
 
@@ -530,7 +530,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
       <SectionAudioPlayer src="/sound/detektiv6.mp3" audioId="p1_s5_audio" label="Prehrať nahrávku" played={!!playedAudios['p1_s5_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Ľudia konšpiračné presvedčenia šíria z mnohých dôvodov a väčšinou si to ani neuvedomujú.</BodyText>
       <ContentList>
-        <ContentListItem><ItemLabel>Chcú pomôcť</ItemLabel><ItemDesc>Osoba verí, že objavila „pravdu", a chce ju zdieľať s ostatnými. Šírenie presvedčenia môže byť vnímané ako morálna povinnosť</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Chcú pomôcť</ItemLabel><ItemDesc>Osoba verí, že objavila „pravdu", a chce ju zdieľať s ostatnými. Šírenie presvedčenia môže byť vnímané ako morálna povinnosť.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Chcú byť časťou komunity</ItemLabel><ItemDesc>Keď zdieľajú presvedčenie, sú súčasťou komunity. Dostávajú pozitívnu odozvu od ostatných - lajky, komentáre, pocit spolupatričnosti.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Pocit moci a vplyvu</ItemLabel><ItemDesc>Keď šíria konšpiračné presvedčenie a niekto mu verí, cítia pocit moci a vplyvu.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Strach a úzkosť</ItemLabel><ItemDesc>Keď sa bojíme, prirodzene sa chceme deliť s ostatnými o svoje obavy.</ItemDesc></ContentListItem>
