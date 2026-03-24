@@ -563,7 +563,7 @@ const OutroMission0 = () => {
             <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
                 <strong>Ak sa rozhodnete zúčastniť, nižšie môžete potvrdiť účasť a zvoliť si, či chcete byť jednorázovo upozornený/á e-mailom.</strong>
             <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
-                <strong>Ešte raz ďakujeme za účasť v predvýskume, dúfame že sa vám predvýskum páčil a snáď sa v blízkej dobe vidíme znova.</strong>
+                <strong>Ešte raz ďakujeme za účasť v predvýskume, dúfame že sa vám predvýskum páčil a snáď sa v blízkej dobe vidíme znova.❤️</strong>
             `}
               detectiveName="Inšpektor Kritan"
             autoOpen={true}

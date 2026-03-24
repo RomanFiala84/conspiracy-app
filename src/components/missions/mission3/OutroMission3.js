@@ -191,6 +191,7 @@ const DebriefText = styled.p`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
   margin: 0;
+  text-align: justify;
 `;
 
 const DebriefLink = styled.a`

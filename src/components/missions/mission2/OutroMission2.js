@@ -488,7 +488,7 @@ const OutroMission2 = () => {
                 <strong>Teraz sa môžete sa vrátiť do hlavného menu a aplikáciu ukončiť. O päť dní sa vám odomkne druhá časť hlavného výskumu. Nezabudnite svoju účasť potvrdiť nižši a prípadne si zvoliť upozornie na e-mail.</strong>
               </p>
               <p style="font-size: 15px; font-weight: bold; margin-bottom: 10px; line-height: 1.6; color: ${theme.PRIMARY_TEXT_COLOR};">
-                <strong>V prípade ak sa druhej časti už nezúčastníte, veľmi vám ďakujem za učásť vo vyskume:❤️</strong>
+                <strong>V prípade ak sa druhej časti už nezúčastníte, veľmi vám ďakujeme za učásť vo vyskume.❤️</strong>
               </p>
             `}
             detectiveName="Inšpektor Kritan"

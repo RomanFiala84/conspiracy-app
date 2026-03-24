@@ -242,7 +242,6 @@ const StroopTest1 = () => {
   // ── Tip texty ─────────────────────────────────────────────────────────────
 
   const detectiveTipStart = `
-    <p><strong>Prípad: Kukučie hniezdo</strong></p>
     <ul style="text-align: left; padding-left: 8px; list-style: none;">
       <li><strong>Aká je vaša úloha?</strong></li>
       <li>👁️ Uvidíte <strong>4 symboly</strong>.</li>
