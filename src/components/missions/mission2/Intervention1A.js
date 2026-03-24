@@ -869,8 +869,8 @@ const Intervention1A = () => {
               detectiveName="Inšpektor Kritan"
               autoOpen={true}
               autoOpenDelay={300}
-              played={page.detectiveTipOutroAudio ? !!playedAudios[page.detectiveTipOutroAudio.audioId] : undefined}  {/* ← CHÝBA */}
-              onPlayed={markAudioPlayed}  {/* ← CHÝBA */}
+              played={page.detectiveTipOutroAudio ? !!playedAudios[page.detectiveTipOutroAudio.audioId] : undefined} 
+              onPlayed={markAudioPlayed}
             />
           )}
 
