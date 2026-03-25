@@ -875,10 +875,11 @@ export default function Instruction() {
     if (email && validateEmail(email)) {
       try {
         const exists = await dataManager.checkEmailExists(email);
-        if (exists) {
+        if (exists && email !== existingEmail) {
+          // ✅ Zablokuje len ak email patrí INÉMU účtu
           e.email = 'Táto e-mailová adresa už bola zaregistrovaná v súťaži.';
-          if (!firstErrorRef) firstErrorRef = emailRef;
         }
+
       } catch (error) {
         console.error('❌ Error checking email:', error);
         e.email = 'Nepodarilo sa overiť e-mailovú adresu. Skúste to znova prosím.';
@@ -1271,8 +1272,10 @@ export default function Instruction() {
           </WelcomeSubtitle>
           
           <WelcomeInstructions>
-            <p><strong>Prečítajte si prosím pozorne podmienky a inštrukcie k výskumu.</strong></p>
-            <p><strong>Následne pokračujte prihlásením sa do výskumnej aplikácie.</strong></p>
+            <p><strong>Prečítajte si prosím pozorne podmienky účasti, ostatné časti sú informačné.</strong></p>
+            <p><strong>Pre zapojenie do výskumu je potrebné vždy poskytnúť informovaný súhlas.</strong></p>
+            <p><strong>Následne pokračujte prihlásením sa do výskumnej aplikácie podľa inštrukcií pre prihlásenie.</strong></p>
+            <p><strong>V spodnej časti nájdete prihlásenie do súťaže kde je potrebné poskytnúť e-mailovú adresu a informovaný súhlas pre účasť v súťaži.</strong></p>
           </WelcomeInstructions>
         </WelcomeCard>
 
@@ -1444,7 +1447,7 @@ export default function Instruction() {
           <CompetitionText>
             <LocalList>
               <li><strong>Pre zapojenie do súťaže je potrebné zadať e-mailovú adresu a absolovať predvýskum alebo prvú časť hlavného výskumu.</strong></li>
-              <li><strong>Súťaž funguje na základe bodovacieho systému:</strong></li>
+              <li><strong>Súťaž funguje na základe bodovacieho systému:</strong></li>toUpperCase
             </LocalList>
             
             <LocalNestedItem>
@@ -1492,10 +1495,11 @@ export default function Instruction() {
           {errors.email && <ErrorText>{errors.email}</ErrorText>}
           {!errors.email && email && existingEmail && 
             email.toLowerCase() === existingEmail.toLowerCase() && (
-            <Note style={{ color: '#f59e0b', fontWeight: 500 }}>
+            <Note style={{ color: '#f59e0b', fontWeight: 500, fontSize: '15px' }}>
               ⚠️ Tento e-mail je už pre váš kód zaregistrovaný. Prihlásenie prebehne bez zmeny e-mailu.
             </Note>
           )}
+
 
           <Note>
             <LocalList>
@@ -1563,7 +1567,7 @@ export default function Instruction() {
                 disabled={isBlocked}
                 onChange={(e) => setHasReferral(e.target.checked)}
               />
-              <label><strong>Mám referral kód</strong></label>
+              <label><strong>Mám referral kód (zdieľací kód od iného respondenta/ky)</strong></label>
             </CheckboxContainer>
 
             {hasReferral && (
