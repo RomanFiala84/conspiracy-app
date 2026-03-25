@@ -436,7 +436,6 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
           <NestedList>
             <NestedItem>Ak autor uvádza svoje meno, ale bez detailov o svojej kvalifikácii - pýtajte sa: Čo ho kvalifikuje na to, aby o tomto hovoril? Všetci môžu hovoriť čokoľvek, ale nie všetci majú na to potrebné znalosti.</NestedItem>
             <NestedItem>Ak autor uvádza inštitúciu alebo organizáciu, ale bez overenia či naozaj v nej pracuje alebo existuje - pýtajte sa: Dá sa toto overiť? Ak sa autor rozhodol vynechať informácie - pýtajte sa: Prečo? Je to zámerné?</NestedItem>
-            <NestedItem></NestedItem>
           </NestedList>
         </ContentListItem>
         <ContentListItem>
@@ -659,11 +658,11 @@ const Intervention1B = () => {
               disabled={isSubmitting || !canContinue}
             >
               {!allRequiredRead
-                ? `Otvor všetky sekcie (zostáva: ${remainingSect})`
+                ? `Dokončite všetky sekcie (zostáva: ${remainingSect})`
                   : isSubmitting
                     ? 'Ukladám...'
                     : isLastPage
-                      ? '🎓 Dokončiť tréning!'
+                      ? 'Pokračovať'
                       : 'Pokračovať ďalej →'}
             </StyledButton>
           </ButtonContainer>

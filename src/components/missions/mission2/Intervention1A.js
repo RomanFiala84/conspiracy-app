@@ -608,7 +608,7 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
       <SectionAudioPlayer src="/sound/detektivd2.mp3" audioId="p2_s1_audio" label="Prehrať" played={!!playedAudios['p2_s1_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Tieto inštitúcie EÚ sú najkľúčovejšie:</BodyText>
       <ContentList>
-        <ContentListItem><ItemLabel>Európsky parlament</ItemLabel><ItemDesc>. Priamo volený občanmi, rozhoduje o zákonoch a kontroluje ostatné inštitúcie.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Európsky parlament</ItemLabel><ItemDesc>Priamo volený občanmi, rozhoduje o zákonoch a kontroluje ostatné inštitúcie.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Európska rada</ItemLabel><ItemDesc>Hlavy štátov, určuje strategické smerovanie EÚ.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Rada EÚ</ItemLabel><ItemDesc>Ministri krajín, vyjednávajú a prijímajú zákony spolu s parlamentom.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Európska komisia</ItemLabel><ItemDesc>Výkonná moc, navrhuje zákony a zabezpečuje ich dodržiavanie.</ItemDesc></ContentListItem>
@@ -619,7 +619,7 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Ako EÚ zabezpečuje transparentnosť?" isRead={readSections.has('p2_s2')} onRead={() => markRead('p2_s2')}>
-      <SectionAudioPlayer src="/sound/p2_s2.mp3" audioId="p2_s2_audio" label="Prehrať" played={!!playedAudios['p2_s2_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektivd3.mp3" audioId="p2_s2_audio" label="Prehrať" played={!!playedAudios['p2_s2_audio']} onPlayed={markAudioPlayed} />
       <BodyText>
         Základným znakom dôveryhodnej inštitúcie je, ak je transparentná a zodpovedná. EÚ má preto nástroje, ktoré zabezpečujú, že inštitúcie nepracujú v skrytosti.
         Teraz si dajme krátky kvíz - ako si myslíte, že EÚ transparentnosť zabezpečuje? Označte, ktoré tvrdenia o fungovaní EÚ sú podľa vás pravdivé.
@@ -688,7 +688,6 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
           <NestedList>
             <NestedItem>Ak autor uvádza svoje meno, ale bez detailov o svojej kvalifikácii - pýtajte sa: Čo ho kvalifikuje na to, aby o tomto hovoril? Všetci môžu hovoriť čokoľvek, ale nie všetci majú na to potrebné znalosti.</NestedItem>
             <NestedItem>Ak autor uvádza inštitúciu alebo organizáciu, ale bez overenia či naozaj v nej pracuje alebo existuje - pýtajte sa: Dá sa toto overiť? Ak sa autor rozhodol vynechať informácie - pýtajte sa: Prečo? Je to zámerné?</NestedItem>
-            <NestedItem></NestedItem>
           </NestedList>
         </ContentListItem>
         <ContentListItem>
@@ -761,7 +760,7 @@ const PAGES = [
   {
     key: 'page2',
     title: 'Príspevkový semafor',
-    subtitle: 'Bonus',
+    subtitle: 'Bonus - dobrovoľné',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page3Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
     detectiveTipIntro: `<p><strong>V tomto bonuse sa vrátime kúsok späť. V prvej časti sme sa zaoberali konšpiračnými presvedčeniami. Ako som už spomínal, často sa vyskytujú na sociálnych sieťach vo forme rôznych príspevkov, komentárov, videí. Poďme sa spolu teraz pozrieť konkrétne na príspevky zo sociálnych sietí.</strong></p>`,
@@ -923,11 +922,11 @@ const Intervention1A = () => {
               disabled={isSubmitting || !canContinue}
             >
               {!allRequiredRead
-                ? `Otvor všetky sekcie (zostáva: ${remainingSect})`
+                ? `Dokončite všetky sekcie (zostáva: ${remainingSect})`
                   : isSubmitting
                     ? 'Ukladám...'
                     : isLastPage
-                      ? '🎓 Dokončiť tréning!'
+                      ? 'Pokračovať!'
                       : 'Pokračovať ďalej →'}
             </StyledButton>
           </ButtonContainer>
