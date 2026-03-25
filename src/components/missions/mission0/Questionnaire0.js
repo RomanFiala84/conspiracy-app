@@ -133,7 +133,7 @@ const Question = styled.p`
   font-size: 15px;
   font-weight: 500;
   line-height: 1.5;
-  text-align: justify;
+  text-align: ${p => p.justify ? 'justify' : 'left'};
   /* ✅ PRIDANÉ: Markdown styling */
   p {
     margin: 0;
@@ -2523,7 +2523,7 @@ const Questionnaire0 = () => {
         isActive={activeQuestionId === question.id}
       >
         {/* ✅ ZMENENÉ: Použitie ReactMarkdown pre text s markdown */}
-        <Question>
+        <Question justify={question.type === 'ladder'}>
           {!isFeedback && `${index + 1}. `}
           {question.text.includes('**') || question.text.includes('\\n') ? (
             <ReactMarkdown>{question.text}</ReactMarkdown>

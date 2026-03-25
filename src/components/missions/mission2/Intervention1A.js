@@ -53,7 +53,7 @@ const BodyText = styled.p`
   font-size: 15px;
   line-height: 1.8;
   margin-bottom: 14px;
-  text-align: justify;
+  text-align: left;
 `;
 
 const ItemLabel = styled.strong`
@@ -67,7 +67,7 @@ const ItemDesc = styled.span`
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   font-size: 15px;
   line-height: 1.6;
-  text-align: justify;
+  text-align: left;
 `;
 
 const ContentList = styled.ol`
@@ -82,7 +82,7 @@ const ContentListItem = styled.li`
   font-size: 15px;
   color: ${p => p.theme.PRIMARY_TEXT_COLOR};
   line-height: 1.7;
-  text-align: justify;
+  text-align: left;
    &::marker {
     font-weight: 700;
   }
@@ -95,7 +95,7 @@ const NestedList = styled.ol`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  text-align: justify;
+  text-align: left;
   &::marker {
     font-weight: 700;
   }
@@ -491,7 +491,7 @@ const AccordionItem = ({ title, children, isRead, onRead }) => {
 
 const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed }) => (
   <>
-    <ModuleTitle>Konšpiračné presvedčenia</ModuleTitle>
+    <ModuleTitle></ModuleTitle>
 
     <AccordionItem title="Čo je to vlastne konšpiračné presvedčenie?" isRead={readSections.has('p1_s1')} onRead={() => markRead('p1_s1')}>
       <SectionAudioPlayer src="/sound/detektiv2.mp3" audioId="p1_s1_audio" label="Prehrať" played={!!playedAudios['p1_s1_audio']} onPlayed={markAudioPlayed} />
@@ -602,13 +602,13 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
 const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed }) => (
   <>
-    <ModuleTitle>Inštitúcie EÚ</ModuleTitle>
+    <ModuleTitle></ModuleTitle>
 
     <AccordionItem title="Aké sú inštitúcie EÚ a čo robia?" isRead={readSections.has('p2_s1')} onRead={() => markRead('p2_s1')}>
-      <SectionAudioPlayer src="/sound/p2_s1.mp3" audioId="p2_s1_audio" label="Prehrať" played={!!playedAudios['p2_s1_audio']} onPlayed={markAudioPlayed} />
+      <SectionAudioPlayer src="/sound/detektivd2.mp3" audioId="p2_s1_audio" label="Prehrať" played={!!playedAudios['p2_s1_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Tieto inštitúcie EÚ sú najkľúčovejšie:</BodyText>
       <ContentList>
-        <ContentListItem><ItemLabel>Európsky parlament</ItemLabel><ItemDesc>Priamo volený občanmi, rozhoduje o zákonoch a kontroluje ostatné inštitúcie.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Európsky parlament</ItemLabel><ItemDesc>. Priamo volený občanmi, rozhoduje o zákonoch a kontroluje ostatné inštitúcie.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Európska rada</ItemLabel><ItemDesc>Hlavy štátov, určuje strategické smerovanie EÚ.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Rada EÚ</ItemLabel><ItemDesc>Ministri krajín, vyjednávajú a prijímajú zákony spolu s parlamentom.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Európska komisia</ItemLabel><ItemDesc>Výkonná moc, navrhuje zákony a zabezpečuje ich dodržiavanie.</ItemDesc></ContentListItem>
@@ -621,21 +621,21 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     <AccordionItem title="Ako EÚ zabezpečuje transparentnosť?" isRead={readSections.has('p2_s2')} onRead={() => markRead('p2_s2')}>
       <SectionAudioPlayer src="/sound/p2_s2.mp3" audioId="p2_s2_audio" label="Prehrať" played={!!playedAudios['p2_s2_audio']} onPlayed={markAudioPlayed} />
       <BodyText>
-        Základným znakom dôveryhodnej inštitúcie je, ak sú transparentné a zodpovedné.
-        Teraz si dajme krátky kvíz — ako si myslíte, že EÚ transparentnosť zabezpečuje?
+        Základným znakom dôveryhodnej inštitúcie je, ak je transparentná a zodpovedná. EÚ má preto nástroje, ktoré zabezpečujú, že inštitúcie nepracujú v skrytosti.
+        Teraz si dajme krátky kvíz - ako si myslíte, že EÚ transparentnosť zabezpečuje? Označte, ktoré tvrdenia o fungovaní EÚ sú podľa vás pravdivé.
       </BodyText>
       <QuizAccordion playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />
     </AccordionItem>
 
     <AccordionItem title="Čo EÚ robí pre vás?" isRead={readSections.has('p2_s3')} onRead={() => markRead('p2_s3')}>
-      <SectionAudioPlayer src="/sound/p2_s3.mp3" audioId="p2_s3_audio" label="Prehrať" played={!!playedAudios['p2_s3_audio']} onPlayed={markAudioPlayed} />
-      <BodyText>Dôveryhodné inštitúcie nekonajú len efektívne a transparentne — konajú v záujme ľudí:</BodyText>
+      <SectionAudioPlayer src="/sound/detektivd4.mp3" audioId="p2_s3_audio" label="Prehrať" played={!!playedAudios['p2_s3_audio']} onPlayed={markAudioPlayed} />
+      <BodyText>Dôveryhodné inštitúcie nekonajú len efektívne a transparentne - konajú v záujme ľudí. Pozrite sa na konkrétne výhody, ktoré EÚ zabezpečuje.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Voľný pohyb</ItemLabel><ItemDesc>Môžete študovať, pracovať, žiť alebo odísť do dôchodku kdekoľvek v EÚ bez vízových obmedzení.</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Cenová ochrana</ItemLabel><ItemDesc>14-dňová lehota na vrátenie online nákupov, žiadne roamingové poplatky, ochrana bankových vkladov do 100 000 €.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Cenová ochrana</ItemLabel><ItemDesc>14 dňová lehota na vrátenie online nákupov, žiadne roamingové poplatky, ochrana bankových vkladov do sto tisíc eur.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Vzdelávanie</ItemLabel><ItemDesc>Program Erasmus+ a možnosť študovať na akejkoľvek vysokej škole v rámci EÚ.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Životné prostredie</ItemLabel><ItemDesc>Podpora ochrany životného prostredia a právne záväzný cieľ klimatickej neutrality do roku 2050.</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Zdravie</ItemLabel><ItemDesc>Európska karta zdravotného poistenia — lekárska starostlivosť v celej EÚ za rovnakých podmienok.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Zdravie</ItemLabel><ItemDesc>Európska karta zdravotného poistenia, lekárska starostlivosť v celej EÚ za rovnakých podmienok.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Bezpečnosť</ItemLabel><ItemDesc>Prísne bezpečnostné štandardy pre hračky, potraviny a lieky patria medzi najprísnejšie na svete.</ItemDesc></ContentListItem>
       </ContentList>
     </AccordionItem>
@@ -646,74 +646,80 @@ const Page2Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
 const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed }) => (
   <>
-    <ModuleTitle>🚦 Príspevkový semafor</ModuleTitle>
+    <ModuleTitle></ModuleTitle>
 
     <AccordionItem title="Základné tri otázky" isRead={readSections.has('p3_s1')} onRead={() => markRead('p3_s1')}>
-      <SectionAudioPlayer src="/sound/p3_s1.mp3" audioId="p3_s1_audio" label="Prehrať" played={!!playedAudios['p3_s1_audio']} onPlayed={markAudioPlayed} />
-      <BodyText>Poďme začať so základnými troma otázkami, z ktorých sa každá farba semaforu skladá:</BodyText>
+      <SectionAudioPlayer src="/sound/detektivb2.mp3" audioId="p3_s1_audio" label="Prehrať" played={!!playedAudios['p3_s1_audio']} onPlayed={markAudioPlayed} />
+      <BodyText>Naše mozgy sú prirodzene navrhnuté hľadať vzory. To naším predkom zachraňovalo život - tmavé mraky znamenali búrku, pohyb v kríkoch znamenal predátora. Schopnosť vidieť vzory ich udržiavala nažive. Ale náš mozog sa stal tak dobrým v hľadaní vzorov, že ich niekedy vidí aj tam, kde neexistujú. To nie je znak hlúposti, ale je to vedľajší produkt evolúcie. Stáva sa to každému z nás. Obzvlášť na sociálnych sieťach, kde algoritmy ponúkajú obsah navrhnutý tak, aby nás udržal čo najdlhšie online. A niektorí autori príspevkov to využívajú.
+      Ako môžeme rozpoznať, či nám chce niekto poskytnúť dôveryhodné a pravdivé informácie, alebo nami chce len manipulovať? Dobrá správa! Rozpoznávanie manipulatívnych a dôveryhodných príspevkov možno zlepšiť. Stačia jednoduché otázky. Ukážem vám ich v príspevkovom semafore, ktorý vám pomôže vidieť sociálne siete úplne inak a budete môcť lepšie rozpoznať manipulatívne príspevky.
+      </BodyText>
+      <SectionAudioPlayer src="/sound/detektivb3.mp3" audioId="p3_s11_audio" label="Prehrať" played={!!playedAudios['p3_s11_audio']} onPlayed={markAudioPlayed} />
+      <BodyText>Manipulatívne príspevky môžu byť napríklad len vo forme reklamy alebo clickbaitu - teda návnady, ktorá láka na senzačný nadpis, ale obsah nesplní to, čo sľubuje. Ale iné môžu byť aj konšpiračné. Takýto typ príspevku je forma manipulácie, ktorá vytvára falošný obraz nielen o konkrétnych udalostiach, ale aj o tom, ako fungujú inštitúcie alebo svet. Takéto príspevky môžu ovplyvniť vaše presvedčenia, rozhodnutia a dôveru.
+      Teraz si prezrite pozorne príspevkový semafor, pomôže vám rozpoznávať štruktúru príspevkov a odlišovať dôveryhodné od manipulatívnych, nech už majú akýkoľvek obsah.
+      </BodyText>
+      <BodyText>Poďme začať so základnými troma otázkami, z ktorých sa každá farba semaforu skladá.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Kto profituje?</ItemLabel><ItemDesc>Keď si čítate príspevok, zastavte sa a spýtajte sa: Kto to napísal? Kto má záujem, aby ste verili konkrétnemu príspevku?</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>Odkiaľ to pochádza?</ItemLabel><ItemDesc>Vidím konkrétny zdroj? Meno autora? Organizáciu? Link na článok? Alebo je to len príspevok bez akéhokoľvek predloženia dôkazov?</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel><ItemDesc>Predstavte si príspevok bez výkričníkov, bez veľkých písmen, bez urgencií, bez dramatických fotiek. Zostáva presvedčivý?</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel><ItemDesc>Predstavte si príspevok bez výkričníkov, bez veľkých písmen, bez urgencií, bez dramatických fotiek. Zostáva presvedčivý? Alebo sa sila informácie príspevku rozpadá?</ItemDesc></ContentListItem>
       </ContentList>
       <BodyText>Tieto tri otázky spolu fungujú ako detektívny nástroj. Keď si ich položíte, môžete si všimnúť zámer tvorcu príspevku.</BodyText>
     </AccordionItem>
 
-    <AccordionItem title="🔴 Červená — znaky manipulatívneho príspevku" isRead={readSections.has('p3_s2')} onRead={() => markRead('p3_s2')}>
-      <SectionAudioPlayer src="/sound/p3_s2.mp3" audioId="p3_s2_audio" label="Prehrať" played={!!playedAudios['p3_s2_audio']} onPlayed={markAudioPlayed} />
+    <AccordionItem title="🔴 Znaky manipulatívneho príspevku" isRead={readSections.has('p3_s2')} onRead={() => markRead('p3_s2')}>
+      <SectionAudioPlayer src="/sound/detektivb4.mp3" audioId="p3_s2_audio" label="Prehrať" played={!!playedAudios['p3_s2_audio']} onPlayed={markAudioPlayed} />
       <TrafficSemafor active="red" />
-      <BodyText>Ak sa tvorca pokúša o manipuláciu, často si môžete všimnúť tieto znaky:</BodyText>
+      <BodyText>Ak sa tvorca pokúša o manipuláciu, často si môžete všimnúť tieto znaky.</BodyText>
       <ContentList>
-        <ContentListItem><ItemLabel>Kto profituje?</ItemLabel><ItemDesc>Autor sa skrýva: účet môže byť anonymný, bez histórie, bez fotky. Čo chce? Vašu pozornosť a vašu emóciu. Ako profituje? Z vášho zdieľania, lajkovania, komentovania — vášho strachu a úzkosti.</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Odkiaľ to pochádza?</ItemLabel><ItemDesc>Príspevok môže byť od anonymného autora, bez uvedenia inštitúcie alebo organizácie, bez konkrétneho zdroja. Ak autor neuvedie zdroj, poskytne informáciu, ktorú si nikto bez dodatočného úsilia nemôže overiť.</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel><ItemDesc>Príspevok je zameraný na emócie: snaží sa vyvolať strach, úzkosť, hnev, vzrušenie alebo šok. S výkričníkmi a veľkými písmenami apeluje na urgenciu. Bez emócií ostáva iba prázdne tvrdenie: bez faktov, bez zdrojov.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Kto profituje?</ItemLabel><ItemDesc>Autor sa skrýva: účet môže byť anonymný, bez histórie, bez fotky, alebo prípadne s fotkou, ktorá ho anonymizuje, bez informácií. Kto je teda autorom? Neviete. Čo chce? Vašu pozornosť a vašu emóciu. Ako profituje? Z vášho konania: zdieľania, lajkovania, komentovania - vášho strachu a úzkosti.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Odkiaľ to pochádza?</ItemLabel><ItemDesc>Príspevok môže byť od anonymného autora, bez uvedenia inštitúcie alebo organizácie, bez konkrétneho zdroja odkiaľ čerpal. Prečo je dôležité uvádzať zdroj? Pre overenie informácie. Ak autor neuvedie zdroj, poskytne informáciu, ktorú si nikto bez dodatočného úsilia nemôže overiť.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel><ItemDesc>Príspevok môže byť zameraný na emócie: snaží sa vyvolať strach, úzkosť, hnev, vzrušenie alebo šok, pomocou dramatického textu, fotky alebo videa. S výkričníkmi a veľkými písmenami príspevok apeluje na urgenciu - napríklad: zdieľaj kým to nevymažú. Vyvolaním emócií sa vás snaží presvedčiť. Spolieha sa napríklad na strach - rýchlo, inak je neskoro. Na hnev - toto je nespravodlivé. Alebo na vzrušenie - konečne sa dozviete pravdu. Bez emócií v príspevku ostáva iba prázdne tvrdenie bez faktov, bez zdrojov.</ItemDesc></ContentListItem>
       </ContentList>
     </AccordionItem>
 
-    <AccordionItem title="🟠 Oranžová — znaky neistého príspevku" isRead={readSections.has('p3_s3')} onRead={() => markRead('p3_s3')}>
-      <SectionAudioPlayer src="/sound/p3_s3.mp3" audioId="p3_s3_audio" label="Prehrať" played={!!playedAudios['p3_s3_audio']} onPlayed={markAudioPlayed} />
+    <AccordionItem title="🟠 Znaky neistého príspevku" isRead={readSections.has('p3_s3')} onRead={() => markRead('p3_s3')}>
+      <SectionAudioPlayer src="/sound/detektivb5.mp3" audioId="p3_s3_audio" label="Prehrať" played={!!playedAudios['p3_s3_audio']} onPlayed={markAudioPlayed} />
       <TrafficSemafor active="orange" />
-      <BodyText>Ako aj na cestách, predtým ako prejdeme na zelenú je dôležité dať si pozor — môže ísť o manipulatívny príspevok, ale aj o dôveryhodný:</BodyText>
+      <BodyText>Ako aj na cestách, predtým ako prejdeme na zelenú, je dôležité dať si pozor na premávku, pretože sa tam môže vyskytnúť niečo, čo môže mať rôzne dôsledky. V takomto prípade môže ísť o manipulatívny príspevok, ale pozor, aj o dôveryhodný. Preto je potrebné si všímať tieto znaky.</BodyText>
       <ContentList>
         <ContentListItem>
           <ItemLabel>Kto profituje?</ItemLabel>
-          <ItemDesc>Autor sa čiastočne predstavuje, ale niektoré informácie môžu chýbať alebo byť vymyslené.</ItemDesc>
+          <ItemDesc>Autor sa čiastočne predstavuje: poznáte meno, inštitúciu alebo organizáciu. Môže sa ale stať, že niektoré informácie chýbajú, nie sú úplné, alebo prípadne vymyslené. V takomto prípade môže ísť o manipulatívny príspevok, ale aj o dôveryhodný. Preto si musíte dať pozor.</ItemDesc>
           <NestedList>
-            <NestedItem>Ak autor uvádza meno, ale bez detailov o kvalifikácii — čo ho kvalifikuje na to, aby o tomto hovoril?</NestedItem>
-            <NestedItem>Ak autor uvádza inštitúciu — dá sa overiť, či v nej naozaj pracuje?</NestedItem>
+            <NestedItem>Ak autor uvádza svoje meno, ale bez detailov o svojej kvalifikácii - pýtajte sa: Čo ho kvalifikuje na to, aby o tomto hovoril? Všetci môžu hovoriť čokoľvek, ale nie všetci majú na to potrebné znalosti.</NestedItem>
+            <NestedItem>Ak autor uvádza inštitúciu alebo organizáciu, ale bez overenia či naozaj v nej pracuje alebo existuje - pýtajte sa: Dá sa toto overiť? Ak sa autor rozhodol vynechať informácie - pýtajte sa: Prečo? Je to zámerné?</NestedItem>
             <NestedItem></NestedItem>
           </NestedList>
         </ContentListItem>
         <ContentListItem>
           <ItemLabel>Odkiaľ to pochádza?</ItemLabel>
-          <ItemDesc>Zdroje sú uvedené, ale nie sú úplné — napríklad „podľa štúdie" bez presného odkazu.</ItemDesc>
+          <ItemDesc>Zdroje sú uvedené, ale nie sú úplné - napríklad „podľa štúdie" alebo „americkí vedci zistili" bez precízneho odkazu. Fotografia, prípadne video má kontext, ale bez všetkých detailov - viete čo, ale nie kedy, kde, odkiaľ a od koho pochádza. Informácie sa dajú čiastočne overiť, ale vyžaduje to úsilie. V takomto prípade tiež môže ísť o manipulatívny príspevok, ale aj o dôveryhodný, pretože nie vždy sú zdroje uvedené. Preto si musíte dať pozor a položte si tieto otázky.</ItemDesc>
           <NestedList>
-            <NestedItem>Sú zdroje zámerne skryté alebo len nedostatočne uvedené?</NestedItem>
-            <NestedItem>Má fotografia/video zmysel v jej pôvodnom kontexte?</NestedItem>
-            <NestedItem>Má text aj iné presné informácie — mená, dátumy, miesta?</NestedItem>
+            <NestedItem>Sú zdroje zámerne skryté alebo len nedostatočne uvedené? Skúste si vyhľadať originálny zdroj. Ak existuje a je vyhľadateľný, autor ho asi len nestihol uviesť - mohlo ísť len o chybu. Ak neexistuje alebo je falošný, môže ísť o nepravdivú informáciu a manipuláciu. </NestedItem>
+            <NestedItem>Má fotografia alebo video zmysel v jej pôvodnom kontexte? Pozrite si, aký bol pôvodný kontext. Ak sa kontext zmenil, môže ísť o manipuláciu. Dôležité je si všimnúť, či nejde len o ilustračnú fotku, prípadne video.</NestedItem>
+            <NestedItem>Bol autor presný? Má text aj iné presné informácie - mená, dátumy, miesta? Alebo sú všetky detaily vágne a neurčité? Ak sa jedná o faktografické informácie, autor nemá dôvod neudať ich.</NestedItem>
           </NestedList>
         </ContentListItem>
         <ContentListItem>
           <ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel>
-          <ItemDesc>Príspevok má určitú emotívnosť, ale nie extrémnu. Fakty sú tu, ale zvýraznené vyberaním.</ItemDesc>
+          <ItemDesc>Príspevok má určitú emotívnosť, ale nie extrémnu. Fakty sú tu, ale sú zvýraznené vyberaním — autor si zvolil tie, ktoré podporujú jeho názor. Bez emócií by príspevok stále mal zmysel, ale bol by menej zaujímavý. V takomto prípade tiež môže ísť o manipulatívny príspevok, ale aj o dôveryhodný, pretože nie vždy je emócia príspevku jasná. Preto si musíte dať pozor a položte si tieto otázky.</ItemDesc>
           <NestedList>
-            <NestedItem>Chce ma autor informovať alebo presvedčiť?</NestedItem>
-            <NestedItem>Dôveryhodný príspevok vám povie fakty, nechá rozhodnutie na vás.</NestedItem>
-            <NestedItem>Sú emócie mierne, pretože téma je objektívna? Alebo aby bol príspevok ťažšie rozpoznateľný?</NestedItem>
+            <NestedItem>Chce ma autor informovať alebo presvedčiť? Dôveryhodný príspevok vám povie fakty a nechá rozhodnutie na vás. Manipulatívny príspevok vám povie: Teraz viete, čo je správne. </NestedItem>
+            <NestedItem>Prečo sú emócie práve takéto? Ak sú emócie v príspevku mierne, spýtajte sa: Sú mierne, pretože téma je objektívna? Alebo sú mierne, aby bol príspevok ťažšie rozpoznateľný ako manipulatívny?</NestedItem>
           </NestedList>
         </ContentListItem>
       </ContentList>
-      <BodyText>Keď autor prezentuje čiastočne pravdivé informácie vybrané tak, aby podporili jeho tvrdenie, to je najnebezpečnejšia forma manipulácie, pretože vyzerá ako fakt.</BodyText>
+      <BodyText>Dôveryhodný príspevok bez kontextu môže byť mätúci. Ale keď autor prezentuje nepravdivé alebo čiastočne pravdivé informácie vybrané tak, aby podporili jeho tvrdenie, to je najnebezpečnejšia forma manipulácie, pretože vyzerá ako fakt. Preto neodsudzujte príspevok ihneď, ale ani mu automaticky neverte. Sami si vždy overujte informácie.</BodyText>
     </AccordionItem>
 
-    <AccordionItem title="🟢 Zelená — znaky dôveryhodného príspevku" isRead={readSections.has('p3_s4')} onRead={() => markRead('p3_s4')}>
-      <SectionAudioPlayer src="/sound/p3_s4.mp3" audioId="p3_s4_audio" label="Prehrať" played={!!playedAudios['p3_s4_audio']} onPlayed={markAudioPlayed} />
+    <AccordionItem title="🟢 Znaky dôveryhodného príspevku" isRead={readSections.has('p3_s4')} onRead={() => markRead('p3_s4')}>
+      <SectionAudioPlayer src="/sound/detektivb6.mp3" audioId="p3_s4_audio" label="Prehrať" played={!!playedAudios['p3_s4_audio']} onPlayed={markAudioPlayed} />
       <TrafficSemafor active="green" />
-      <BodyText>Ak sa tvorca pokúša informovať o faktoch, často si môžete všimnúť tieto znaky:</BodyText>
+      <BodyText>Ak sa tvorca pokúša informovať o faktoch, často si môžete všimnúť tieto znaky.</BodyText>
       <ContentList>
-        <ContentListItem><ItemLabel>Kto profituje?</ItemLabel><ItemDesc>Autor sa predstavuje — viete, kto je, prípadne v ktorej inštitúcii pôsobí. Nejde o profit, ide o predanie informácie. Autor chce, aby ste boli informovaní, nie aby ste reagovali.</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Odkiaľ to pochádza?</ItemLabel><ItemDesc>Autora vieme identifikovať. Zdroje sú jasne označené — odkazy alebo citácie. Fotografie a videá majú kontext: kedy, kde, kto ich urobil.</ItemDesc></ContentListItem>
-        <ContentListItem><ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel><ItemDesc>Fakty hovoria samé za seba. Informácie, čísla a zdroje sú presvedčivé aj v pokojnom, neutrálnom tóne. Autor nemá potrebu dramatizácie.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Kto profituje?</ItemLabel><ItemDesc>Autor sa predstavuje - viete, kto je, prípadne v ktorej inštitúcii alebo organizácii pôsobí. Ako autor profituje? V takýchto prípadoch často nejde o profit, ide o predanie informácie alebo vedomostí. Jediné, z čoho autor môže profitovať, je kvalita obsahu: presnosť, čitateľnosť, užitočnosť. A prečo? Autor chce, aby ste boli informovaní, nie aby ste reagovali.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Odkiaľ to pochádza?</ItemLabel><ItemDesc>Autora vieme identifikovať buď ako ľudskú osobu, inštitúciu alebo organizáciu. Zdroje sú jasne označené, poskytne nám odkazy alebo citácie. Informácie majú svoj pôvod a môžete ich skontrolovať. Fotografie a videá majú kontext: kedy, kde, kto ich urobil. Môžete si overiť informácie. A prečo? Autor príspevku nemá potrebu vás o niečom presvedčiť, chce, aby ste sa presvedčili sami.</ItemDesc></ContentListItem>
+        <ContentListItem><ItemLabel>Je príspevok bez emócií presvedčivý?</ItemLabel><ItemDesc>Je príspevok bez emócií presvedčivý? Fakty hovoria samé za seba. Informácie, tvrdenia, čísla a zdroje sú presvedčivé aj v pokojnom, neutrálnom tóne bez urgencií. Autor nemá potrebu dramatizácie. A prečo? Autor chce, aby ste boli informovaní, nie aby ste reagovali.</ItemDesc></ContentListItem>
       </ContentList>
     </AccordionItem>
   </>
@@ -724,7 +730,7 @@ const Page3Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 const REQUIRED_SECTIONS = [
   ['p1_s1', 'p1_s2', 'p1_s3', 'p1_s4', 'p1_s5', 'p1_s6'],
   ['p2_s1', 'p2_s2', 'p2_s3'],
-  ['p3_s1', 'p3_s2', 'p3_s3', 'p3_s4'],
+  [],
 ];
 
 
@@ -732,8 +738,8 @@ const REQUIRED_SECTIONS = [
 const PAGES = [
   {
     key: 'page0',
-    title: 'Prípad: Kukučie hniezdo',
-    subtitle: 'Konšpiračné presvedčenia',
+    title: 'Konšpiračné presvedčenia',
+    subtitle: 'Prípad: Kukučie hniezdo',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page1Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
     detectiveTipIntro: `<p><strong>Vitajte v ďalšej časti druhej misie. V tejto časti absolvujete detektívny tréning v ktorom získate nástroje, ktoré sú využiteľné aj v každodennom živote. Jednotlivé časti si môžete prečítať, alebo si ich prehrať pomocou nahrávok, ktoré som pre vás pripravil. S tvrdeniami, ktoré ste v predošlej časti mohli vidieť, sa pravdepodobne stretávate v bežnom živote každý deň. Často sa vyskytujú na sociálnych sieťach v podobe rôznych príspevkov, komentárov, videí... každé môže mať inú formu. Ale všetky majú jednu vec spoločnú: chcú vás o niečom presvedčiť. A preto je dôležité vedieť rozoznať, čo je dôveryhodné a čo je konšpirácia. Poďme sa teda spolu pozrieť do zákulisia konšpiračných presvedčení.</strong></p>`,
@@ -743,25 +749,25 @@ const PAGES = [
   },
   {
     key: 'page1',
-    title: 'Prípad: Kukučie hniezdo',
-    subtitle: 'Budovanie dôvery',
+    title: 'Inštitúcie EÚ',
+    subtitle: '',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page2Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
-    detectiveTipIntro: `<p><strong>Vitajte v ďalšej časti druhej misie. V tejto časti absolvujete detektívny tréning v ktorom získate nástroje, ktoré sú využiteľné aj v každodennom živote. Jednotlivé časti si môžete prečítať, alebo si ich prehrať pomocou nahrávok, ktoré som pre vás pripravil. S tvrdeniami, ktoré ste v predošlej časti mohli vidieť, sa pravdepodobne stretávate v bežnom živote každý deň. Často sa vyskytujú na sociálnych sieťach v podobe rôznych príspevkov, komentárov, videí... každé môže mať inú formu. Ale všetky majú jednu vec spoločnú: chcú vás o niečom presvedčiť. A preto je dôležité vedieť rozoznať, čo je dôveryhodné a čo je konšpirácia. Poďme sa teda spolu pozrieť do zákulisia konšpiračných presvedčení.</strong></p>`,
-    detectiveTipIntroAudio: { src: '/sound/detektiv1.mp3', audioId: 'tip_p1_audio' },
-    detectiveTipOutro: `<p><strong>Výborne! Prvú časť máte za sebou, nezabudnite si dať krátku prestávku a potom môžeme pokračovať.</strong></p>`,
-    detectiveTipOutroAudio: { src: '/sound/detektiv9.mp3', audioId: 'tip_p11_audio' },
+    detectiveTipIntro: `<p><strong>V prvej časti sme sa zaoberali konšpiračnými presvedčeniami. Teraz sa poďme spolu pozrieť na inštitúcie Európskej únie — zameriame sa na to, čo robia, ako fungujú a čo nám prinášajú. Oddýchli ste si? Ak áno, poďme na to!</strong></p>`,
+    detectiveTipIntroAudio: { src: '/sound/detektivd1.mp3', audioId: 'tip_p1_audio' },
+    detectiveTipOutro: `<p><strong>Výborne! Máte za sebou druhú časť tréningu. Ako ste mohli vidieť, inštitúcie Európskej únie si zakladajú na kompetentnosti, integrite a starostlivosti o občanov. Európska únia nie je dokonalá, ale je postavená na princípoch transparentnosti, demokratickej kontroly a ochrany práv. Teraz sa môžete ešte pozrieť na bonus, alebo prejsť k záveru tréningu a pokračovať do ďalšej časti.</strong></p>`,
+    detectiveTipOutroAudio: { src: '/sound/detektivd5.mp3', audioId: 'tip_p11_audio' },
   },
   {
     key: 'page2',
-    title: 'Bonus',
-    subtitle: 'Príspevkový semafor',
+    title: 'Príspevkový semafor',
+    subtitle: 'Bonus',
     content: (readSections, markRead, playedAudios, markAudioPlayed) =>
       <Page3Content readSections={readSections} markRead={markRead} playedAudios={playedAudios} markAudioPlayed={markAudioPlayed} />,
-    detectiveTipIntro: `...`,
-    detectiveTipIntroAudio: { src: '/sound/tip_p2.mp3', audioId: 'tip_p2_audio' },
-    detectiveTipOutro: `...`,
-    detectiveTipOutroAudio: { src: '/sound/tip_p22.mp3', audioId: 'tip_p22_audio' },
+    detectiveTipIntro: `<p><strong>V tomto bonuse sa vrátime kúsok späť. V prvej časti sme sa zaoberali konšpiračnými presvedčeniami. Ako som už spomínal, často sa vyskytujú na sociálnych sieťach vo forme rôznych príspevkov, komentárov, videí. Poďme sa spolu teraz pozrieť konkrétne na príspevky zo sociálnych sietí.</strong></p>`,
+    detectiveTipIntroAudio: { src: '/sound/detektivb1a.mp3', audioId: 'tip_p2_audio' },
+    detectiveTipOutro: `<p><strong>Výborne, zvládli ste to! Tréning máte za sebou. Teraz prejdeme v ďalšej časti znovu ku tvrdeniam. Keď ich budete čítať, skúste využiť poznatky, ktoré ste nadobudli. Hlavne sa nezabudnite spýtať samých seba tieto základné otázky: Ako ste prišli k tomuto názoru? Čo vás presvedčilo, že je to pravda? Máte pocit, že existujú aj iné pohľady na túto tému? Čo by vám pomohlo pochopiť veci z iného uhla pohľadu?</strong></p>`,
+    detectiveTipOutroAudio: { src: '/sound/detektivz.mp3', audioId: 'tip_p22_audio' },
   },
 ];
 

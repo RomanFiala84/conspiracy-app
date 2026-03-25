@@ -134,7 +134,8 @@ const Question = styled.p`
   font-size: 15px;
   font-weight: 500;
   line-height: 1.5;
-  text-align: justify;
+  text-align: ${p => p.justify ? 'justify' : 'left'};
+
   
   /* ✅ PRIDANÉ: Markdown styling */
   p {
@@ -965,7 +966,8 @@ const PAGES = [
         required: true,
         options: [
           { value: 'muz', label: 'Muž' },
-          { value: 'zena', label: 'Žena' }
+          { value: 'zena', label: 'Žena' },
+          { value: 'ine', label: 'Iné' }
         ]
       },
       {
@@ -2110,7 +2112,7 @@ const Questionnaire1 = () => {
         isActive={activeQuestionId === question.id}
       >
         {/* ✅ ZMENENÉ: Použitie ReactMarkdown pre text s markdown */}
-        <Question>
+        <Question justify={question.type === 'ladder'}>
           {`${index + 1}. `}
           {question.text.includes('**') || question.text.includes('\\n') ? (
             <ReactMarkdown>{question.text}</ReactMarkdown>

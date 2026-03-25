@@ -135,7 +135,7 @@ const Question = styled.p`
   font-size: 15px;
   font-weight: 500;
   line-height: 1.5;
-  text-align: justify;
+  text-align: left;
   /* ✅ PRIDANÉ: Markdown styling */
   p {
     margin: 0;
