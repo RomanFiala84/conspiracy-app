@@ -358,8 +358,8 @@ const OutroMission2 = () => {
       if (!userId) return;
       try {
         const progress = await dataManager.loadUserProgress(userId);
-        if (progress?.contest_email) {
-          setExistingEmail(progress.contest_email);
+        if (progress?.competition_email) {
+          setExistingEmail(progress.competition_email);
           setEmailOption('contest');
         } else {
           setExistingEmail('');

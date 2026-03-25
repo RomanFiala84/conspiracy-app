@@ -422,6 +422,13 @@ const AdminPanel = () => {
           'Misia 3 - Odomknutá':    p.mission3_unlocked ? 'ÁNO' : 'NIE',
           'Misia 3 - Dokončená':    p.mission3_completed ? 'ÁNO' : 'NIE',
           'Všetky misie dokončené': p.all_missions_completed ? 'ÁNO' : 'NIE',
+          'Súhlas so súťažou':      p.competition_consent_given ? 'ÁNO' : 'NIE',
+          'Chce participovať':  p.wantstoparticipatemainstudy ? 'ÁNO' : 'NIE',
+          'Chce notifikáciu':   p.wantsnotification ? 'ÁNO' : 'NIE',
+          'Notifikačný email':  p.notificationemail || '',
+          // A pre Mission2:
+          'Notif. M3 email':    p.notificationmission3email || '',
+          'Chce notif. M3':     p.wantsnotificationmission3 ? 'ÁNO' : 'NIE',
         };
 
         allComponentIds.forEach(componentId => {
