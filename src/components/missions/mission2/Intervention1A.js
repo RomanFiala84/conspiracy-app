@@ -547,6 +547,8 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
     </AccordionItem>
 
     <AccordionItem title="Sebareflexia" isRead={readSections.has('p1_s6')} onRead={() => markRead('p1_s6')}>
+      <SectionAudioPlayer src="/sound/detektiv7.mp3" audioId="p1_s66_audio" label="Prehrať" played={!!playedAudios['p1_s66_audio']} onPlayed={markAudioPlayed} />
+      <BodyText>Teraz už vieme, čo sú konšpiračné presvedčenia, aké majú znaky, prečo sa im darí, ako vznikajú a prečo ich ľudia šíria. Ale keď si prezeráme napríklad rôzne príspevky, je dôležité spýtať sa seba, či verím alebo neverím obsahu príspevku. Práve preto sa pozrieme hlbšie na seba samých pomocou sebareflektujúcich otázok, ktoré nám môžu pomôcť.</BodyText>
       <SectionAudioPlayer src="/sound/detektiv8.mp3" audioId="p1_s6_audio" label="Prehrať" played={!!playedAudios['p1_s6_audio']} onPlayed={markAudioPlayed} />
       <BodyText>Tieto sebareflektujúce otázky môžu byť užitočným nástrojom nielen pri odhaľovaní konšpiračných presvedčení, ale aj v každodennom živote.</BodyText>
       <ContentList>
