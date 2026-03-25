@@ -1281,8 +1281,6 @@ const PAGES = [
             id: 'attention_check_1',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 4.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
 
           // Online a tlač
@@ -1435,8 +1433,6 @@ const PAGES = [
             id: 'attention_check_2',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 2.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
           {
             id: 'sh4',
@@ -1629,8 +1625,6 @@ const PAGES = [
             id: 'attention_check_3',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 1.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
           // EÚ konšpiračné presvedčenia variované
           { id: 'epv1', text: 'Štáty si zachovávajú svoju suverenitu v rámci EÚ.', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Rozhodne nesúhlasím', max: 'Rozhodne súhlasím' }, scaleValueLabels: ['Rozhodne nesúhlasím', 'Takmer úplne nesúhlasím', 'Skôr nesúhlasím', 'Neutrálny postoj', 'Skôr súhlasím', 'Takmer úplne súhlasím', 'Rozhodne súhlasím'] },

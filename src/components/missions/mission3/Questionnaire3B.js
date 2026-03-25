@@ -956,8 +956,6 @@ const EP_NORMAL = [
             id: 'attention_check_9',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 3.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
 ];
 
@@ -973,8 +971,6 @@ const EP_VARIED = [
             id: 'attention_check_9v',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 3.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
 ];
 

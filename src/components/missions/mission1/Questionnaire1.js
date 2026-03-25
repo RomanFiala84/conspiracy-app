@@ -1149,8 +1149,6 @@ const PAGES = [
             id: 'attention_check_4',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 4.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
           // Online a tlač
           { id: 'ot1', text: 'SME', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
@@ -1289,8 +1287,6 @@ const PAGES = [
             id: 'attention_check_5',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 5.',
             scale: [1, 2, 3, 4, 5],
-            scaleLabels: { min: '1', max: '5' },
-            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
           {
             id: 'sh3',
