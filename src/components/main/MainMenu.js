@@ -1185,7 +1185,7 @@ const MainMenu = () => {
 
                   <h4>Trvanie súťaže:</h4>
                   <GradientCircleList>
-                    <li>Súťaž prebieha v období od spustenia predvýskumu do ukončenia hlavného výskumu - marec 2026.</li>
+                    <li>Súťaž prebieha v období od spustenia predvýskumu do ukončenia hlavného výskumu - marec/apríl 2026.</li>
                     <li>Pozor - predvýskum bude dostupný iba do spustenia hlavného výskumu, to znamená že po jeho spustení predvýskum už nebude možné absolvovať.</li>
                     <li>Do žrebovania budú zaradení len účastníci, ktorí splnia podmienky účasti v tomto časovom intervale.</li>
                   </GradientCircleList>

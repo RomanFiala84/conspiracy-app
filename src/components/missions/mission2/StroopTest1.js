@@ -252,8 +252,8 @@ const StroopTest1 = () => {
   `;
 
   const detectiveTipEnd = `
-    <p><strong>Výborne!</strong> Šifru prípadu: Kukučie hniezdo ste úspešne zvládli!</p>
-    <p>Vaša schopnosť rozoznať <strong>pravé symboly od votrelcov</strong> bola kľúčová pre tento prípad.</p>
+    <p><strong>Výborne! Šifru prípadu: Kukučie hniezdo ste úspešne zvládli!</strong></p>
+    <p>Vaša schopnosť rozoznať pravé symboly od votrelcov bola kľúčová pre tento prípad.</p>
     <p><strong>Teraz môžete pokračovať do ďalšej fázy misie!</strong></p>
   `;
 

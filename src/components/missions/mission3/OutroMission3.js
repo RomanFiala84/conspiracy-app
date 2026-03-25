@@ -213,7 +213,7 @@ const DebriefDivider = styled.div`
 
 const OutroMission3 = () => {
   const navigate = useNavigate();
-  const { addMissionPoints, refreshUserStats, userStats } = useUserStats();
+  const { addMissionPoints, refreshUserStats } = useUserStats();
   const [isProcessing, setIsProcessing] = useState(false);
   const theme = useContext(ThemeContext);
 
@@ -264,7 +264,7 @@ const OutroMission3 = () => {
           <InfoTitle><strong>Čo ste dosiahli?</strong></InfoTitle>
           <InfoList>
             <InfoItem><strong>Úspešne ste dokončili celý výskum.</strong></InfoItem>
-            <InfoItem><strong>Získali ste celkový počet bodov: <strong>{userStats.totalPoints}</strong> do súťaže.</strong></InfoItem>
+            <InfoItem><strong>Získali ste dostatok bodov do súťaže.</strong></InfoItem>
             <InfoItem><strong>Pomohli ste nám s dokončením výskumu.</strong></InfoItem>
           </InfoList>
 
@@ -284,7 +284,7 @@ const OutroMission3 = () => {
           <DebriefSection>
 
             <DebriefBlock>
-              <DebriefTitle>ℹDôležité informácie k zobrazeným tvrdeniam</DebriefTitle>
+              <DebriefTitle>ℹ️Dôležité informácie k zobrazeným tvrdeniam</DebriefTitle>
               <DebriefText>Počas výskumu ste hodnotili rôzne tvrdenia o spoločenských a politických témach. Niektoré z nich boli v súlade s dostupnými faktami a vedeckými poznatkami, iné patrili medzi takzvané konšpiračné presvedčenia — teda vysvetlenia udalostí, ktoré pripisujú skryté úmysly mocným skupinám alebo jednotlivcom, zvyčajne bez dostatočných dôkazov.</DebriefText>
               <DebriefText>Konšpiračné presvedčenia môžu byť nebezpečné, pretože vedú k nedôvere voči legitímnym inštitúciám, vede a médiám, môžu podnecovať sociálne napätie a v krajných prípadoch aj k odmietaniu zdravotnej starostlivosti či k preberaniu extrémnych postojov.</DebriefText>
               <DebriefText>V dotazníku sme zámerne neoznačovali, ktoré tvrdenia sú dôveryhodné a ktoré nie. Cieľom bolo zistiť, ako ľudia prirodzene reagujú na rôzne typy tvrdení – čo znie presvedčivo, kde majú pochybnosti a s čím majú tendenciu súhlasiť.</DebriefText>

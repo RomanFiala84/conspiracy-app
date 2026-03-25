@@ -1145,7 +1145,19 @@ const PAGES = [
           { id: 'ts2', text: 'Správy STVR', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
           { id: 'ts3', text: 'Noviny TV JOJ', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
           { id: 'ts4', text: 'Správy TA3', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
-          
+          {
+            id: 'attention_check_1',
+            text: 'Pozor kontrolná otázka. Prosím vyberte číslo 4.',
+            type: 'radio',
+            required: true,
+            options: [
+              { value: '1', label: '1' },
+              { value: '2', label: '2' },
+              { value: '3', label: '3' },
+              { value: '4', label: '4' },
+              { value: '5', label: '5' },
+            ]
+          },
           // Online a tlač
           { id: 'ot1', text: 'SME', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
           { id: 'ot2', text: 'Denník N', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
@@ -1277,6 +1289,19 @@ const PAGES = [
               'Ani neohrozuje, ani neohrozuje (neutrálny postoj)',
               'Skôr ohrozuje moju identitu a hodnoty',
               'Veľmi ohrozuje moju identitu a hodnoty'
+            ]
+          },
+          {
+            id: 'attention_check_2',
+            text: 'Pozor kontrolná otázka. Prosím vyberte číslo 2.',
+            type: 'radio',
+            required: true,
+            options: [
+              { value: '1', label: '1' },
+              { value: '2', label: '2' },
+              { value: '3', label: '3' },
+              { value: '4', label: '4' },
+              { value: '5', label: '5' },
             ]
           },
           {
@@ -1653,7 +1678,7 @@ const Questionnaire1 = () => {
 
       // ✅ OPRAVENÉ: Označ misi ako completed priamo v progress
       const progress = await dataManager.loadUserProgress(userId);
-      progress.mission0_completed = true; // ← SPRÁVNE
+      progress.mission1_completed = true; // ← SPRÁVNE
       await dataManager.saveProgress(userId, progress);
       
       console.log('✅ Questionnaire1 submitted successfully');

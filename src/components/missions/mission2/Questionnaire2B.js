@@ -1397,7 +1397,7 @@ const Questionnaire2B = () => {
 
       // ✅ OPRAVENÉ: Označ misi ako completed priamo v progress
       const progress = await dataManager.loadUserProgress(userId);
-      progress.mission2_questaCompleted = true;
+      progress.mission2_questbCompleted = true;
       await dataManager.saveProgress(userId, progress);
 
       // skupinová navigácia:

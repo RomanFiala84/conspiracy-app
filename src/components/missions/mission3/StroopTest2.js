@@ -252,8 +252,8 @@ const StroopTest2 = () => {
   `;
 
   const detectiveTipEnd = `
-    <p><strong>Výborne!</strong> Šifru prípadu: Falošná stopa ste úspešne zvládli!</p>
-    <p>Vaša schopnosť rozoznať <strong>pravé symboly od votrelcov</strong> bola kľúčová pre tento prípad.</p>
+    <p><strong>Výborne!Šifru prípadu: Falošná stopa ste úspešne zvládli!</strong></p>
+    <p>Vaša schopnosť rozoznať pravé symboly od votrelcovbola kľúčová pre tento prípad.</p>
     <p><strong>Teraz môžete pokračovať do ďalšej fázy misie!</strong></p>
   `;
 

@@ -294,7 +294,7 @@ const Page1Content = ({ readSections, markRead, playedAudios, markAudioPlayed })
 
     <AccordionItem title="Aké sú ich spoločné znaky?" isRead={readSections.has('p1_s2')} onRead={() => markRead('p1_s2')}>
       <SectionAudioPlayer src="/sound/detektiv3.mp3" audioId="p1_s2_audio" label="Prehrať" played={!!playedAudios['p1_s2_audio']} onPlayed={markAudioPlayed} />
-      <BodyText>Konšpiračné presvedčenia sa často vyskytujú v rôznych formách, ale majú niekoľko spoločných znakov:</BodyText>
+      <BodyText>Konšpiračné presvedčenia sa často vyskytujú v rôznych formách, ale majú niekoľko spoločných znakov. Keď si ich všimnete, viete, že sa pohybujete v území konšpiračných presvedčení.</BodyText>
       <ContentList>
         <ContentListItem><ItemLabel>Údajné tajné sprisahanie</ItemLabel><ItemDesc>Tvrdenie, že určitá skupina, či už vláda, inštitúcie, médiá alebo špecifická skupina ľudí, tajne a úmyselne koná.</ItemDesc></ContentListItem>
         <ContentListItem><ItemLabel>„Dôkazy" podporujúce presvedčenie</ItemLabel><ItemDesc>Selektívne vybraté informácie, ktoré sa interpretujú ako „dôkaz". Protichodné alebo faktické dôkazy sa ignorujú alebo vyvrátia.</ItemDesc></ContentListItem>

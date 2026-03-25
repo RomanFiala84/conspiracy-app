@@ -17,7 +17,7 @@ const LocalList = styled.ul`
   padding-left: 20px;
   padding-right: 20px;
   margin: 0;
-  text-align: left;
+  text-align: justify;
   > li {
     padding-left: 0;
     position: relative;
@@ -58,7 +58,7 @@ const LocalNestedItem = styled.div`
   position: relative;
   margin-bottom: 10px;
   line-height: 1.6;
-  text-align: left;
+  text-align: justify;
   &::before {
     content: '→';
     position: absolute;
@@ -1120,7 +1120,7 @@ export default function Instruction() {
       content: (
       <>
         <LocalList>
-          <li>V predvýskume prejdete sériou otázok a tvrdení - Misia 0 v aplikácii (5-10 minút).</li>
+          <li>V predvýskume prejdete sériou otázok a tvrdení - Misia 0 (5-10 minút).</li>
           <li>Pri hodnotení neexistujú správne ani nesprávne odpovede a po každom bloku otázok vás požiadame o spätnú väzbu.</li>
           <li>Budeme sa pýtať napríklad na:</li>
         </LocalList>
@@ -1159,10 +1159,7 @@ export default function Instruction() {
         <LocalNestedItem>
           Misia 3 (10-15 minút) - Prebehne po piatich dňoch od dokončenia Misie 1.
         </LocalNestedItem>
-        
-        <LocalList>
-          <li>Počas výskumu budeme automaticky zaznamenávať vaše interakcie s aplikáciou pre účely výskumu.</li>
-        </LocalList>
+      
       </>
       )
     },
@@ -1366,9 +1363,6 @@ export default function Instruction() {
               </LocalNestedItem>
               <LocalNestedItem>
                 Rozumiem, že moje osobné údaje budú spracované v súlade s GDPR a zákonom č. 18/2018 Z. z..
-              </LocalNestedItem>
-              <LocalNestedItem>
-                Rozumiem, že budú zaznamenávané moje interakcie s aplikáciou pre vedeckú analýzu.
               </LocalNestedItem>
               <LocalNestedItem>
                 Súhlasím s anonymizáciou a publikáciou mojich údajov v súhrnnej forme.
@@ -1625,7 +1619,7 @@ export default function Instruction() {
 
                 <h4>Trvanie súťaže:</h4>
                 <LocalList>
-                  <li>Súťaž prebieha v období od spustenia predvýskumu do ukončenia hlavného výskumu - marec 2026.</li>
+                  <li>Súťaž prebieha v období od spustenia predvýskumu do ukončenia hlavného výskumu - marec/apríl 2026.</li>
                   <li>Pozor - predvýskum bude dostupný iba do spustenia hlavného výskumu, to znamená že po jeho spustení predvýskum už nebude možné absolvovať.</li>
                   <li>Do žrebovania budú zaradení len účastníci, ktorí splnia podmienky účasti v tomto časovom intervale.</li>
                 </LocalList>
