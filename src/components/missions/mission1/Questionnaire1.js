@@ -1146,17 +1146,11 @@ const PAGES = [
           { id: 'ts3', text: 'Noviny TV JOJ', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
           { id: 'ts4', text: 'Správy TA3', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
           {
-            id: 'attention_check_1',
+            id: 'attention_check_4',
             text: 'Pozor kontrolná otázka. Prosím vyberte číslo 4.',
-            type: 'radio',
-            required: true,
-            options: [
-              { value: '1', label: '1' },
-              { value: '2', label: '2' },
-              { value: '3', label: '3' },
-              { value: '4', label: '4' },
-              { value: '5', label: '5' },
-            ]
+            scale: [1, 2, 3, 4, 5],
+            scaleLabels: { min: '1', max: '5' },
+            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
           // Online a tlač
           { id: 'ot1', text: 'SME', scale: [1, 2, 3, 4, 5, 6, 7], scaleLabels: { min: 'Nikdy', max: 'Denne' }, scaleValueLabels: ['Nikdy', 'Menej ako raz mesačne', 'Približne raz mesačne', 'Niekoľkokrát mesačne', 'Približne raz týždenne', 'Niekoľkokrát týždenne', 'Denne'] },
@@ -1292,17 +1286,11 @@ const PAGES = [
             ]
           },
           {
-            id: 'attention_check_2',
-            text: 'Pozor kontrolná otázka. Prosím vyberte číslo 2.',
-            type: 'radio',
-            required: true,
-            options: [
-              { value: '1', label: '1' },
-              { value: '2', label: '2' },
-              { value: '3', label: '3' },
-              { value: '4', label: '4' },
-              { value: '5', label: '5' },
-            ]
+            id: 'attention_check_5',
+            text: 'Pozor kontrolná otázka. Prosím vyberte číslo 5.',
+            scale: [1, 2, 3, 4, 5],
+            scaleLabels: { min: '1', max: '5' },
+            scaleValueLabels: ['1', '2', '3', '4', '5']
           },
           {
             id: 'sh3',

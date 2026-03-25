@@ -17,7 +17,7 @@ const LocalList = styled.ul`
   padding-left: 20px;
   padding-right: 20px;
   margin: 0;
-  text-align: justify;
+  text-align: left;
   > li {
     padding-left: 0;
     position: relative;
@@ -58,7 +58,7 @@ const LocalNestedItem = styled.div`
   position: relative;
   margin-bottom: 10px;
   line-height: 1.6;
-  text-align: justify;
+  text-align: left;
   &::before {
     content: '→';
     position: absolute;
