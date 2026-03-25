@@ -514,7 +514,7 @@ const AdminPanel = () => {
       const res = await fetch('/api/progress?code=all', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminCode: 'RF9846' }),
+        body: JSON.stringify({ adminCode: process.env.REACT_APP_ADMIN_CODE })
       });
       if (res.ok) { dataManager.clearAllData(); alert('✅ Vymazané!'); await loadStats(); }
       else { const e = await res.json(); alert(`❌ ${e.error || res.statusText}`); }
@@ -528,7 +528,7 @@ const AdminPanel = () => {
       const res = await fetch('/api/responses', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminCode: 'RF9846', deleteAll: true }),
+        body: JSON.stringify({ adminCode: process.env.REACT_APP_ADMIN_CODE })
       });
       if (res.ok) { alert('✅ Vymazané!'); }
       else { const e = await res.json(); alert(`❌ ${e.error || res.statusText}`); }
@@ -543,11 +543,12 @@ const AdminPanel = () => {
     try {
       await fetch('/api/progress?code=all', {
         method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminCode: 'RF9846' }),
+        body: JSON.stringify({ adminCode: process.env.REACT_APP_ADMIN_CODE })
+
       });
       await fetch('/api/responses', {
         method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminCode: 'RF9846', deleteAll: true }),
+        body: JSON.stringify({ adminCode: process.env.REACT_APP_ADMIN_CODE })
       });
       dataManager.clearAllData();
       alert('✅ Všetko vymazané!');
