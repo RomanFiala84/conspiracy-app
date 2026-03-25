@@ -296,7 +296,7 @@ class DataManager {
       const response = await fetch(`${this.apiBase}?code=missions-unlock`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ missionId, adminCode: this.adminUserId })
+        body: JSON.stringify({ missionId, adminCode: process.env.REACT_APP_ADMIN_CODE })
       });
 
       if (!response.ok) {
