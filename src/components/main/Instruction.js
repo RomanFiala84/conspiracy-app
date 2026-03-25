@@ -1275,7 +1275,7 @@ export default function Instruction() {
             <p><strong>Prečítajte si prosím pozorne podmienky účasti, ostatné časti sú informačné.</strong></p>
             <p><strong>Pre zapojenie do výskumu je potrebné vždy poskytnúť informovaný súhlas.</strong></p>
             <p><strong>Následne pokračujte prihlásením sa do výskumnej aplikácie podľa inštrukcií pre prihlásenie.</strong></p>
-            <p><strong>V spodnej časti nájdete prihlásenie do súťaže kde je potrebné poskytnúť e-mailovú adresu a informovaný súhlas pre účasť v súťaži.</strong></p>
+            <p><strong>V spodnej časti nájdete prihlásenie do súťaže, kde je potrebné poskytnúť e-mailovú adresu a informovaný súhlas pre účasť v súťaži.</strong></p>
           </WelcomeInstructions>
         </WelcomeCard>
 
