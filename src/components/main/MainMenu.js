@@ -1109,7 +1109,7 @@ const MainMenu = () => {
           
           <SharingInfo>
             <strong>Zdieľajte kód alebo link s priateľmi!</strong><br/>
-           <strong>Za každého nového respondenta získate</strong> <strong>+10 bodov</strong>
+           <strong>Za každého nového respondenta získate</strong> <strong>+10 bodov</strong>.
           </SharingInfo>
         
         </SharingSection>
