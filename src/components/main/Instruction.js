@@ -1447,7 +1447,7 @@ export default function Instruction() {
           <CompetitionText>
             <LocalList>
               <li><strong>Pre zapojenie do súťaže je potrebné zadať e-mailovú adresu a absolovať predvýskum alebo prvú časť hlavného výskumu.</strong></li>
-              <li><strong>Súťaž funguje na základe bodovacieho systému:</strong></li>toUpperCase
+              <li><strong>Súťaž funguje na základe bodovacieho systému:</strong></li>
             </LocalList>
             
             <LocalNestedItem>
