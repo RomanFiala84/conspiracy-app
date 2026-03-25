@@ -741,7 +741,8 @@ export default function Instruction() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [referralFromUrl, setReferralFromUrl] = useState(false);
   const [openSections, setOpenSections] = useState({});
-  
+  const [existingEmail, setExistingEmail] = useState('')
+
   const consentRef = useRef(null);
   const participantCodeRef = useRef(null);
   const emailRef = useRef(null);
@@ -1073,6 +1074,7 @@ export default function Instruction() {
     setReferralCode('');
     setReferralFromUrl(false);
     setEmail('');
+    setExistingEmail('')
     sessionStorage.removeItem('participantCode');
     console.log('🧹 Formulár vyčistený');
   };
@@ -1473,12 +1475,28 @@ export default function Instruction() {
             type="email"
             placeholder="vas.email@priklad.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value)}
+            onBlur={() => {
+              const upper = participantCode.toUpperCase()
+              if (upper.length === 6 && validateParticipantCode(upper).valid) {
+                dataManager.loadUserProgress(upper).then(p => {
+                  setExistingEmail(p?.competition_email || '')
+                }).catch(() => setExistingEmail(''))
+              }
+            }}
             disabled={isBlocked}
-            $hasError={!!errors.email}
+            hasError={!!errors.email}
             autoComplete="email"
           />
+
           {errors.email && <ErrorText>{errors.email}</ErrorText>}
+          {!errors.email && email && existingEmail && 
+            email.toLowerCase() === existingEmail.toLowerCase() && (
+            <Note style={{ color: '#f59e0b', fontWeight: 500 }}>
+              ⚠️ Tento e-mail je už pre váš kód zaregistrovaný. Prihlásenie prebehne bez zmeny e-mailu.
+            </Note>
+          )}
+
           <Note>
             <LocalList>
               <li>Kontaktný e-mail nebude spájaný s odpoveďami v predvýskume ani v hlavnom výskume.</li>

@@ -424,24 +424,25 @@ const AdminPanel = () => {
           'Všetky misie dokončené':   p.all_missions_completed ? 'ÁNO' : 'NIE',
 
                     // === SÚŤAŽ ===
-          'Informed consent':                p.informedconsentgiven ? 'ÁNO' : 'NIE',
-          'Súhlas so súťažou':               p.competitionconsentgiven ? 'ÁNO' : 'NIE',
-          'Súťažný email':                   p.competitionemail || '',
-          'Súťažný email pridaný dňa':       p.competitionemailaddedat ? new Date(p.competitionemailaddedat).toLocaleString('sk-SK') : '',
+         // ✅ SÚŤAŽ - Instruction.js
+          'Súhlas s výskumom':              p.informed_consent_given ? 'ÁNO' : 'NIE',
+          'Súhlas so súťažou':              p.competition_consent_given ? 'ÁNO' : 'NIE',
+          'Súťažný email':                  p.competition_email || '',
+          'Súťažný email pridaný dňa':      p.competition_email_added_at
+                                              ? new Date(p.competition_email_added_at).toLocaleString('sk-SK') : '',
 
-          // === OUTRO MISSION 0 — účasť na hlavnom výskume ===
-          'Chce participovať (hlavný)':      p.wantstoparticipatemainstudy ? 'ÁNO' : 'NIE',
-          'Participácia M0 odpoveď dňa':     p.participationresponsetimestamp ? new Date(p.participationresponsetimestamp).toLocaleString('sk-SK') : '',
-          'Chce notifikáciu (M0)':           p.wantsnotification ? 'ÁNO' : 'NIE',
-          'Notifikačný email (M0)':          p.notificationemail || '',
-          'Email option (M0)':               p.notificationemailoption || '',
+          // ✅ OUTRO M0 - ďalšia účasť
+          'Chce hlavný výskum':             p.wants_to_participate_main_study ? 'ÁNO' : 'NIE',
+          'Chce notifikáciu M1':            p.wants_notification ? 'ÁNO' : 'NIE',
+          'Notifikačný email M1':           p.notification_email || '',
+          'Notif. email M1 typ':            p.notification_email_option || '',
 
-          // === OUTRO MISSION 2 — účasť na misii 3 ===
-          'Chce participovať (M3)':          p.wantstoparticipatemission3 ? 'ÁNO' : 'NIE',
-          'Participácia M3 odpoveď dňa':     p.participationmission3responsetimestamp ? new Date(p.participationmission3responsetimestamp).toLocaleString('sk-SK') : '',
-          'Chce notifikáciu (M3)':           p.wantsnotificationmission3 ? 'ÁNO' : 'NIE',
-          'Notifikačný email (M3)':          p.notificationmission3email || '',
-          'Email option (M3)':               p.notificationmission3emailoption || '',
+          // ✅ OUTRO M2 - ďalšia účasť (Misia 3)
+          'Chce Misiu 3':                   p.wants_to_participate_mission3 ? 'ÁNO' : 'NIE',
+          'Chce notifikáciu M3':            p.wants_notification_mission3 ? 'ÁNO' : 'NIE',
+          'Notifikačný email M3':           p.notification_mission3_email || '',
+          'Notif. email M3 typ':            p.notification_mission3_email_option || '',
+
 
         };
 
