@@ -1424,7 +1424,7 @@ export default function Instruction() {
         </InfoBox>
 
         <FormCard ref={participantCodeRef} $hasError={!!errors.participant || !!errors.blocked}>
-          <InputLabel htmlFor="participant-code"><strong>Zadajte váš identifikačný kód respondenta pre prihlásenie (bez diakritiky):</strong></InputLabel>
+          <InputLabel htmlFor="participant-code"><strong>Zadajte váš identifikačný kód respondenta pre prihlásenie - (bez diakritiky):</strong></InputLabel>
           <Input
             id="participant-code"
             type="text"
