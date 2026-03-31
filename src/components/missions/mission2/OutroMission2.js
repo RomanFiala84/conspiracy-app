@@ -476,7 +476,7 @@ const OutroMission2 = () => {
           <InfoList>
             <InfoItem><strong>Úspešne ste dokončili prvú časť hlavného výskumu</strong></InfoItem>
             <InfoItem><strong>Získali ste 25 bodov a spolu s bodmi z úvodného dotazníka ste splnili podmienky pre zapojenie sa do súťaže</strong></InfoItem>
-            <InfoItem><strong>Pomohli ste nám zlepšiť hlavný výskum.</strong></InfoItem>
+            <InfoItem><strong>Kód pre ShareQuest.sk: bnt071wefhfnww4n77xuoj</strong></InfoItem>
           </InfoList>
 
           <DetectiveTipSmall
