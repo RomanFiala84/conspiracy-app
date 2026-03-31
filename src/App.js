@@ -4,6 +4,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import { lightTheme, darkTheme } from './styles/theme';
 import ScrollToTop from './styles/ScrollToTop';
 import { GlobalStyles } from './styles/GlobalStyles';
@@ -272,6 +273,7 @@ function App() {
               <ThemeToggle themeName={themeName} onToggle={toggleTheme} />
             </div>
             <AppContent />
+            <Analytics />
           </BrowserRouter>
         </UserStatsProvider>
       </ThemeProvider>
